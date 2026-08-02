@@ -1,10 +1,18 @@
 const BASE = "http://localhost:8000";
 
-export async function getJSON<T>(path: string): Promise<T> {
+async function getJSON<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}${path}`);
-  if (!res.ok) {
-    throw new Error(`${path} -> ${res.status} ${res.statusText}`);
-  }
+  if (!res.ok) throw new Error(`${path} -> ${res.status} ${res.statusText}`);
+  return res.json() as Promise<T>;
+}
+
+async function postJSON<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`${path} -> ${res.status} ${res.statusText}`);
   return res.json() as Promise<T>;
 }
 
@@ -20,6 +28,81 @@ export type DistrictCollection = GeoJSON.FeatureCollection<
   DistrictProperties
 >;
 
-export function getDistricts(): Promise<DistrictCollection> {
-  return getJSON<DistrictCollection>("/districts");
+export interface RiskDistrict {
+  district_id: string;
+  flood_prob: number;
+  drought_prob: number;
 }
+
+export interface RiskResponse {
+  date: string;
+  date_min: string;
+  date_max: string;
+  districts: RiskDistrict[];
+}
+
+export interface Depot {
+  depot_id: string;
+  name: string;
+  lat: number;
+  lon: number;
+  fleet: { truk_tangki: number; pompa: number; regu: number };
+}
+
+export interface ScenarioResponse {
+  date_min: string;
+  date_max: string;
+  resources: string[];
+  resource_labels: Record<string, string>;
+  note: string;
+  depots: Depot[];
+}
+
+export interface PlanItem {
+  district_id: string;
+  district: string;
+  kabupaten: string;
+  resource: "pompa" | "truk_tangki";
+  resource_label: string;
+  units: number;
+  from_depot: string;
+  minutes: number;
+  hazard_prob: number;
+  population: number;
+  people_exposed: number;
+  reason: string;
+}
+
+export interface AllocateResponse {
+  date: string;
+  plan: PlanItem[];
+  summary: {
+    status: string;
+    total_dispatched: { pompa: number; truk_tangki: number };
+    total_fleet: { pompa: number; truk_tangki: number };
+    fleet_used_pct: number;
+    n_districts_served: number;
+    n_active_districts: number;
+  };
+}
+
+export interface Lock {
+  district_id: string;
+  resource: string;
+  units: number;
+}
+export interface Reject {
+  district_id: string;
+  resource: string;
+}
+
+export const getDistricts = () =>
+  getJSON<DistrictCollection>("/districts");
+export const getRisk = (date?: string) =>
+  getJSON<RiskResponse>(`/risk${date ? `?date=${date}` : ""}`);
+export const getScenario = () => getJSON<ScenarioResponse>("/scenario");
+export const postAllocate = (body: {
+  date?: string;
+  locks: Lock[];
+  rejects: Reject[];
+}) => postJSON<AllocateResponse>("/allocate", body);
