@@ -22,6 +22,7 @@ import type { ViewMode } from "./hazard";
 import "./App.css";
 
 const PRESETS = [
+  { label: "Dua bahaya Feb 2015", date: "2015-02-19" },
   { label: "Kemarau Sep 2023", date: "2023-09-15" },
   { label: "Musim hujan Jan 2024", date: "2024-01-15" },
 ];
@@ -30,7 +31,7 @@ const keyOf = (p: PlanItem) => `${p.district_id}:${p.resource}`;
 
 export default function App() {
   const [scenario, setScenario] = useState<ScenarioResponse | null>(null);
-  const [date, setDate] = useState<string>("2023-09-15");
+  const [date, setDate] = useState<string>("2015-02-19");
   const [mode, setMode] = useState<ViewMode>("gabungan");
   const [risk, setRisk] = useState<Map<string, RiskDistrict>>(new Map());
   const [result, setResult] = useState<AllocateResponse | null>(null);
