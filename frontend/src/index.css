@@ -1,0 +1,44 @@
+/* SIAGA — utilitarian ops-room styling.
+   Rules of the house: flat surfaces, 1px borders, no gradients, no glass,
+   no rounded-everything. Color is reserved for risk and status. */
+
+:root {
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --border: #d4d8dd;
+  --text: #1a1f24;
+  --text-dim: #5c6670;
+  --header-bg: #14273f;   /* institutional navy */
+  --header-text: #e8edf3;
+  --accent: #14273f;
+
+  /* risk ramps (colorblind-safe) */
+  --flood-1: #c6dbef;
+  --flood-2: #6baed6;
+  --flood-3: #2171b5;
+  --drought-1: #fee391;
+  --drought-2: #fe9929;
+  --drought-3: #cc4c02;
+  --both: #7a0177;        /* compound: both hazards high */
+
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  color: var(--text);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  overflow: hidden;
+}
