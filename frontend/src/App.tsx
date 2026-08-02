@@ -3,8 +3,11 @@ import MapView from "./components/MapView";
 import Controls from "./components/Controls";
 import Legend from "./components/Legend";
 import Sidebar from "./components/Sidebar";
-import CausalLoop from "./components/CausalLoop";
 import DistrictDrawer from "./components/DistrictDrawer";
+import NavRail, { type View } from "./components/NavRail";
+import KpiStrip from "./components/KpiStrip";
+import Overview from "./components/Overview";
+import About from "./components/About";
 import {
   getDistricts,
   getRisk,
@@ -19,6 +22,7 @@ import {
   type ScenarioResponse,
 } from "./api/client";
 import type { ViewMode } from "./hazard";
+import { computeKpis } from "./metrics";
 import "./App.css";
 
 const PRESETS = [
@@ -33,6 +37,7 @@ export default function App() {
   const [scenario, setScenario] = useState<ScenarioResponse | null>(null);
   const [date, setDate] = useState<string>("2015-02-19");
   const [mode, setMode] = useState<ViewMode>("gabungan");
+  const [view, setView] = useState<View>("peta");
   const [risk, setRisk] = useState<Map<string, RiskDistrict>>(new Map());
   const [result, setResult] = useState<AllocateResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -43,9 +48,7 @@ export default function App() {
 
   const [selected, setSelected] = useState<string | null>(null);
   const propsRef = useRef<Map<string, DistrictProperties>>(new Map());
-  const popRef = useRef<Map<string, number>>(new Map());
 
-  // one-time: scenario + district props/population lookup
   useEffect(() => {
     getScenario().then(setScenario).catch((e) => setError(String(e)));
     getDistricts()
@@ -56,7 +59,6 @@ export default function App() {
       .catch(() => {});
   }, []);
 
-  // risk whenever date changes
   useEffect(() => {
     getRisk(date)
       .then((r) => {
@@ -68,7 +70,6 @@ export default function App() {
       .catch((e) => setError(String(e)));
   }, [date]);
 
-  // (re)allocate when date / locks / rejects change
   const reallocate = useCallback(() => {
     setLoading(true);
     postAllocate({
@@ -78,7 +79,6 @@ export default function App() {
     })
       .then((res) => {
         setResult(res);
-        for (const p of res.plan) popRef.current.set(p.district_id, p.population);
         setError(null);
       })
       .catch((e) => setError(String(e)))
@@ -100,11 +100,7 @@ export default function App() {
   };
   const onReject = (p: PlanItem) => {
     const k = keyOf(p);
-    setRejects((prev) => {
-      const next = new Map(prev);
-      next.set(k, { district_id: p.district_id, resource: p.resource });
-      return next;
-    });
+    setRejects((prev) => new Map(prev).set(k, { district_id: p.district_id, resource: p.resource }));
     setLocks((prev) => {
       if (!prev.has(k)) return prev;
       const next = new Map(prev);
@@ -119,21 +115,22 @@ export default function App() {
       return next;
     });
 
-  const labelFor = useCallback(
-    (key: string) => {
-      const [did, res] = key.split(":");
-      const name = propsRef.current.get(did)?.name ?? did;
-      const resLabel = res === "pompa" ? "pompa" : "truk tangki";
-      return `${name} · ${resLabel}`;
-    },
-    [],
-  );
+  const labelFor = useCallback((key: string) => {
+    const [did, res] = key.split(":");
+    const name = propsRef.current.get(did)?.name ?? did;
+    return `${name} · ${res === "pompa" ? "pompa" : "truk tangki"}`;
+  }, []);
 
   const plan = result?.plan ?? [];
+  const kpis = useMemo(() => computeKpis(risk, result), [risk, result]);
   const assignmentsForSelected = useMemo(
     () => plan.filter((p) => p.district_id === selected),
     [plan, selected],
   );
+  const openDistrict = (id: string) => {
+    setView("peta");
+    setSelected(id);
+  };
 
   return (
     <div className="app">
@@ -151,50 +148,62 @@ export default function App() {
 
       {error && <div className="errbar">Gagal memuat data: {error}</div>}
 
-      <main className="content">
-        <div className="map-wrap">
-          <MapView
-            risk={risk}
-            mode={mode}
-            depots={scenario?.depots ?? []}
-            plan={plan}
-            onSelect={setSelected}
-          />
-          <Controls
-            mode={mode}
-            onMode={setMode}
-            date={date}
-            dateMin={scenario?.date_min ?? "2015-01-30"}
-            dateMax={scenario?.date_max ?? "2024-12-31"}
-            onDate={setDate}
-            presets={PRESETS}
-          />
-          <Legend mode={mode} />
-          {selected && (
-            <DistrictDrawer
-              props={propsRef.current.get(selected) ?? null}
-              risk={risk.get(selected)}
-              population={popRef.current.get(selected)}
-              assignments={assignmentsForSelected}
-              onClose={() => setSelected(null)}
-            />
-          )}
-        </div>
-        <div className="right">
-          <Sidebar
-            result={result}
-            loading={loading}
-            locks={new Set(locks.keys())}
-            rejects={new Set(rejects.keys())}
-            onLock={onLock}
-            onReject={onReject}
-            onClearReject={onClearReject}
-            onSelect={setSelected}
-            labelFor={labelFor}
-          />
-          <CausalLoop />
-        </div>
-      </main>
+      <div className="body">
+        <NavRail view={view} onView={setView} />
+
+        {view === "peta" && (
+          <div className="peta">
+            <KpiStrip kpis={kpis} />
+            <main className="content">
+              <div className="map-wrap">
+                <MapView
+                  risk={risk}
+                  mode={mode}
+                  depots={scenario?.depots ?? []}
+                  plan={plan}
+                  onSelect={setSelected}
+                />
+                <Controls
+                  mode={mode}
+                  onMode={setMode}
+                  date={date}
+                  dateMin={scenario?.date_min ?? "2015-01-30"}
+                  dateMax={scenario?.date_max ?? "2024-12-31"}
+                  onDate={setDate}
+                  presets={PRESETS}
+                />
+                <Legend mode={mode} />
+                {selected && (
+                  <DistrictDrawer
+                    props={propsRef.current.get(selected) ?? null}
+                    risk={risk.get(selected)}
+                    population={risk.get(selected)?.population}
+                    assignments={assignmentsForSelected}
+                    onClose={() => setSelected(null)}
+                  />
+                )}
+              </div>
+              <Sidebar
+                result={result}
+                loading={loading}
+                locks={new Set(locks.keys())}
+                rejects={new Set(rejects.keys())}
+                onLock={onLock}
+                onReject={onReject}
+                onClearReject={onClearReject}
+                onSelect={setSelected}
+                labelFor={labelFor}
+              />
+            </main>
+          </div>
+        )}
+
+        {view === "ringkasan" && (
+          <Overview risk={risk} result={result} date={date} onSelect={openDistrict} />
+        )}
+
+        {view === "tentang" && <About />}
+      </div>
     </div>
   );
 }

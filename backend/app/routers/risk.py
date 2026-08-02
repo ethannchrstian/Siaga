@@ -19,6 +19,9 @@ def risk(date: str | None = Query(default=None, description="YYYY-MM-DD")):
         "districts": [
             {
                 "district_id": r["district_id"],
+                "name": r["name"],
+                "kabupaten": r["kabupaten"],
+                "population": int(r["population"]),
                 "flood_prob": round(r["flood_prob"], 4),
                 "drought_prob": round(r["drought_prob"], 4),
             }

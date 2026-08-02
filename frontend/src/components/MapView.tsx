@@ -140,6 +140,31 @@ export default function MapView({ risk, mode, depots, plan, onSelect }: Props) {
         },
       });
 
+      map.addSource("markers", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
+      map.addLayer({
+        id: "markers",
+        type: "circle",
+        source: "markers",
+        paint: {
+          "circle-radius": ["interpolate", ["linear"], ["get", "sev"], 0.5, 4, 1, 9],
+          "circle-color": [
+            "match",
+            ["get", "kind"],
+            "flood",
+            "#2171b5",
+            "drought",
+            "#cc4c02",
+            "#7a0177",
+          ],
+          "circle-opacity": 0.9,
+          "circle-stroke-color": "#fff",
+          "circle-stroke-width": 1.5,
+        },
+      });
+
       map.addSource("depots", {
         type: "geojson",
         data: { type: "FeatureCollection", features: [] },
@@ -187,8 +212,13 @@ export default function MapView({ risk, mode, depots, plan, onSelect }: Props) {
       });
 
       readyRef.current = true;
-      map.resize();
+      // Nudge the canvas size a few times while the flex layout settles.
+      // A single resize can land during a reflow and never fetch tiles.
+      [0, 120, 350, 700].forEach((ms) =>
+        setTimeout(() => mapRef.current?.resize(), ms),
+      );
       paint();
+      paintMarkers();
       paintDepots();
       paintArrows();
     });
@@ -218,6 +248,49 @@ export default function MapView({ risk, mode, depots, plan, onSelect }: Props) {
     (map.getSource("districts") as maplibregl.GeoJSONSource).setData(
       data as unknown as GeoJSON.FeatureCollection,
     );
+  }
+
+  // Pins on the highest-risk districts, colored by dominant hazard, sized by
+  // severity. Purple when both hazards are high (compound).
+  function paintMarkers() {
+    const map = mapRef.current;
+    if (!map || !readyRef.current) return;
+    // Only the most significant districts get a pin, so the map stays readable
+    // even when nearly the whole corridor is at risk. Rank by exposure.
+    const rows: { c: [number, number]; sev: number; kind: string; exp: number }[] = [];
+    for (const [id, r] of riskRef.current) {
+      const sev = Math.max(r.flood_prob, r.drought_prob);
+      if (sev < 0.5) continue;
+      const c = centroidsRef.current.get(id);
+      if (!c) continue;
+      const show =
+        mode === "gabungan" ||
+        (mode === "banjir" && r.flood_prob >= 0.5) ||
+        (mode === "cekaman" && r.drought_prob >= 0.5);
+      if (!show) continue;
+      const both = r.flood_prob >= 0.5 && r.drought_prob >= 0.5;
+      const kind =
+        mode === "banjir"
+          ? "flood"
+          : mode === "cekaman"
+            ? "drought"
+            : both
+              ? "both"
+              : r.drought_prob >= r.flood_prob
+                ? "drought"
+                : "flood";
+      rows.push({ c, sev, kind, exp: sev * r.population });
+    }
+    rows.sort((a, b) => b.exp - a.exp);
+    const feats: GeoJSON.Feature[] = rows.slice(0, 30).map((r) => ({
+      type: "Feature",
+      properties: { sev: r.sev, kind: r.kind },
+      geometry: { type: "Point", coordinates: r.c },
+    }));
+    (map.getSource("markers") as maplibregl.GeoJSONSource)?.setData({
+      type: "FeatureCollection",
+      features: feats,
+    });
   }
 
   function paintDepots() {
@@ -259,6 +332,7 @@ export default function MapView({ risk, mode, depots, plan, onSelect }: Props) {
 
   useEffect(() => {
     paint();
+    paintMarkers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [risk, mode]);
   useEffect(() => {

@@ -30,6 +30,9 @@ export type DistrictCollection = GeoJSON.FeatureCollection<
 
 export interface RiskDistrict {
   district_id: string;
+  name: string;
+  kabupaten: string;
+  population: number;
   flood_prob: number;
   drought_prob: number;
 }
