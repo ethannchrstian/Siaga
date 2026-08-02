@@ -242,6 +242,18 @@ def _extract_plan(prob, x, active, depots, resources, tmin, per_unit, prob_key):
     dmap = {d["district_id"]: d for d in active}
     depmap = {dep.depot_id: dep for dep in depots}
 
+    # True per-depot outflow straight from the solver variables. This respects
+    # depot capacity by construction, unlike attributing a district's units to
+    # its nearest depot.
+    depot_dispatch = {
+        dep.depot_id: {"name": dep.name, "pompa": 0, "truk_tangki": 0}
+        for dep in depots
+    }
+    for (dep_id, _did, r), var in x.items():
+        units = int(round(var.value() or 0))
+        if units > 0:
+            depot_dispatch[dep_id][r] += units
+
     # Aggregate x by (district, resource); remember the depot each unit came from.
     agg: dict[tuple[str, str], dict] = {}
     for (dep_id, did, r), var in x.items():
@@ -259,8 +271,9 @@ def _extract_plan(prob, x, active, depots, resources, tmin, per_unit, prob_key):
         d = dmap[did]
         prob_val = d[prob_key[r]]
         pop = int(d["population"])
-        # Nearest contributing depot leads the explanation line.
-        nearest = min(entry["sources"], key=lambda s: s["minutes"])
+        # The depot that actually supplied the most units leads the line, so the
+        # "from depot X" text matches the solver's real sourcing.
+        nearest = max(entry["sources"], key=lambda s: (s["units"], -s["minutes"]))
         dep = depmap[nearest["depot_id"]]
         exposed = int(round(prob_val * pop))
         plan.append(
@@ -298,6 +311,7 @@ def _extract_plan(prob, x, active, depots, resources, tmin, per_unit, prob_key):
 
     return {
         "plan": plan,
+        "depot_dispatch": depot_dispatch,
         "summary": {
             "status": status,
             "total_dispatched": dispatched,

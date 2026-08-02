@@ -40,6 +40,27 @@ interface Props {
   depots: Depot[];
   plan: PlanItem[];
   onSelect: (districtId: string) => void;
+  onDepot: (depotId: string) => void;
+}
+
+// Gojek-style flowing dash along the supply routes, so the direction of flow
+// (depot -> district) reads at a glance. Defined before the component so
+// Vite Fast Refresh never sees it as used-before-defined.
+function startRouteAnimation(map: maplibregl.Map) {
+  const steps: number[][] = [
+    [0, 4, 3], [0.5, 4, 2.5], [1, 4, 2], [1.5, 4, 1.5],
+    [2, 4, 1], [2.5, 4, 0.5], [3, 4, 0], [0, 0.5, 3, 3.5],
+    [0, 1, 3, 3], [0, 1.5, 3, 2.5], [0, 2, 3, 2], [0, 2.5, 3, 1.5],
+    [0, 3, 3, 1], [0, 3.5, 3, 0.5],
+  ];
+  let i = 0;
+  const tick = () => {
+    if (!map.getLayer("arrows")) return;
+    map.setPaintProperty("arrows", "line-dasharray", steps[i % steps.length]);
+    i++;
+    window.setTimeout(() => requestAnimationFrame(tick), 55);
+  };
+  requestAnimationFrame(tick);
 }
 
 interface DistrictData {
@@ -65,7 +86,7 @@ function centroid(geom: GeoJSON.Geometry): [number, number] {
   return n ? [sx / n, sy / n] : [0, 0];
 }
 
-export default function MapView({ risk, mode, depots, plan, onSelect }: Props) {
+export default function MapView({ risk, mode, depots, plan, onSelect, onDepot }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const readyRef = useRef(false);
@@ -136,17 +157,27 @@ export default function MapView({ risk, mode, depots, plan, onSelect }: Props) {
       });
 
       map.addSource("arrows", { type: "geojson", data: emptyFC() });
+      // A soft casing under the routes so they read on any basemap color.
+      map.addLayer({
+        id: "arrows-casing",
+        type: "line",
+        source: "arrows",
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: { "line-color": "#ffffff", "line-width": 5, "line-opacity": 0.7 },
+      });
       map.addLayer({
         id: "arrows",
         type: "line",
         source: "arrows",
+        layout: { "line-cap": "round", "line-join": "round" },
         paint: {
           "line-color": ["match", ["get", "resource"], "pompa", FLOOD, "truk_tangki", DROUGHT, "#666"],
-          "line-width": 1.6,
-          "line-opacity": 0.55,
-          "line-dasharray": [2, 1.5],
+          "line-width": 2.6,
+          "line-opacity": 0.95,
+          "line-dasharray": [0, 2, 3],
         },
       });
+      startRouteAnimation(map);
 
       const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false });
       map.on("mousemove", "district-fill", (e) => {
@@ -190,6 +221,18 @@ export default function MapView({ risk, mode, depots, plan, onSelect }: Props) {
           fit();
         }, ms),
       );
+      // Lock the map to the corridor: can't pan into empty ocean/inland or
+      // zoom out past the affected strip.
+      setTimeout(() => {
+        const m = mapRef.current;
+        if (!m) return;
+        const pad = 0.25;
+        m.setMaxBounds([
+          [minX - pad, minY - pad],
+          [maxX + pad, maxY + pad],
+        ]);
+        m.setMinZoom(Math.max(m.getZoom() - 0.4, 6));
+      }, 800);
       paint();
       paintArrows();
       paintHtmlMarkers();
@@ -250,7 +293,11 @@ export default function MapView({ risk, mode, depots, plan, onSelect }: Props) {
       const el = document.createElement("div");
       el.className = "depot-marker";
       el.innerHTML = depotSvg();
-      el.title = d.name;
+      el.title = `${d.name} (klik untuk rincian)`;
+      el.onclick = (ev) => {
+        ev.stopPropagation();
+        onDepot(d.depot_id);
+      };
       htmlMarkersRef.current.push(
         new maplibregl.Marker({ element: el }).setLngLat([d.lon, d.lat]).addTo(map),
       );

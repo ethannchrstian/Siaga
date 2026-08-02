@@ -4,10 +4,14 @@ import Controls from "./components/Controls";
 import Legend from "./components/Legend";
 import Sidebar from "./components/Sidebar";
 import DistrictDrawer from "./components/DistrictDrawer";
+import DepotDrawer from "./components/DepotDrawer";
 import NavRail, { type View } from "./components/NavRail";
 import KpiStrip from "./components/KpiStrip";
 import Overview from "./components/Overview";
+import Insiden from "./components/Insiden";
+import Inventaris from "./components/Inventaris";
 import About from "./components/About";
+import Toasts, { type Toast } from "./components/Toasts";
 import {
   getDistricts,
   getRisk,
@@ -47,7 +51,15 @@ export default function App() {
   const [rejects, setRejects] = useState<Map<string, Reject>>(new Map());
 
   const [selected, setSelected] = useState<string | null>(null);
+  const [selectedDepot, setSelectedDepot] = useState<string | null>(null);
+  const [toasts, setToasts] = useState<Toast[]>([]);
   const propsRef = useRef<Map<string, DistrictProperties>>(new Map());
+
+  const pushToast = useCallback((msg: string, kind: Toast["kind"]) => {
+    const id = Date.now() + Math.random();
+    setToasts((t) => [...t, { id, msg, kind }]);
+    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 5000);
+  }, []);
 
   useEffect(() => {
     getScenario().then(setScenario).catch((e) => setError(String(e)));
@@ -91,12 +103,19 @@ export default function App() {
 
   const onLock = (p: PlanItem) => {
     const k = keyOf(p);
+    const isLocking = !locks.has(k);
     setLocks((prev) => {
       const next = new Map(prev);
       if (next.has(k)) next.delete(k);
       else next.set(k, { district_id: p.district_id, resource: p.resource, units: p.units });
       return next;
     });
+    if (isLocking)
+      pushToast(
+        `Dikunci: ${p.units} ${p.resource_label} ke ${p.district}. Rencana dioptimasi ulang di sekitarnya.`,
+        "lock",
+      );
+    else pushToast(`Kunci dilepas untuk ${p.district}.`, "info");
   };
   const onReject = (p: PlanItem) => {
     const k = keyOf(p);
@@ -107,13 +126,19 @@ export default function App() {
       next.delete(k);
       return next;
     });
+    pushToast(
+      `Ditolak: ${p.resource_label} untuk ${p.district}. Sumber daya dialihkan.`,
+      "reject",
+    );
   };
-  const onClearReject = (k: string) =>
+  const onClearReject = (k: string) => {
     setRejects((prev) => {
       const next = new Map(prev);
       next.delete(k);
       return next;
     });
+    pushToast("Penolakan dibatalkan. Rencana dioptimasi ulang.", "info");
+  };
 
   const labelFor = useCallback((key: string) => {
     const [did, res] = key.split(":");
@@ -129,8 +154,14 @@ export default function App() {
   );
   const openDistrict = (id: string) => {
     setView("peta");
+    setSelectedDepot(null);
     setSelected(id);
   };
+  const onDepot = (depotId: string) => {
+    setSelected(null);
+    setSelectedDepot(depotId);
+  };
+  const depotObj = scenario?.depots.find((d) => d.depot_id === selectedDepot) ?? null;
 
   return (
     <div className="app">
@@ -149,7 +180,7 @@ export default function App() {
       {error && <div className="errbar">Gagal memuat data: {error}</div>}
 
       <div className="body">
-        <NavRail view={view} onView={setView} />
+        <NavRail view={view} onView={setView} incidentCount={kpis.atRisk} />
 
         {view === "peta" && (
           <div className="peta">
@@ -161,7 +192,8 @@ export default function App() {
                   mode={mode}
                   depots={scenario?.depots ?? []}
                   plan={plan}
-                  onSelect={setSelected}
+                  onSelect={openDistrict}
+                  onDepot={onDepot}
                 />
                 <Controls
                   mode={mode}
@@ -182,6 +214,13 @@ export default function App() {
                     onClose={() => setSelected(null)}
                   />
                 )}
+                {depotObj && (
+                  <DepotDrawer
+                    depot={depotObj}
+                    result={result}
+                    onClose={() => setSelectedDepot(null)}
+                  />
+                )}
               </div>
               <Sidebar
                 result={result}
@@ -191,19 +230,26 @@ export default function App() {
                 onLock={onLock}
                 onReject={onReject}
                 onClearReject={onClearReject}
-                onSelect={setSelected}
+                onSelect={openDistrict}
                 labelFor={labelFor}
               />
             </main>
           </div>
         )}
 
+        {view === "insiden" && (
+          <Insiden risk={risk} plan={plan} date={date} onSelect={openDistrict} />
+        )}
+        {view === "inventaris" && (
+          <Inventaris depots={scenario?.depots ?? []} result={result} note={scenario?.note} />
+        )}
         {view === "ringkasan" && (
           <Overview risk={risk} result={result} date={date} onSelect={openDistrict} />
         )}
-
         {view === "tentang" && <About />}
       </div>
+
+      <Toasts toasts={toasts} onDismiss={(id) => setToasts((t) => t.filter((x) => x.id !== id))} />
     </div>
   );
 }

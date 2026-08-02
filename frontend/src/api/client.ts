@@ -76,9 +76,16 @@ export interface PlanItem {
   reason: string;
 }
 
+export interface DepotDispatch {
+  name: string;
+  pompa: number;
+  truk_tangki: number;
+}
+
 export interface AllocateResponse {
   date: string;
   plan: PlanItem[];
+  depot_dispatch: Record<string, DepotDispatch>;
   summary: {
     status: string;
     total_dispatched: { pompa: number; truk_tangki: number };

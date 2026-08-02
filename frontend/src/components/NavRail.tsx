@@ -1,9 +1,11 @@
-import { GridIcon, InfoIcon, MapIcon } from "../icons";
+import { AlertIcon, FleetIcon, GridIcon, InfoIcon, MapIcon } from "../icons";
 
-export type View = "peta" | "ringkasan" | "tentang";
+export type View = "peta" | "insiden" | "inventaris" | "ringkasan" | "tentang";
 
 const ITEMS: { key: View; label: string; Icon: typeof MapIcon }[] = [
   { key: "peta", label: "Peta Risiko", Icon: MapIcon },
+  { key: "insiden", label: "Insiden Aktif", Icon: AlertIcon },
+  { key: "inventaris", label: "Inventaris", Icon: FleetIcon },
   { key: "ringkasan", label: "Ringkasan", Icon: GridIcon },
   { key: "tentang", label: "Tentang", Icon: InfoIcon },
 ];
@@ -11,9 +13,11 @@ const ITEMS: { key: View; label: string; Icon: typeof MapIcon }[] = [
 export default function NavRail({
   view,
   onView,
+  incidentCount,
 }: {
   view: View;
   onView: (v: View) => void;
+  incidentCount: number;
 }) {
   return (
     <nav className="navrail">
@@ -30,6 +34,9 @@ export default function NavRail({
         >
           <it.Icon size={18} />
           <span>{it.label}</span>
+          {it.key === "insiden" && incidentCount > 0 && (
+            <span className="nav-badge">{incidentCount}</span>
+          )}
         </button>
       ))}
       <div className="navrail-foot">
