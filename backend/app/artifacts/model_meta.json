@@ -1,0 +1,1 @@
+{"flood_feats": ["rain_1d", "rain_3d", "rain_7d", "rain_30d", "disc_now", "disc_7d_mean", "disc_change_3d", "month", "coastal"], "drought_feats": ["spi1", "spi3", "spi6", "p1", "dry_run", "month", "coastal"]}

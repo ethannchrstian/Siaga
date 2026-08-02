@@ -1,6 +1,10 @@
 # raw downloads (large, re-fetchable)
 data-raw/
 
+# large regenerable training tables (rebuild via ml/build_features.py)
+backend/data/flood_dataset.parquet
+backend/data/drought_dataset.parquet
+
 # python
 backend/venv/
 __pycache__/
