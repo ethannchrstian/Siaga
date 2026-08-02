@@ -16,9 +16,18 @@ export default function Legend({ mode }: { mode: ViewMode }) {
           {row.label}
         </div>
       ))}
-      <div className="legend-row" style={{ marginTop: 6 }}>
-        <span className="swatch depot-dot" />
+      <div className="legend-sep" />
+      <div className="legend-row">
+        <span className="swatch depot-sq" />
         Depot BPBD
+      </div>
+      <div className="legend-row">
+        <span className="swatch pill blue">7</span>
+        Pompa dikirim (jumlah)
+      </div>
+      <div className="legend-row">
+        <span className="swatch pill orange">7</span>
+        Truk tangki dikirim (jumlah)
       </div>
     </div>
   );
