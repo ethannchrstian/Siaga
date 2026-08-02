@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import districts
+from app.routers import allocate, districts, risk
 
 app = FastAPI(title="SIAGA API", version="0.1.0")
 
@@ -15,6 +15,8 @@ app.add_middleware(
 
 
 app.include_router(districts.router)
+app.include_router(risk.router)
+app.include_router(allocate.router)
 
 
 @app.get("/health")
