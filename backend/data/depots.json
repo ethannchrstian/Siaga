@@ -1,0 +1,20 @@
+{
+  "_note": "SCENARIO DATA. BPBD/BNPB fleet inventories are not public. Depot locations sit at real BPBD kota/kabupaten seats along the Pantura corridor; vehicle and crew counts are plausible placeholders for the demo. A deployed system would read real inventory via Pusdalops integration.",
+  "resources": ["truk_tangki", "pompa", "regu"],
+  "resource_labels": {
+    "truk_tangki": "Truk tangki air",
+    "pompa": "Pompa banjir",
+    "regu": "Regu personel"
+  },
+  "depots": [
+    { "depot_id": "DEP-JKT", "name": "BPBD DKI Jakarta", "lat": -6.1626, "lon": 106.8446, "fleet": { "truk_tangki": 8, "pompa": 14, "regu": 20 } },
+    { "depot_id": "DEP-BKS", "name": "BPBD Kabupaten Bekasi", "lat": -6.2447, "lon": 107.0011, "fleet": { "truk_tangki": 4, "pompa": 6, "regu": 10 } },
+    { "depot_id": "DEP-KRW", "name": "BPBD Karawang", "lat": -6.3060, "lon": 107.3060, "fleet": { "truk_tangki": 5, "pompa": 4, "regu": 9 } },
+    { "depot_id": "DEP-IDM", "name": "BPBD Indramayu", "lat": -6.3373, "lon": 108.3200, "fleet": { "truk_tangki": 6, "pompa": 3, "regu": 8 } },
+    { "depot_id": "DEP-CRB", "name": "BPBD Kota Cirebon", "lat": -6.7320, "lon": 108.5523, "fleet": { "truk_tangki": 5, "pompa": 5, "regu": 9 } },
+    { "depot_id": "DEP-TGL", "name": "BPBD Kota Tegal", "lat": -6.8694, "lon": 109.1402, "fleet": { "truk_tangki": 4, "pompa": 4, "regu": 8 } },
+    { "depot_id": "DEP-PKL", "name": "BPBD Kota Pekalongan", "lat": -6.8898, "lon": 109.6753, "fleet": { "truk_tangki": 4, "pompa": 6, "regu": 8 } },
+    { "depot_id": "DEP-SMG", "name": "BPBD Kota Semarang", "lat": -6.9667, "lon": 110.4167, "fleet": { "truk_tangki": 7, "pompa": 10, "regu": 15 } },
+    { "depot_id": "DEP-DMK", "name": "BPBD Demak", "lat": -6.8899, "lon": 110.6377, "fleet": { "truk_tangki": 4, "pompa": 5, "regu": 8 } }
+  ]
+}
