@@ -31,7 +31,19 @@ const BASE_STYLE: maplibregl.StyleSpecification = {
       attribution: "&copy; OpenStreetMap, &copy; CARTO",
     },
   },
-  layers: [{ id: "carto", type: "raster", source: "carto" }],
+  layers: [
+    {
+      id: "carto",
+      type: "raster",
+      source: "carto",
+      paint: {
+        "raster-saturation": -0.75,
+        "raster-contrast": -0.18,
+        "raster-brightness-max": 0.98,
+        "raster-opacity": 0.62,
+      },
+    },
+  ],
 };
 
 interface Props {
@@ -41,6 +53,34 @@ interface Props {
   plan: PlanItem[];
   onSelect: (districtId: string) => void;
   onDepot: (depotId: string) => void;
+}
+
+class ResetViewControl implements maplibregl.IControl {
+  private container?: HTMLDivElement;
+  private readonly onReset: () => void;
+
+  constructor(onReset: () => void) {
+    this.onReset = onReset;
+  }
+
+  onAdd() {
+    this.container = document.createElement("div");
+    this.container.className = "maplibregl-ctrl maplibregl-ctrl-group";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "map-reset-icon";
+    button.title = "Tampilkan seluruh wilayah";
+    button.setAttribute("aria-label", "Tampilkan seluruh wilayah");
+    button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 4 8 4-8 4-8-4 8-4Zm-8 8 8 4 8-4M4 16l8 4 8-4"/></svg>';
+    button.addEventListener("click", this.onReset);
+    this.container.appendChild(button);
+    return this.container;
+  }
+
+  onRemove() {
+    this.container?.remove();
+    this.container = undefined;
+  }
 }
 
 // Gojek-style flowing dash along the supply routes, so the direction of flow
@@ -113,6 +153,17 @@ export default function MapView({ risk, mode, depots, plan, onSelect, onDepot }:
     });
     mapRef.current = map;
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
+    map.addControl(
+      new ResetViewControl(() => {
+        if (!boundsRef.current) return;
+        map.fitBounds(boundsRef.current, {
+          padding: { top: 80, bottom: 24, left: 24, right: 24 },
+          duration: 350,
+        });
+      }),
+      "top-left",
+    );
+    map.addControl(new maplibregl.FullscreenControl(), "top-left");
     map.on("error", (e) => console.error("[SIAGA] map error:", e.error));
 
     const ro = new ResizeObserver(() => map.resize());
@@ -146,14 +197,14 @@ export default function MapView({ risk, mode, depots, plan, onSelect, onDepot }:
         source: "districts",
         paint: {
           "fill-color": ["coalesce", ["get", "color"], "#e9ecef"],
-          "fill-opacity": 0.72,
+          "fill-opacity": 0.68,
         },
       });
       map.addLayer({
         id: "district-line",
         type: "line",
         source: "districts",
-        paint: { "line-color": "#6b7784", "line-width": 0.4 },
+        paint: { "line-color": "#98a6b5", "line-width": 0.35 },
       });
 
       map.addSource("arrows", { type: "geojson", data: emptyFC() });
@@ -211,7 +262,7 @@ export default function MapView({ risk, mode, depots, plan, onSelect, onDepot }:
       boundsRef.current = [[minX, minY], [maxX, maxY]];
       const fit = () =>
         mapRef.current?.fitBounds(boundsRef.current!, {
-          padding: { top: 24, bottom: 24, left: 24, right: 24 },
+          padding: { top: 80, bottom: 24, left: 24, right: 24 },
           duration: 0,
         });
       // Re-fit after each resize so the settled canvas shows the whole corridor.

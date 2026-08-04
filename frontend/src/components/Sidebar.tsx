@@ -82,7 +82,7 @@ export default function Sidebar({
               <div className="card-top">
                 <span
                   className="tag"
-                  style={{ background: isFlood ? "#2171b5" : "#cc4c02" }}
+                  style={{ background: isFlood ? "#1463d6" : "#ef3c35" }}
                 >
                   {isFlood ? "BANJIR" : "CEKAMAN AIR"}
                 </span>

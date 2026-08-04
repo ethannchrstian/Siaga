@@ -91,3 +91,56 @@ export const FleetIcon = ({ size, className }: P) => (
     <rect x="3" y="16" width="18" height="4" />
   </svg>
 );
+
+export const EyeIcon = ({ size, className }: P) => (
+  <svg {...base(size)} className={className}>
+    <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z" />
+    <circle cx="12" cy="12" r="2.5" />
+  </svg>
+);
+
+export const SearchIcon = ({ size, className }: P) => (
+  <svg {...base(size)} className={className}>
+    <circle cx="11" cy="11" r="7" />
+    <path d="m20 20-4-4" />
+  </svg>
+);
+
+export const FilterIcon = ({ size, className }: P) => (
+  <svg {...base(size)} className={className}>
+    <path d="M3 5h18l-7 8v6l-4 2v-8z" />
+  </svg>
+);
+
+export const ResetIcon = ({ size, className }: P) => (
+  <svg {...base(size)} className={className}>
+    <path d="M4 8V3m0 0h5M4 3l3.5 3.5A8 8 0 1 1 4.3 14" />
+  </svg>
+);
+
+export const ChevronDownIcon = ({ size, className }: P) => (
+  <svg {...base(size)} className={className}><path d="m7 9 5 5 5-5" /></svg>
+);
+
+export const ChevronLeftIcon = ({ size, className }: P) => (
+  <svg {...base(size)} className={className}><path d="m15 18-6-6 6-6" /></svg>
+);
+
+export const ChevronRightIcon = ({ size, className }: P) => (
+  <svg {...base(size)} className={className}><path d="m9 18 6-6-6-6" /></svg>
+);
+
+export const MoreIcon = ({ size, className }: P) => (
+  <svg {...base(size)} className={className}>
+    <circle cx="12" cy="5" r="1" fill="currentColor" stroke="none" />
+    <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
+    <circle cx="12" cy="19" r="1" fill="currentColor" stroke="none" />
+  </svg>
+);
+
+export const ShieldIcon = ({ size, className }: P) => (
+  <svg {...base(size)} className={className}>
+    <path d="M12 2.5 20 6v5.5c0 4.8-3.2 8.4-8 10-4.8-1.6-8-5.2-8-10V6z" />
+    <path d="M7.5 13.5c1.4-1 2.8-1 4.5 0 1.7 1 3.1 1 4.5 0M8.5 10c1.1-.8 2.2-.8 3.5 0 1.3.8 2.4.8 3.5 0" />
+  </svg>
+);

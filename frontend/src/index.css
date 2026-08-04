@@ -3,14 +3,22 @@
    no rounded-everything. Color is reserved for risk and status. */
 
 :root {
-  --bg: #f4f5f7;
+  --bg: #f5f7fa;
   --surface: #ffffff;
-  --border: #d4d8dd;
-  --text: #1a1f24;
-  --text-dim: #5c6670;
-  --header-bg: #14273f;   /* institutional navy */
-  --header-text: #e8edf3;
-  --accent: #14273f;
+  --border: #e5e7eb;
+  --border-strong: #d8dde5;
+  --text: #1f2937;
+  --text-dim: #6b7280;
+  --text-soft: #94a3b8;
+  --header-bg: #183153;
+  --header-text: #ffffff;
+  --accent: #183153;
+  --navy: #183153;
+  --navy-bright: #274c77;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #dc2626;
+  --info: #2563eb;
 
   /* risk ramps (colorblind-safe) */
   --flood-1: #c6dbef;
@@ -21,7 +29,7 @@
   --drought-3: #cc4c02;
   --both: #7a0177;        /* compound: both hazards high */
 
-  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: 14px;
   color: var(--text);
 }
@@ -41,4 +49,18 @@ body,
 body {
   background: var(--bg);
   overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid #7aa7df;
+  outline-offset: 2px;
 }

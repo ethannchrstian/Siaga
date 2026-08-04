@@ -12,6 +12,7 @@ import Insiden from "./components/Insiden";
 import Inventaris from "./components/Inventaris";
 import About from "./components/About";
 import Toasts, { type Toast } from "./components/Toasts";
+import Header from "./components/Header";
 import {
   getDistricts,
   getRisk,
@@ -28,6 +29,7 @@ import {
 import type { ViewMode } from "./hazard";
 import { computeKpis } from "./metrics";
 import "./App.css";
+import "./redesign.css";
 
 const PRESETS = [
   { label: "Dua bahaya Feb 2015", date: "2015-02-19" },
@@ -54,6 +56,7 @@ export default function App() {
   const [selectedDepot, setSelectedDepot] = useState<string | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const propsRef = useRef<Map<string, DistrictProperties>>(new Map());
+  const [districtMeta, setDistrictMeta] = useState<Map<string, DistrictProperties>>(new Map());
 
   const pushToast = useCallback((msg: string, kind: Toast["kind"]) => {
     const id = Date.now() + Math.random();
@@ -65,8 +68,11 @@ export default function App() {
     getScenario().then(setScenario).catch((e) => setError(String(e)));
     getDistricts()
       .then((fc) => {
+        const next = new Map<string, DistrictProperties>();
         for (const f of fc.features)
-          propsRef.current.set(f.properties.district_id, f.properties);
+          next.set(f.properties.district_id, f.properties);
+        propsRef.current = next;
+        setDistrictMeta(next);
       })
       .catch(() => {});
   }, []);
@@ -146,7 +152,7 @@ export default function App() {
     return `${name} · ${res === "pompa" ? "pompa" : "truk tangki"}`;
   }, []);
 
-  const plan = result?.plan ?? [];
+  const plan = useMemo(() => result?.plan ?? [], [result]);
   const kpis = useMemo(() => computeKpis(risk, result), [risk, result]);
   const assignmentsForSelected = useMemo(
     () => plan.filter((p) => p.district_id === selected),
@@ -165,22 +171,12 @@ export default function App() {
 
   return (
     <div className="app">
-      <header className="topbar">
-        <div className="topbar-title">
-          <span className="topbar-name">SIAGA</span>
-          <span className="topbar-sub">
-            Peringatan Dini Banjir–Kekeringan &amp; Prapenempatan Sumber Daya
-          </span>
-        </div>
-        <div className="topbar-right">
-          Koridor Pantura · Purwarupa{result ? ` · ${result.date}` : ""}
-        </div>
-      </header>
+      <Header />
 
       {error && <div className="errbar">Gagal memuat data: {error}</div>}
 
       <div className="body">
-        <NavRail view={view} onView={setView} incidentCount={kpis.atRisk} />
+        <NavRail view={view} onView={setView} incidentCount={kpis.atRisk} lastUpdated={date} />
 
         {view === "peta" && (
           <div className="peta">
@@ -238,7 +234,14 @@ export default function App() {
         )}
 
         {view === "insiden" && (
-          <Insiden risk={risk} plan={plan} date={date} onSelect={openDistrict} />
+          <Insiden
+            risk={risk}
+            plan={plan}
+            date={date}
+            districtMeta={districtMeta}
+            kpis={kpis}
+            onSelect={openDistrict}
+          />
         )}
         {view === "inventaris" && (
           <Inventaris depots={scenario?.depots ?? []} result={result} note={scenario?.note} />

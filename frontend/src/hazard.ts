@@ -3,10 +3,10 @@
 
 export type ViewMode = "gabungan" | "banjir" | "cekaman";
 
-const FLOOD = ["#eef3f8", "#c6dbef", "#6baed6", "#2171b5"]; // light -> deep blue
-const DROUGHT = ["#fdf5e6", "#fee391", "#fe9929", "#cc4c02"]; // light -> deep orange
-const COMPOUND = "#7a0177"; // both hazards high
-const EMPTY = "#e9ecef";
+const FLOOD = ["#f0f6fd", "#d7e8fb", "#9fc7f4", "#5a9bf2"]; // light -> deep blue
+const DROUGHT = ["#fff2f2", "#fbdcde", "#f5adb1", "#f47b82"]; // light -> coral red
+const COMPOUND = "#bcc4ce"; // both hazards high; darker base, rendered at low map opacity
+const EMPTY = "#eef1f4";
 
 const HI = 0.5; // "high" hazard threshold used for the compound class
 
@@ -37,7 +37,7 @@ export const LEGEND: Record<
   gabungan: [
     { swatch: FLOOD[3], label: "Risiko banjir tinggi" },
     { swatch: DROUGHT[3], label: "Risiko cekaman air tinggi" },
-    { swatch: COMPOUND, label: "Keduanya tinggi (majemuk)" },
+    { swatch: COMPOUND, label: "Keduanya (gabungan)" },
     { swatch: EMPTY, label: "Rendah / tidak ada" },
   ],
   banjir: [

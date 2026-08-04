@@ -5,6 +5,9 @@ const HI = 0.5;
 export interface Kpis {
   exposed: number; // people under meaningful risk
   atRisk: number; // districts with either hazard high
+  highFlood: number;
+  highDrought: number;
+  monitored: number;
   served: number; // districts in the plan
   fleetPct: number;
 }
@@ -15,14 +18,21 @@ export function computeKpis(
 ): Kpis {
   let exposed = 0;
   let atRisk = 0;
+  let highFlood = 0;
+  let highDrought = 0;
   for (const d of risk.values()) {
     const p = Math.max(d.flood_prob, d.drought_prob);
     if (p >= 0.05) exposed += p * d.population;
     if (p >= HI) atRisk += 1;
+    if (d.flood_prob >= HI) highFlood += 1;
+    if (d.drought_prob >= HI) highDrought += 1;
   }
   return {
     exposed: Math.round(exposed),
     atRisk,
+    highFlood,
+    highDrought,
+    monitored: risk.size,
     served: result?.summary.n_districts_served ?? 0,
     fleetPct: result?.summary.fleet_used_pct ?? 0,
   };
