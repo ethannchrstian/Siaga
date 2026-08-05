@@ -383,3 +383,95 @@ th.num .sort-button { margin-left: auto; }
   .peta .map-wrap { height: 500px; }
   .peta .sidebar { width: 100%; height: 500px; }
 }
+
+/* ---- comparison toggle + banner (Terpisah vs Terpadu) ---- */
+.seg-row { display: flex; gap: 12px; justify-content: center; }
+.controls-disabled { opacity: .75; }
+.seg-btn:disabled, .chip:disabled { cursor: default; }
+
+.compare-banner {
+  position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+  z-index: 5; display: flex; align-items: baseline; gap: 10px;
+  max-width: 560px; padding: 12px 18px;
+  background: #fff; border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(20, 44, 78, .10);
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+.compare-banner .compare-figure {
+  color: #15803d; font-size: 24px; line-height: 1; font-weight: 750;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.compare-banner .compare-copy { color: #334461; font-size: 12px; line-height: 1.5; }
+.compare-banner .compare-copy b { color: #15803d; }
+.compare-banner.off { border-color: #f3cf9f; background: #fffaf2; }
+.compare-banner.off .compare-copy { color: #7c5a1e; }
+.compare-banner.off .compare-copy b { color: #b45309; }
+
+/* crossfade support: allocation badges fade with the plan swap */
+.peta .alloc-marker { transition: opacity 160ms ease; }
+
+/* ---- hindcast replay ---- */
+.peta .chip-replay { color: #08275f; font-weight: 650; }
+.replay-banner {
+  position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+  z-index: 5; width: 380px; padding: 12px 18px;
+  background: #fff; border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(20, 44, 78, .10);
+}
+.replay-row { display: flex; align-items: center; gap: 10px; }
+.replay-label { color: #59677b; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.replay-date { color: var(--text); font-size: 13px; font-variant-numeric: tabular-nums; }
+.replay-stop {
+  margin-left: auto; width: 26px; height: 26px; display: grid; place-items: center;
+  color: #32425b; background: #f8fafc; border: 1px solid var(--border);
+  border-radius: 5px; font-size: 10px; cursor: pointer;
+}
+.replay-stop:hover { background: #eef3fa; }
+.replay-track { height: 4px; margin-top: 10px; background: #e8edf4; border-radius: 999px; overflow: hidden; }
+.replay-fill { height: 100%; background: #2563eb; border-radius: 999px; transition: width 380ms linear; }
+
+/* ---- stakes: coverage line + crew meter (sidebar head) ---- */
+.coverage-line {
+  display: flex; align-items: center; gap: 8px; margin-top: 8px;
+  color: #334461; font-size: 11.5px;
+}
+.coverage-line b { font-variant-numeric: tabular-nums; }
+.coverage-delta {
+  padding: 2px 7px; border-radius: 4px; font-size: 10.5px; font-weight: 700;
+  font-variant-numeric: tabular-nums; animation: delta-in 240ms ease;
+}
+.coverage-delta.up { color: #15803d; background: #e8f6ec; }
+.coverage-delta.down { color: #b91c1c; background: #fdecec; }
+@keyframes delta-in { from { opacity: 0; transform: translateY(3px); } }
+
+.crew-meter { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.crew-label { color: #59677b; font-size: 10.5px; white-space: nowrap; }
+.crew-label b { color: var(--text); font-variant-numeric: tabular-nums; }
+.crew-track { flex: 1; height: 5px; background: #e8edf4; border-radius: 999px; overflow: hidden; }
+.crew-fill { display: block; height: 100%; background: #15386f; border-radius: 999px; transition: width 300ms ease; }
+
+/* ---- polish: transitions, reason line, stagger, solving state ---- */
+.btn, .chip, .seg-btn, .link, .navrail-btn, .toolbar-button, .page-button, .icon-button {
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease;
+}
+.btn:active:not(:disabled), .chip:active:not(:disabled) { transform: translateY(1px); }
+.btn:disabled { opacity: .45; cursor: default; }
+
+.card-reason {
+  margin-top: 6px; padding-left: 8px; border-left: 2px solid var(--border);
+  color: #59677b; font-size: 11px; line-height: 1.5;
+}
+.cards .card { animation: card-in 260ms ease backwards; animation-delay: calc(var(--i, 0) * 30ms); }
+@keyframes card-in { from { opacity: 0; transform: translateY(4px); } }
+.cards.solving { opacity: .55; pointer-events: none; transition: opacity 150ms ease; }
+
+/* ---- district sparkline ---- */
+.spark { margin: 10px 0 4px; }
+.spark-title { color: #59677b; font-size: 9.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; margin-bottom: 4px; }
+.spark-svg { display: block; }
+.spark-line { stroke-dasharray: 600; stroke-dashoffset: 600; animation: spark-draw 500ms ease forwards; }
+@keyframes spark-draw { to { stroke-dashoffset: 0; } }
+.spark-legend { display: flex; gap: 12px; margin-top: 3px; font-size: 10px; }
+.spark-placeholder { height: 66px; margin: 10px 0 4px; background: #f4f6f9; border-radius: 6px; animation: pulse 1.1s ease-in-out infinite alternate; }
+@keyframes pulse { from { opacity: .5; } to { opacity: .9; } }
+.peta .chip-disrupt { color: #b45309; }

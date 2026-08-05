@@ -1,6 +1,11 @@
 import { LEGEND, type ViewMode } from "../hazard";
 
-export default function Legend({ mode }: { mode: ViewMode }) {
+interface Props {
+  mode: ViewMode;
+  dispatched?: { pompa: number; truk_tangki: number };
+}
+
+export default function Legend({ mode, dispatched }: Props) {
   return (
     <div className="legend">
       <div className="legend-title">
@@ -22,12 +27,12 @@ export default function Legend({ mode }: { mode: ViewMode }) {
         Depot BPBD
       </div>
       <div className="legend-row">
-        <span className="swatch pill blue">7</span>
-        Pompa dikirim (jumlah)
+        <span className="swatch pill blue">{dispatched?.pompa ?? 0}</span>
+        Pompa dikirim (total)
       </div>
       <div className="legend-row">
-        <span className="swatch pill orange">7</span>
-        Truk tangki dikirim (jumlah)
+        <span className="swatch pill orange">{dispatched?.truk_tangki ?? 0}</span>
+        Truk tangki dikirim (total)
       </div>
     </div>
   );

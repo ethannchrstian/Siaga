@@ -74,6 +74,44 @@ def _expected_need(prob: float, pop: float, per_unit: int) -> float:
     return prob * pop / per_unit
 
 
+PROB_KEY = {"pompa": "flood_prob", "truk_tangki": "drought_prob"}
+PER_UNIT = {"pompa": PEOPLE_PER_PUMP, "truk_tangki": PEOPLE_PER_TRUCK}
+RESOURCES = ["pompa", "truk_tangki"]
+
+
+def active_districts(districts: list[dict]) -> list[dict]:
+    """Districts with meaningful risk on either hazard; the rest need nothing."""
+    return [
+        d
+        for d in districts
+        if d["flood_prob"] >= RISK_FLOOR or d["drought_prob"] >= RISK_FLOOR
+    ]
+
+
+def sample_scenarios(active: list[dict]) -> list[dict]:
+    """The scenario ensemble both the MILP and any plan evaluation must share.
+
+    Seeded here so the MILP objective and the coverage metrics that compare
+    plans (SIAGA vs the uncoordinated baseline) score against identical draws.
+    Draw order is (scenario, district, resource); changing it silently
+    invalidates the comparison.
+    """
+    rng = np.random.default_rng(SEED)
+    scenarios = []
+    for _ in range(N_SCENARIOS):
+        need = {}
+        for d in active:
+            for r in RESOURCES:
+                p = d[PROB_KEY[r]]
+                occ = rng.random() < p
+                sev = rng.uniform(0.5, 1.0) if occ else 0.0
+                need[(d["district_id"], r)] = _expected_need(
+                    1.0, d["population"], PER_UNIT[r]
+                ) * sev
+        scenarios.append(need)
+    return scenarios
+
+
 def allocate(
     districts: list[dict],
     depots: list[Depot],
@@ -87,20 +125,15 @@ def allocate(
     """
     locks = locks or []
     rejects = rejects or []
-    rng = np.random.default_rng(SEED)
 
     # Keep only districts with meaningful risk; the rest need nothing today.
-    active = [
-        d
-        for d in districts
-        if d["flood_prob"] >= RISK_FLOOR or d["drought_prob"] >= RISK_FLOOR
-    ]
+    active = active_districts(districts)
     if not active:
         return {"plan": [], "summary": _empty_summary(depots)}
 
-    resources = ["pompa", "truk_tangki"]
-    prob_key = {"pompa": "flood_prob", "truk_tangki": "drought_prob"}
-    per_unit = {"pompa": PEOPLE_PER_PUMP, "truk_tangki": PEOPLE_PER_TRUCK}
+    resources = RESOURCES
+    prob_key = PROB_KEY
+    per_unit = PER_UNIT
     fleet_attr = {"pompa": "pumps", "truk_tangki": "trucks"}
 
     # Feasible depot->district pairs within the travel cutoff, with minutes.
@@ -172,18 +205,8 @@ def allocate(
             prob += prepositioned(did, r) == units
 
     # Sample scenarios: hazard occurrence per district, with random severity.
-    scenarios = []
-    for _ in range(N_SCENARIOS):
-        need = {}
-        for d in active:
-            for r in resources:
-                p = d[prob_key[r]]
-                occ = rng.random() < p
-                sev = rng.uniform(0.5, 1.0) if occ else 0.0
-                need[(d["district_id"], r)] = _expected_need(
-                    1.0, d["population"], per_unit[r]
-                ) * sev
-        scenarios.append(need)
+    # Shared with baseline.coverage_metrics so both plans see identical draws.
+    scenarios = sample_scenarios(active)
 
     # Vulnerability weight: larger population -> heavier unmet penalty (proxy
     # for people at stake); keeps the optimizer from abandoning big districts.
@@ -204,7 +227,10 @@ def allocate(
                     continue
                 u = pulp.LpVariable(f"u_{w}_{did}_{r}", lowBound=0)
                 prob += u >= D - prepositioned(did, r)
-                cost_terms.append(vuln[did] * u)
+                # Unmet need is priced in PEOPLE (units x coverage per unit),
+                # so a pump shortfall (8000 jiwa) rightly outweighs a truck
+                # shortfall (3000 jiwa) instead of counting units as equals.
+                cost_terms.append(vuln[did] * per_unit[r] * u)
         cw = pulp.lpSum(cost_terms)
         scen_cost_terms.append(cw)
         prob += z[w] >= cw - eta
@@ -220,7 +246,9 @@ def allocate(
     )
     prob += expected_cost + CVAR_BETA * cvar + TRAVEL_WEIGHT * travel_cost
 
-    prob.solve(pulp.PULP_CBC_CMD(msg=0, timeLimit=25))
+    # 0.5% MIP gap: indistinguishable plans, ~4x faster re-solves (matters for
+    # the interactive lock/reject loop).
+    prob.solve(pulp.PULP_CBC_CMD(msg=0, timeLimit=25, gapRel=0.005))
 
     return _extract_plan(prob, x, active, depots, resources, tmin, per_unit, prob_key)
 

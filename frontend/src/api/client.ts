@@ -82,17 +82,39 @@ export interface DepotDispatch {
   truk_tangki: number;
 }
 
+export interface PlanSummary {
+  status: string;
+  total_dispatched: { pompa: number; truk_tangki: number };
+  total_fleet: { pompa: number; truk_tangki: number };
+  fleet_used_pct: number;
+  n_districts_served: number;
+  n_active_districts: number;
+}
+
+// People covered / left uncovered, evaluated on the shared scenario ensemble.
+export interface CoverageMetrics {
+  expected_uncovered: number;
+  cvar_uncovered: number;
+  expected_covered: number;
+  expected_demand: number;
+}
+
 export interface AllocateResponse {
   date: string;
   plan: PlanItem[];
   depot_dispatch: Record<string, DepotDispatch>;
-  summary: {
-    status: string;
-    total_dispatched: { pompa: number; truk_tangki: number };
-    total_fleet: { pompa: number; truk_tangki: number };
-    fleet_used_pct: number;
-    n_districts_served: number;
-    n_active_districts: number;
+  summary: PlanSummary;
+  // Counterfactual: uncoordinated per-hazard allocation (paper's B2 config).
+  baseline: {
+    plan: PlanItem[];
+    depot_dispatch: Record<string, DepotDispatch>;
+    summary: PlanSummary;
+  };
+  comparison: {
+    siaga: CoverageMetrics;
+    baseline: CoverageMetrics;
+    delta_protected: number;
+    delta_cvar: number;
   };
 }
 
@@ -106,8 +128,27 @@ export interface Reject {
   resource: string;
 }
 
+// Compact per-district probability series for the hindcast replay.
+export interface RiskRangeResponse {
+  dates: string[];
+  districts: { district_id: string; flood: number[]; drought: number[] }[];
+}
+
 export const getDistricts = () =>
   getJSON<DistrictCollection>("/districts");
+export const getRiskRange = (start: string, end: string) =>
+  getJSON<RiskRangeResponse>(`/risk/range?start=${start}&end=${end}`);
+
+export interface DistrictSeries {
+  district_id: string;
+  dates: string[];
+  flood: number[];
+  drought: number[];
+}
+export const getDistrictSeries = (districtId: string, end: string, days = 60) =>
+  getJSON<DistrictSeries>(
+    `/risk/district/${districtId}?days=${days}&end=${end}`,
+  );
 export const getRisk = (date?: string) =>
   getJSON<RiskResponse>(`/risk${date ? `?date=${date}` : ""}`);
 export const getScenario = () => getJSON<ScenarioResponse>("/scenario");

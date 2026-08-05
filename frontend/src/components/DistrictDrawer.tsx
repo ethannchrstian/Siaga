@@ -1,10 +1,12 @@
 import type { DistrictProperties, PlanItem, RiskDistrict } from "../api/client";
+import Sparkline from "./Sparkline";
 
 interface Props {
   props: DistrictProperties | null;
   risk: RiskDistrict | undefined;
   population: number | undefined;
   assignments: PlanItem[];
+  date: string;
   onClose: () => void;
 }
 
@@ -29,6 +31,7 @@ export default function DistrictDrawer({
   risk,
   population,
   assignments,
+  date,
   onClose,
 }: Props) {
   if (!props) return null;
@@ -58,6 +61,8 @@ export default function DistrictDrawer({
           Populasi terpapar: <b>{population.toLocaleString("id-ID")}</b>
         </div>
       )}
+
+      <Sparkline districtId={props.district_id} end={date} />
 
       <div className="drawer-section">Penempatan saat ini</div>
       {assignments.length === 0 ? (

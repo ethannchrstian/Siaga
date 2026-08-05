@@ -99,3 +99,30 @@ def risk_records(date: str | None = None) -> tuple[pd.Timestamp, list[dict]]:
         "population", "flood_prob", "drought_prob",
     ]
     return ts, df[cols].to_dict("records")
+
+
+def risk_range(start: str, end: str) -> dict:
+    """Compact per-district series over [start, end] for the hindcast replay:
+    one fetch instead of one request per day. Missing districts (no modeled
+    river) are zero-filled, mirroring risk_on."""
+    r = risk_history()
+    lo, hi = pd.Timestamp(start), pd.Timestamp(end)
+    window = r[(r["date"] >= lo) & (r["date"] <= hi)]
+    dates = sorted(window["date"].drop_duplicates())
+
+    flood = window.pivot_table(index="district_id", columns="date", values="flood_prob")
+    drought = window.pivot_table(index="district_id", columns="date", values="drought_prob")
+    meta = district_meta()
+
+    districts = []
+    for did in meta["district_id"]:
+        f = flood.loc[did] if did in flood.index else None
+        d = drought.loc[did] if did in drought.index else None
+        districts.append(
+            {
+                "district_id": did,
+                "flood": [round(float(f[dt]), 3) if f is not None else 0.0 for dt in dates],
+                "drought": [round(float(d[dt]), 3) if d is not None else 0.0 for dt in dates],
+            }
+        )
+    return {"dates": [str(dt.date()) for dt in dates], "districts": districts}

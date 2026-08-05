@@ -138,8 +138,11 @@ export default function MapView({ risk, mode, depots, plan, onSelect, onDepot }:
   riskRef.current = risk;
   const planRef = useRef<PlanItem[]>(plan);
   planRef.current = plan;
-  const htmlMarkersRef = useRef<maplibregl.Marker[]>([]);
+  const depotMarkersRef = useRef<maplibregl.Marker[]>([]);
+  const allocMarkersRef = useRef<maplibregl.Marker[]>([]);
   const boundsRef = useRef<[[number, number], [number, number]] | null>(null);
+  const fadeTokenRef = useRef(0);
+  const hadPlanRef = useRef(false);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -286,7 +289,9 @@ export default function MapView({ risk, mode, depots, plan, onSelect, onDepot }:
       }, 800);
       paint();
       paintArrows();
-      paintHtmlMarkers();
+      paintDepotMarkers();
+      paintAllocMarkers();
+      hadPlanRef.current = planRef.current.length > 0;
     });
 
     return () => {
@@ -333,13 +338,12 @@ export default function MapView({ risk, mode, depots, plan, onSelect, onDepot }:
   }
 
   // Depots and allocations as HTML markers so they carry real icons + counts.
-  function paintHtmlMarkers() {
+  // Painted separately: depots are stable, allocations swap with the plan.
+  function paintDepotMarkers() {
     const map = mapRef.current;
     if (!map || !readyRef.current) return;
-    htmlMarkersRef.current.forEach((m) => m.remove());
-    htmlMarkersRef.current = [];
-
-    // depots
+    depotMarkersRef.current.forEach((m) => m.remove());
+    depotMarkersRef.current = [];
     for (const d of depotsRef.current) {
       const el = document.createElement("div");
       el.className = "depot-marker";
@@ -349,10 +353,17 @@ export default function MapView({ risk, mode, depots, plan, onSelect, onDepot }:
         ev.stopPropagation();
         onDepot(d.depot_id);
       };
-      htmlMarkersRef.current.push(
+      depotMarkersRef.current.push(
         new maplibregl.Marker({ element: el }).setLngLat([d.lon, d.lat]).addTo(map),
       );
     }
+  }
+
+  function paintAllocMarkers() {
+    const map = mapRef.current;
+    if (!map || !readyRef.current) return;
+    allocMarkersRef.current.forEach((m) => m.remove());
+    allocMarkersRef.current = [];
 
     // allocations grouped by district (a district can get both a pump and a truck)
     const byDistrict = new Map<string, PlanItem[]>();
@@ -376,10 +387,53 @@ export default function MapView({ risk, mode, depots, plan, onSelect, onDepot }:
         .join("");
       el.onclick = () => onSelect(did);
       el.title = items.map((p) => `${p.units} ${p.resource_label}`).join(" + ");
-      htmlMarkersRef.current.push(
+      // Mount transparent; the CSS transition fades it in on the next frame.
+      el.style.opacity = "0";
+      requestAnimationFrame(() => {
+        el.style.opacity = "1";
+      });
+      allocMarkersRef.current.push(
         new maplibregl.Marker({ element: el }).setLngLat(c).addTo(map),
       );
     }
+  }
+
+  // Crossfade to a new plan: routes + badges fade out, repaint, fade back in.
+  // Used when one plan replaces another (compare toggle, lock/reject re-solve)
+  // so the swap reads as a deliberate exchange rather than a flicker.
+  function swapPlan() {
+    const map = mapRef.current;
+    if (!map || !readyRef.current) return;
+    const token = ++fadeTokenRef.current;
+    const OUT = 160;
+
+    const setLineOpacity = (v: number) => {
+      if (!map.getLayer("arrows")) return;
+      map.setPaintProperty("arrows", "line-opacity", 0.95 * v);
+      map.setPaintProperty("arrows-casing", "line-opacity", 0.7 * v);
+    };
+    for (const m of allocMarkersRef.current) m.getElement().style.opacity = "0";
+
+    const t0 = performance.now();
+    const fadeOut = (now: number) => {
+      if (token !== fadeTokenRef.current) return;
+      const t = Math.min(1, (now - t0) / OUT);
+      setLineOpacity(1 - t);
+      if (t < 1) requestAnimationFrame(fadeOut);
+      else {
+        paintArrows();
+        paintAllocMarkers();
+        const t1 = performance.now();
+        const fadeIn = (n: number) => {
+          if (token !== fadeTokenRef.current) return;
+          const u = Math.min(1, (n - t1) / OUT);
+          setLineOpacity(u);
+          if (u < 1) requestAnimationFrame(fadeIn);
+        };
+        requestAnimationFrame(fadeIn);
+      }
+    };
+    requestAnimationFrame(fadeOut);
   }
 
   useEffect(() => {
@@ -387,10 +441,19 @@ export default function MapView({ risk, mode, depots, plan, onSelect, onDepot }:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [risk, mode]);
   useEffect(() => {
-    paintArrows();
-    paintHtmlMarkers();
+    paintDepotMarkers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [plan, depots]);
+  }, [depots]);
+  useEffect(() => {
+    const swapping = hadPlanRef.current && plan.length > 0;
+    hadPlanRef.current = plan.length > 0;
+    if (swapping) swapPlan();
+    else {
+      paintArrows();
+      paintAllocMarkers();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plan]);
 
   return <div ref={containerRef} style={{ width: "100%", height: "100%" }} />;
 }
