@@ -8,9 +8,10 @@ interface Props {
   monitoringCount: number;
   presets: { label: string; date: string }[];
   onDate: (date: string) => void;
+  disabled?: boolean;
 }
 
-export default function Header({ date, dateMin, dateMax, monitoringCount, presets, onDate }: Props) {
+export default function Header({ date, dateMin, dateMax, monitoringCount, presets, onDate, disabled = false }: Props) {
   return (
     <header className="topbar global-commandbar">
       <div className="brand-lockup">
@@ -27,7 +28,7 @@ export default function Header({ date, dateMin, dateMax, monitoringCount, preset
 
       <div className="global-context" aria-label="Konteks data aktif">
         <span className="global-hindcast">Hindcast 2015–2024</span>
-        <label className="global-date-control">
+        <label className={`global-date-control${disabled ? " is-disabled" : ""}`}>
           <span>Tanggal aktif</span>
           <strong>{formatShortDate(date)}</strong>
           <ChevronDownIcon size={13} />
@@ -38,13 +39,15 @@ export default function Header({ date, dateMin, dateMax, monitoringCount, preset
             max={dateMax}
             onChange={(event) => onDate(event.target.value)}
             aria-label="Pilih tanggal data"
+            disabled={disabled}
           />
         </label>
-        <label className="global-scenario-control">
+        <label className={`global-scenario-control${disabled ? " is-disabled" : ""}`}>
           <span className="sr-only">Pilih skenario contoh</span>
           <select
             value={presets.some((preset) => preset.date === date) ? date : ""}
             onChange={(event) => event.target.value && onDate(event.target.value)}
+            disabled={disabled}
           >
             <option value="">Pilih skenario</option>
             {presets.map((preset) => <option key={preset.date} value={preset.date}>{preset.label}</option>)}

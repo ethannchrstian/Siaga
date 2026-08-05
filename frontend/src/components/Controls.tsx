@@ -11,6 +11,9 @@ interface Props {
   onReplay?: () => void;
   onDisrupt?: () => void;
   disabled?: boolean;
+  replayLoading?: boolean;
+  disrupting?: boolean;
+  canDisrupt?: boolean;
 }
 
 const MODES: { key: ViewMode; label: string; horizon: string }[] = [
@@ -32,6 +35,9 @@ export default function Controls({
   onReplay,
   onDisrupt,
   disabled = false,
+  replayLoading = false,
+  disrupting = false,
+  canDisrupt = false,
 }: Props) {
   return (
     <div className={`controls map-mode-control${disabled ? " controls-disabled" : ""}`}>
@@ -74,25 +80,29 @@ export default function Controls({
         {onReplay && (
           <button
             type="button"
-            className="map-feature-button"
+            className={`map-feature-button${replayLoading ? " is-loading" : ""}`}
             onClick={onReplay}
-            disabled={disabled}
+            disabled={disabled || replayLoading}
             title="Putar ulang 3 minggu risiko menuju tanggal terpilih"
           >
             <ResetIcon size={13} />
-            <span>Putar ulang</span>
+            <span>{replayLoading ? "Menyiapkan..." : "Putar ulang"}</span>
           </button>
         )}
         {onDisrupt && (
           <button
             type="button"
-            className="map-feature-button disrupt"
+            className={`map-feature-button disrupt${disrupting ? " is-loading" : ""}`}
             onClick={onDisrupt}
-            disabled={disabled}
-            title="Simulasikan rute ke alokasi banjir teratas yang terputus"
+            disabled={disabled || disrupting || !canDisrupt}
+            title={canDisrupt
+              ? "Simulasikan rute ke alokasi banjir teratas yang terputus"
+              : compare === "terpisah"
+                ? "Kembali ke mode Terpadu untuk menjalankan simulasi jalur putus"
+                : "Tunggu sampai rencana alokasi tersedia"}
           >
             <AlertIcon size={13} />
-            <span>Jalur putus</span>
+            <span>{disrupting ? "Mengalihkan..." : "Jalur putus"}</span>
           </button>
         )}
       </div>

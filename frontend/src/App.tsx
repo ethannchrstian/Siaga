@@ -42,6 +42,11 @@ const PRESETS = [
 
 const keyOf = (p: PlanItem) => `${p.district_id}:${p.resource}`;
 
+type DisruptionTarget = Pick<
+  PlanItem,
+  "district_id" | "district" | "resource" | "resource_label" | "units"
+>;
+
 export default function App() {
   const [scenario, setScenario] = useState<ScenarioResponse | null>(null);
   const [date, setDate] = useState<string>("2015-02-19");
@@ -64,8 +69,12 @@ export default function App() {
   // active, risk frames come from the prefetched range (no per-day fetches,
   // no re-solves) and the allocation is hidden until the "decision" lands.
   const [replay, setReplay] = useState<{ dates: string[]; idx: number } | null>(null);
+  const [replayLoading, setReplayLoading] = useState(false);
   const replayDataRef = useRef<RiskRangeResponse | null>(null);
   const replayTimerRef = useRef<number | null>(null);
+  const replayRequestRef = useRef(0);
+  const [disruption, setDisruption] = useState<DisruptionTarget | null>(null);
+  const disruptionRef = useRef<DisruptionTarget | null>(null);
   const dateRef = useRef(date);
   dateRef.current = date;
   const propsRef = useRef<Map<string, DistrictProperties>>(new Map());
@@ -106,8 +115,10 @@ export default function App() {
   const [coverageDelta, setCoverageDelta] = useState<number | null>(null);
   const prevCoveredRef = useRef<{ date: string; covered: number } | null>(null);
   const deltaTimerRef = useRef<number | null>(null);
+  const allocationRequestRef = useRef(0);
 
   const reallocate = useCallback(() => {
+    const requestId = ++allocationRequestRef.current;
     setLoading(true);
     postAllocate({
       date,
@@ -115,6 +126,7 @@ export default function App() {
       rejects: [...rejects.values()],
     })
       .then((res) => {
+        if (requestId !== allocationRequestRef.current) return;
         setResult(res);
         setError(null);
         const cov = res.comparison?.siaga.expected_covered;
@@ -130,14 +142,57 @@ export default function App() {
           }
           prevCoveredRef.current = { date: res.date, covered: cov };
         }
+
+        const disrupted = disruptionRef.current;
+        if (disrupted) {
+          const rejectedStillPresent = res.plan.some(
+            (item) => item.district_id === disrupted.district_id && item.resource === disrupted.resource,
+          );
+          const replacement = res.plan.find(
+            (item) => item.resource === disrupted.resource && item.district_id !== disrupted.district_id,
+          );
+          if (rejectedStillPresent) {
+            pushToast(`Pengalihan ${disrupted.resource_label} belum berhasil diterapkan.`, "reject");
+          } else if (replacement) {
+            pushToast(
+              `Rute diperbarui: ${disrupted.resource_label} dari ${disrupted.district} dialihkan ke ${replacement.district}.`,
+              "info",
+            );
+          } else {
+            pushToast(
+              `Rute ke ${disrupted.district} ditutup; ${disrupted.resource_label} dilepas dari rencana aktif.`,
+              "info",
+            );
+          }
+          disruptionRef.current = null;
+          setDisruption(null);
+        }
       })
-      .catch((e) => setError(String(e)))
-      .finally(() => setLoading(false));
-  }, [date, locks, rejects]);
+      .catch((e) => {
+        if (requestId !== allocationRequestRef.current) return;
+        const message = String(e);
+        setError(message);
+        if (disruptionRef.current) {
+          pushToast("Pengalihan rute gagal. Periksa koneksi backend lalu coba lagi.", "reject");
+          disruptionRef.current = null;
+          setDisruption(null);
+        }
+      })
+      .finally(() => {
+        if (requestId === allocationRequestRef.current) setLoading(false);
+      });
+  }, [date, locks, pushToast, rejects]);
 
   useEffect(() => {
     reallocate();
   }, [reallocate]);
+
+  useEffect(() => () => {
+    allocationRequestRef.current += 1;
+    replayRequestRef.current += 1;
+    if (replayTimerRef.current !== null) clearInterval(replayTimerRef.current);
+    if (deltaTimerRef.current !== null) clearTimeout(deltaTimerRef.current);
+  }, []);
 
   const onLock = (p: PlanItem) => {
     const k = keyOf(p);
@@ -196,58 +251,111 @@ export default function App() {
     });
   }, []);
 
-  const stopReplay = useCallback(() => {
+  const stopReplay = useCallback((completed = false) => {
     if (replayTimerRef.current !== null) {
       clearInterval(replayTimerRef.current);
       replayTimerRef.current = null;
     }
-    replayDataRef.current = null;
-    setReplay(null);
+    const requestId = ++replayRequestRef.current;
+    setReplayLoading(true);
     // Restore the decision date's exact risk (a mid-stop leaves a stale frame).
     getRisk(dateRef.current)
       .then((r) => {
+        if (requestId !== replayRequestRef.current) return;
         const m = new Map<string, RiskDistrict>();
         for (const d of r.districts) m.set(d.district_id, d);
         setRisk(m);
+        setError(null);
+        pushToast(
+          completed
+            ? "Putar ulang selesai. Rencana keputusan ditampilkan kembali."
+            : "Putar ulang dihentikan. Risiko dikembalikan ke tanggal aktif.",
+          "info",
+        );
       })
-      .catch(() => {});
-  }, []);
+      .catch((e) => {
+        if (requestId !== replayRequestRef.current) return;
+        setError(String(e));
+        pushToast("Gagal mengembalikan risiko ke tanggal aktif.", "reject");
+      })
+      .finally(() => {
+        if (requestId !== replayRequestRef.current) return;
+        replayDataRef.current = null;
+        setReplay(null);
+        setReplayLoading(false);
+      });
+  }, [pushToast]);
 
   const startReplay = useCallback(() => {
+    if (replayLoading || replayTimerRef.current !== null) return;
     const end = dateRef.current;
-    const d0 = new Date(`${end}T00:00:00`);
-    d0.setDate(d0.getDate() - 20);
+    const d0 = new Date(`${end}T00:00:00Z`);
+    d0.setUTCDate(d0.getUTCDate() - 20);
     const start = d0.toISOString().slice(0, 10);
+    const requestId = ++replayRequestRef.current;
+    setReplayLoading(true);
+    setError(null);
     getRiskRange(start, end)
       .then((data) => {
-        if (data.dates.length < 2) return;
+        if (requestId !== replayRequestRef.current) return;
+        const validFrames = data.dates.length >= 2 && data.districts.every(
+          (district) =>
+            district.flood.length === data.dates.length &&
+            district.drought.length === data.dates.length &&
+            district.flood.every(Number.isFinite) &&
+            district.drought.every(Number.isFinite),
+        );
+        if (!validFrames) {
+          throw new Error("Data putar ulang tidak lengkap untuk tanggal ini.");
+        }
         replayDataRef.current = data;
         setSelected(null);
         setSelectedDepot(null);
         setReplay({ dates: data.dates, idx: 0 });
         applyReplayFrame(0);
+        setReplayLoading(false);
+        pushToast(`Putar ulang dimulai: ${data.dates.length} hari risiko.`, "info");
         let i = 0;
         replayTimerRef.current = window.setInterval(() => {
           i += 1;
           if (i >= data.dates.length) {
             // Decision date reached: the normal risk/plan return to the map.
-            stopReplay();
+            stopReplay(true);
             return;
           }
           setReplay({ dates: data.dates, idx: i });
           applyReplayFrame(i);
         }, 400);
       })
-      .catch((e) => setError(String(e)));
-  }, [applyReplayFrame, stopReplay]);
+      .catch((e) => {
+        if (requestId !== replayRequestRef.current) return;
+        const message = String(e);
+        setError(message);
+        setReplayLoading(false);
+        pushToast("Putar ulang tidak dapat dimulai untuk tanggal ini.", "reject");
+      });
+  }, [applyReplayFrame, pushToast, replayLoading, stopReplay]);
 
   // Scripted disruption: a field report cuts the route to the top flood
   // allocation; the operator rejects it and watches the plan re-route. Same
   // mechanics as a manual Tolak — only the narrative differs.
   const simulateDisruption = useCallback(() => {
+    if (loading || disruptionRef.current) return;
     const p = result?.plan ?? [];
     const top = p.find((x) => x.resource === "pompa") ?? p[0];
-    if (!top) return;
+    if (!top) {
+      pushToast("Belum ada alokasi aktif yang dapat dialihkan.", "info");
+      return;
+    }
+    const target: DisruptionTarget = {
+      district_id: top.district_id,
+      district: top.district,
+      resource: top.resource,
+      resource_label: top.resource_label,
+      units: top.units,
+    };
+    disruptionRef.current = target;
+    setDisruption(target);
     const k = keyOf(top);
     setRejects((prev) =>
       new Map(prev).set(k, { district_id: top.district_id, resource: top.resource }),
@@ -259,10 +367,10 @@ export default function App() {
       return next;
     });
     pushToast(
-      `Laporan lapangan: akses ke ${top.district} terputus. ${top.units} ${top.resource_label} dialihkan ke rute alternatif…`,
+      `Laporan diterima: akses ke ${top.district} terputus. Optimizer sedang mengalihkan ${top.units} ${top.resource_label}.`,
       "reject",
     );
-  }, [result, pushToast]);
+  }, [loading, result, pushToast]);
 
   const labelFor = useCallback((key: string) => {
     const [did, res] = key.split(":");
@@ -323,6 +431,7 @@ export default function App() {
         monitoringCount={kpis.aboveMonitoring}
         presets={PRESETS}
         onDate={setDate}
+        disabled={replayLoading || replay !== null}
       />
 
       {error && <div className="errbar">Gagal memuat data: {error}</div>}
@@ -363,14 +472,18 @@ export default function App() {
                   compare={compare}
                   onCompare={setCompare}
                   onReplay={startReplay}
-                  onDisrupt={compare === "siaga" ? simulateDisruption : undefined}
+                  onDisrupt={simulateDisruption}
                   disabled={!!replay}
+                  replayLoading={replayLoading}
+                  disrupting={disruption !== null}
+                  canDisrupt={compare === "siaga" && !loading && (result?.plan.length ?? 0) > 0}
                 />
                 {replay ? (
                   <ReplayControl
                     dates={replay.dates}
                     idx={replay.idx}
-                    onStop={stopReplay}
+                    onStop={() => stopReplay(false)}
+                    restoring={replayLoading}
                   />
                 ) : (
                   result?.comparison && (

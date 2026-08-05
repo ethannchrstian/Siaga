@@ -1866,7 +1866,14 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 .map-feature-button:hover { color: var(--signal-navy); background: #f1f3f5; }
 .map-feature-button.disrupt { color: #8c3d3d; }
 .map-feature-button:disabled { opacity: .5; cursor: default; }
+.map-feature-button.is-loading svg { animation: feature-spin .8s linear infinite; }
+.map-feature-button.disrupt.is-loading svg { animation: feature-pulse .75s ease-in-out infinite alternate; }
 .controls-disabled { opacity: .78; }
+
+.global-date-control.is-disabled,
+.global-scenario-control.is-disabled { opacity: .58; }
+.global-date-control.is-disabled input,
+.global-scenario-control.is-disabled select { cursor: default; }
 
 .compare-banner,
 .replay-banner {
@@ -1901,6 +1908,9 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 }
 .spark-svg { width: 100%; max-width: 244px; height: auto; }
 
+@keyframes feature-spin { to { transform: rotate(-360deg); } }
+@keyframes feature-pulse { to { transform: scale(1.16); } }
+
 @media (max-width: 760px) {
   .map-feature-row { width: 100%; flex-wrap: wrap; }
   .map-mode-control .seg-compare { flex: 1 1 100%; width: 100%; }
@@ -1912,7 +1922,9 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 @media (prefers-reduced-motion: reduce) {
   .spark-line,
   .cards .decision-card,
-  .coverage-delta { animation: none; }
+  .coverage-delta,
+  .map-feature-button.is-loading svg,
+  .map-feature-button.disrupt.is-loading svg { animation: none; }
   .replay-fill,
   .crew-fill,
   .peta .alloc-marker { transition: none; }

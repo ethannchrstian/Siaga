@@ -108,21 +108,31 @@ def risk_range(start: str, end: str) -> dict:
     r = risk_history()
     lo, hi = pd.Timestamp(start), pd.Timestamp(end)
     window = r[(r["date"] >= lo) & (r["date"] <= hi)]
-    dates = sorted(window["date"].drop_duplicates())
-
-    flood = window.pivot_table(index="district_id", columns="date", values="flood_prob")
-    drought = window.pivot_table(index="district_id", columns="date", values="drought_prob")
     meta = district_meta()
+    dates = sorted(window["date"].drop_duplicates())
+    district_ids = list(meta["district_id"])
+
+    # Reindex both axes and fill gaps before serializing. A partially modeled
+    # district/day previously leaked NaN into the JSON response, which browsers
+    # reject and made replay appear to do nothing.
+    flood = (
+        window.pivot_table(index="district_id", columns="date", values="flood_prob")
+        .reindex(index=district_ids, columns=dates)
+        .fillna(0.0)
+    )
+    drought = (
+        window.pivot_table(index="district_id", columns="date", values="drought_prob")
+        .reindex(index=district_ids, columns=dates)
+        .fillna(0.0)
+    )
 
     districts = []
-    for did in meta["district_id"]:
-        f = flood.loc[did] if did in flood.index else None
-        d = drought.loc[did] if did in drought.index else None
+    for did in district_ids:
         districts.append(
             {
                 "district_id": did,
-                "flood": [round(float(f[dt]), 3) if f is not None else 0.0 for dt in dates],
-                "drought": [round(float(d[dt]), 3) if d is not None else 0.0 for dt in dates],
+                "flood": [round(float(flood.at[did, dt]), 3) for dt in dates],
+                "drought": [round(float(drought.at[did, dt]), 3) for dt in dates],
             }
         )
     return {"dates": [str(dt.date()) for dt in dates], "districts": districts}

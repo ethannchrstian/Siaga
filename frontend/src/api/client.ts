@@ -2,7 +2,10 @@ const BASE = "http://localhost:8000";
 
 async function getJSON<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}${path}`);
-  if (!res.ok) throw new Error(`${path} -> ${res.status} ${res.statusText}`);
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`${path} -> ${res.status} ${detail || res.statusText}`);
+  }
   return res.json() as Promise<T>;
 }
 
@@ -137,7 +140,9 @@ export interface RiskRangeResponse {
 export const getDistricts = () =>
   getJSON<DistrictCollection>("/districts");
 export const getRiskRange = (start: string, end: string) =>
-  getJSON<RiskRangeResponse>(`/risk/range?start=${start}&end=${end}`);
+  getJSON<RiskRangeResponse>(
+    `/risk/range?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`,
+  );
 
 export interface DistrictSeries {
   district_id: string;
