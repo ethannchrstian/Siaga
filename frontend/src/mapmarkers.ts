@@ -19,5 +19,5 @@ export const pumpSvg = (color: string) =>
 export const depotSvg = () =>
   `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V9l9-5 9 5v12"/><path d="M3 21h18"/><rect x="9" y="13" width="6" height="8"/></svg>`;
 
-export const FLOOD = "#3478f6";
-export const DROUGHT = "#ff5a5f";
+export const FLOOD = "#4b7898";
+export const DROUGHT = "#955159";

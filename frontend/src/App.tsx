@@ -7,7 +7,6 @@ import Sidebar from "./components/Sidebar";
 import DistrictDrawer from "./components/DistrictDrawer";
 import DepotDrawer from "./components/DepotDrawer";
 import NavRail, { type View } from "./components/NavRail";
-import KpiStrip from "./components/KpiStrip";
 import Overview from "./components/Overview";
 import Insiden from "./components/Insiden";
 import Inventaris from "./components/Inventaris";
@@ -317,16 +316,37 @@ export default function App() {
 
   return (
     <div className="app">
-      <Header />
+      <Header
+        date={date}
+        dateMin={scenario?.date_min ?? "2015-01-30"}
+        dateMax={scenario?.date_max ?? "2024-12-31"}
+        monitoringCount={kpis.aboveMonitoring}
+        presets={PRESETS}
+        onDate={setDate}
+      />
 
       {error && <div className="errbar">Gagal memuat data: {error}</div>}
 
       <div className="body">
-        <NavRail view={view} onView={setView} incidentCount={kpis.atRisk} lastUpdated={date} />
+        <NavRail view={view} onView={setView} monitoringCount={kpis.aboveMonitoring} lastUpdated={date} />
 
         {view === "peta" && (
           <div className="peta">
-            <KpiStrip kpis={kpis} />
+            <section className="briefing-band" aria-label="Ringkasan situasi">
+              <div className="briefing-intro">
+                <div className="briefing-eyebrow">
+                  <span className="briefing-pulse" /> Situasi koridor Pantura
+                </div>
+                <h1>Peta &amp; alokasi</h1>
+                <p>Banjir 0–72 jam · cekaman air bulan depan</p>
+              </div>
+              <MapSituationStrip
+                monitored={kpis.aboveMonitoring}
+                planned={kpis.served}
+                proactive={kpis.proactiveAllocations}
+                fleetPct={kpis.fleetPct}
+              />
+            </section>
             <main className="content">
               <div className="map-wrap">
                 <MapView
@@ -342,11 +362,6 @@ export default function App() {
                   onMode={setMode}
                   compare={compare}
                   onCompare={setCompare}
-                  date={date}
-                  dateMin={scenario?.date_min ?? "2015-01-30"}
-                  dateMax={scenario?.date_max ?? "2024-12-31"}
-                  onDate={setDate}
-                  presets={PRESETS}
                   onReplay={startReplay}
                   onDisrupt={compare === "siaga" ? simulateDisruption : undefined}
                   disabled={!!replay}
@@ -413,7 +428,6 @@ export default function App() {
             plan={plan}
             date={date}
             districtMeta={districtMeta}
-            kpis={kpis}
             onSelect={openDistrict}
           />
         )}
@@ -423,10 +437,27 @@ export default function App() {
         {view === "ringkasan" && (
           <Overview risk={risk} result={result} date={date} onSelect={openDistrict} />
         )}
-        {view === "tentang" && <About />}
+        {view === "tentang" && (
+          <About
+            dateMin={scenario?.date_min}
+            dateMax={scenario?.date_max}
+            scenarioNote={scenario?.note}
+          />
+        )}
       </div>
 
       <Toasts toasts={toasts} onDismiss={(id) => setToasts((t) => t.filter((x) => x.id !== id))} />
+    </div>
+  );
+}
+
+function MapSituationStrip({ monitored, planned, proactive, fleetPct }: { monitored: number; planned: number; proactive: number; fleetPct: number }) {
+  return (
+    <div className="map-situation-strip" aria-label="Ringkasan keputusan peta">
+      <div title="Ambang Pemantauan 50% hanya menandai wilayah untuk kesadaran situasi; tidak memicu alokasi otomatis."><span>Ambang Pemantauan</span><b>{monitored.toLocaleString("id-ID")}</b><small>peluang ≥50% · visual</small></div>
+      <div><span>Dipilih optimizer</span><b>{planned.toLocaleString("id-ID")}</b><small>kecamatan dalam rencana</small></div>
+      <div className={proactive > 0 ? "is-proactive" : ""} title="Wilayah di bawah Ambang Pemantauan dapat tetap dipilih optimizer mulai peluang 5%."><span>Alokasi preventif</span><b>{proactive.toLocaleString("id-ID")}</b><small>di bawah pemantauan 50%</small></div>
+      <div><span>Armada digunakan</span><b>{fleetPct}%</b><small>pompa &amp; truk</small></div>
     </div>
   );
 }

@@ -3,31 +3,31 @@
    no rounded-everything. Color is reserved for risk and status. */
 
 :root {
-  --bg: #f5f7fa;
+  --bg: #f2f4f5;
   --surface: #ffffff;
-  --border: #e5e7eb;
-  --border-strong: #d8dde5;
-  --text: #1f2937;
-  --text-dim: #6b7280;
-  --text-soft: #94a3b8;
-  --header-bg: #183153;
+  --border: #d6dce2;
+  --border-strong: #c6cdd4;
+  --text: #26313d;
+  --text-dim: #68727e;
+  --text-soft: #8b949e;
+  --header-bg: #12182d;
   --header-text: #ffffff;
-  --accent: #183153;
-  --navy: #183153;
-  --navy-bright: #274c77;
-  --success: #22c55e;
-  --warning: #f59e0b;
-  --danger: #dc2626;
-  --info: #2563eb;
+  --accent: #12182d;
+  --navy: #12182d;
+  --navy-bright: #26313d;
+  --success: #26313d;
+  --warning: #955159;
+  --danger: #d34848;
+  --info: #527a9b;
 
   /* risk ramps (colorblind-safe) */
-  --flood-1: #c6dbef;
-  --flood-2: #6baed6;
-  --flood-3: #2171b5;
-  --drought-1: #fee391;
-  --drought-2: #fe9929;
-  --drought-3: #cc4c02;
-  --both: #7a0177;        /* compound: both hazards high */
+  --flood-1: #d1e0e6;
+  --flood-2: #9fb8c5;
+  --flood-3: #4b7898;
+  --drought-1: #eddbdd;
+  --drought-2: #d3afb2;
+  --drought-3: #955159;
+  --both: #626a73;
 
   font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: 14px;
@@ -61,6 +61,6 @@ select {
 button:focus-visible,
 input:focus-visible,
 select:focus-visible {
-  outline: 2px solid #7aa7df;
+  outline: 2px solid #527a9b;
   outline-offset: 2px;
 }

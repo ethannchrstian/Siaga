@@ -36,7 +36,12 @@ PEOPLE_PER_PUMP = 8000
 PEOPLE_PER_TRUCK = 3000
 SPEED_KMH = 40.0
 MAX_TRAVEL_MIN = 180.0     # feasibility cutoff depot -> district
-RISK_FLOOR = 0.05          # ignore districts below this on both hazards
+# Critical Allocation Threshold: hazard probabilities below 5% are excluded
+# from optimizer eligibility. This is distinct from the UI's 50% Monitoring
+# Threshold, which only controls situational-awareness views.
+CRITICAL_ALLOCATION_THRESHOLD = 0.05
+# Backward-compatible name shared by baseline comparison helpers.
+RISK_FLOOR = CRITICAL_ALLOCATION_THRESHOLD
 N_SCENARIOS = 30
 CVAR_ALPHA = 0.90
 CVAR_BETA = 2.0
@@ -126,7 +131,7 @@ def allocate(
     locks = locks or []
     rejects = rejects or []
 
-    # Keep only districts with meaningful risk; the rest need nothing today.
+    # Keep only districts that meet the explicit 5% allocation threshold.
     active = active_districts(districts)
     if not active:
         return {"plan": [], "summary": _empty_summary(depots)}
@@ -161,7 +166,7 @@ def allocate(
                     continue
                 # Don't send a resource where its own hazard is negligible
                 # (e.g. pumps into a district with 1% flood risk).
-                if d[prob_key[r]] < RISK_FLOOR:
+                if d[prob_key[r]] < CRITICAL_ALLOCATION_THRESHOLD:
                     continue
                 x[key] = pulp.LpVariable(
                     f"x_{dep.depot_id}_{d['district_id']}_{r}",

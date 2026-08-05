@@ -1,27 +1,33 @@
 import { AlertIcon, DropIcon, EyeIcon, PeopleIcon, SunIcon } from "../icons";
 import { fmtCompact, fmtInt, type Kpis } from "../metrics";
 
-export default function KpiStrip({ kpis }: { kpis: Kpis }) {
+export default function KpiStrip({
+  kpis,
+  variant = "cards",
+}: {
+  kpis: Kpis;
+  variant?: "cards" | "compact";
+}) {
   const cards = [
     {
       Icon: AlertIcon,
-      label: "Kecamatan terdampak",
-      value: fmtInt(kpis.atRisk),
-      note: "Perlu pemantauan",
+      label: "Melewati ambang pemantauan",
+      value: fmtInt(kpis.aboveMonitoring),
+      note: "Peluang bahaya ≥50%",
       tone: "neutral",
     },
     {
       Icon: DropIcon,
-      label: "Risiko banjir tinggi",
-      value: fmtInt(kpis.highFlood),
-      note: `${kpis.monitored ? ((kpis.highFlood / kpis.monitored) * 100).toFixed(1) : "0,0"}% dari total`.replace(".", ","),
+      label: "Pemantauan banjir",
+      value: fmtInt(kpis.floodMonitoring),
+      note: `${kpis.totalDistricts ? ((kpis.floodMonitoring / kpis.totalDistricts) * 100).toFixed(1) : "0,0"}% dari total`.replace(".", ","),
       tone: "flood",
     },
     {
       Icon: SunIcon,
-      label: "Risiko cekaman air tinggi",
-      value: fmtInt(kpis.highDrought),
-      note: `${kpis.monitored ? ((kpis.highDrought / kpis.monitored) * 100).toFixed(1) : "0,0"}% dari total`.replace(".", ","),
+      label: "Pemantauan cekaman air",
+      value: fmtInt(kpis.droughtMonitoring),
+      note: `${kpis.totalDistricts ? ((kpis.droughtMonitoring / kpis.totalDistricts) * 100).toFixed(1) : "0,0"}% dari total`.replace(".", ","),
       tone: "drought",
     },
     {
@@ -34,13 +40,13 @@ export default function KpiStrip({ kpis }: { kpis: Kpis }) {
     {
       Icon: EyeIcon,
       label: "Kecamatan dipantau",
-      value: fmtInt(kpis.monitored),
+      value: fmtInt(kpis.totalDistricts),
       note: "100% dari total",
       tone: "neutral",
     },
   ];
   return (
-    <div className="kpi-strip">
+    <div className={`kpi-strip kpi-strip-${variant}`}>
       {cards.map((c) => (
         <div className={`kpi kpi-${c.tone}`} key={c.label}>
           <div className="kpi-text">

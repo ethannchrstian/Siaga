@@ -1,31 +1,27 @@
 import type { ViewMode } from "../hazard";
+import { AlertIcon, ResetIcon } from "../icons";
 
 export type CompareMode = "siaga" | "terpisah";
 
 interface Props {
   mode: ViewMode;
-  onMode: (m: ViewMode) => void;
+  onMode: (mode: ViewMode) => void;
   compare: CompareMode;
-  onCompare: (c: CompareMode) => void;
-  date: string;
-  dateMin: string;
-  dateMax: string;
-  onDate: (d: string) => void;
-  presets: { label: string; date: string }[];
+  onCompare: (mode: CompareMode) => void;
   onReplay?: () => void;
   onDisrupt?: () => void;
   disabled?: boolean;
 }
 
-const MODES: { key: ViewMode; label: string }[] = [
-  { key: "gabungan", label: "Gabungan" },
-  { key: "banjir", label: "Banjir" },
-  { key: "cekaman", label: "Cekaman air" },
+const MODES: { key: ViewMode; label: string; horizon: string }[] = [
+  { key: "gabungan", label: "Gabungan", horizon: "Dua horizon" },
+  { key: "banjir", label: "Banjir", horizon: "0–72 jam" },
+  { key: "cekaman", label: "Cekaman air", horizon: "Bulan depan" },
 ];
 
-const COMPARES: { key: CompareMode; label: string }[] = [
-  { key: "siaga", label: "Terpadu (SIAGA)" },
-  { key: "terpisah", label: "Terpisah" },
+const COMPARE_MODES: { key: CompareMode; label: string; note: string }[] = [
+  { key: "siaga", label: "Terpadu", note: "SIAGA" },
+  { key: "terpisah", label: "Terpisah", note: "Baseline" },
 ];
 
 export default function Controls({
@@ -33,99 +29,73 @@ export default function Controls({
   onMode,
   compare,
   onCompare,
-  date,
-  dateMin,
-  dateMax,
-  onDate,
-  presets,
   onReplay,
   onDisrupt,
-  disabled,
+  disabled = false,
 }: Props) {
   return (
-    <div className={`controls${disabled ? " controls-disabled" : ""}`}>
-      <div className="seg-row">
-        <div className="seg">
-          {MODES.map((m) => (
-            <button
-              key={m.key}
-              className={`seg-btn${mode === m.key ? " active" : ""}`}
-              onClick={() => onMode(m.key)}
-              disabled={disabled}
-            >
-              {m.label}
-            </button>
-          ))}
-        </div>
-        <div className="seg seg-compare" title="Bandingkan rencana terpadu dengan penanganan dua bahaya secara terpisah">
-          {COMPARES.map((c) => (
-            <button
-              key={c.key}
-              className={`seg-btn${compare === c.key ? " active" : ""}`}
-              onClick={() => onCompare(c.key)}
-              disabled={disabled}
-            >
-              {c.label}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="date-row">
-        <label className="date-picker">
-          <span>{formatDate(date)}</span>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="3.5" y="5.5" width="17" height="15" rx="2" />
-            <path d="M8 3.5v4M16 3.5v4M3.5 10h17" />
-          </svg>
-          <input
-            type="date"
-            aria-label="Pilih tanggal risiko"
-            value={date}
-            min={dateMin}
-            max={dateMax}
-            onChange={(e) => onDate(e.target.value)}
-            disabled={disabled}
-          />
-        </label>
-        {presets.map((p) => (
+    <div className={`controls map-mode-control${disabled ? " controls-disabled" : ""}`}>
+      <span className="map-mode-label">Tampilan risiko</span>
+      <div className="seg map-risk-seg">
+        {MODES.map((item) => (
           <button
-            key={p.date}
-            className={`chip${date === p.date ? " active" : ""}`}
-            onClick={() => onDate(p.date)}
+            type="button"
+            key={item.key}
+            className={`seg-btn${mode === item.key ? " active" : ""}`}
+            onClick={() => onMode(item.key)}
             disabled={disabled}
           >
-            {p.label}
+            <span>{item.label}</span>
+            <small>{item.horizon}</small>
           </button>
         ))}
+      </div>
+
+      <div className="map-feature-row">
+        <div
+          className="seg seg-compare"
+          aria-label="Bandingkan rencana terpadu dan terpisah"
+          title="Bandingkan koordinasi SIAGA dengan penanganan dua bahaya secara terpisah"
+        >
+          {COMPARE_MODES.map((item) => (
+            <button
+              type="button"
+              key={item.key}
+              className={`seg-btn${compare === item.key ? " active" : ""}`}
+              onClick={() => onCompare(item.key)}
+              disabled={disabled}
+            >
+              <span>{item.label}</span>
+              <small>{item.note}</small>
+            </button>
+          ))}
+        </div>
+
         {onReplay && (
           <button
-            className="chip chip-replay"
+            type="button"
+            className="map-feature-button"
             onClick={onReplay}
             disabled={disabled}
             title="Putar ulang 3 minggu risiko menuju tanggal terpilih"
           >
-            ▶ Putar ulang
+            <ResetIcon size={13} />
+            <span>Putar ulang</span>
           </button>
         )}
         {onDisrupt && (
           <button
-            className="chip chip-disrupt"
+            type="button"
+            className="map-feature-button disrupt"
             onClick={onDisrupt}
             disabled={disabled}
-            title="Simulasi laporan lapangan: rute ke alokasi banjir teratas terputus"
+            title="Simulasikan rute ke alokasi banjir teratas yang terputus"
           >
-            ⚠ Jalur terputus
+            <AlertIcon size={13} />
+            <span>Jalur putus</span>
           </button>
         )}
       </div>
     </div>
   );
-}
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("id-ID", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(`${value}T00:00:00`));
 }

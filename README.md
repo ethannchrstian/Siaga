@@ -21,6 +21,19 @@ Tiga lapis:
 3. **Keputusan** program stokastik dua tahap dengan objektif CVaR yang
    memprapenempatkan armada terbatas; pompa dan truk berebut satu kumpulan regu.
 
+## Dua ambang yang berbeda
+
+Kedua angka berikut adalah **peluang bahaya model**, bukan persentase stok:
+
+| Ambang | Fungsi | Dampak |
+|---|---|---|
+| **Ambang Pemantauan (50%)** | Peringatan dini dan kesadaran situasi | Mengatur warna peta dan daftar pemantauan. Tidak memicu alokasi otomatis. |
+| **Ambang Alokasi Kritis (5%)** | Batas kelayakan kebutuhan bagi optimizer | Peluang mulai 5% dapat dipertimbangkan optimizer. Alokasi akhir tetap ditentukan paparan, kapasitas, waktu tempuh, dan objektif CVaR. |
+
+Karena fungsinya berbeda, sebuah kecamatan di bawah Ambang Pemantauan 50% dapat
+tetap menerima alokasi preventif jika melewati Ambang Alokasi Kritis 5% dan
+dipilih oleh hasil optimasi.
+
 ## Menjalankan
 
 Butuh Python 3.11+ dan Node 18+.

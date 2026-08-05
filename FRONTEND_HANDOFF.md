@@ -47,6 +47,13 @@ operator can approve or reject each recommendation and the plan re-optimizes.
     purple = both high, grey = low.
   - **Banjir**: flood risk only (blue scale).
   - **Cekaman air**: water-stress risk only (orange scale).
+- **Two distinct thresholds.** Both refer to modelled hazard probability, not
+  resource stock:
+  - **Monitoring Threshold (50%)** controls map emphasis and the monitoring
+    list only. It does not trigger allocation.
+  - **Critical Allocation Threshold (5%)** is the optimizer eligibility floor.
+    Eligible districts are not guaranteed resources; the optimizer still weighs
+    exposure, travel, shared crews, and fleet capacity.
 - **Date control + presets.** Pick any date from 2015 to 2024 (this is a
   hindcast: "what would SIAGA have said on this day"). Three preset buttons jump
   to good demo dates.

@@ -1,216 +1,222 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { DistrictProperties, PlanItem, RiskDistrict } from "../api/client";
-import {
-  ChevronDownIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  FilterIcon,
-  MoreIcon,
-  ResetIcon,
-  SearchIcon,
-} from "../icons";
-import { fmtInt, type Kpis } from "../metrics";
-import KpiStrip from "./KpiStrip";
+import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, ResetIcon, SearchIcon } from "../icons";
+import { fmtInt } from "../metrics";
+import { MONITORING_THRESHOLD, MONITORING_THRESHOLD_HELP } from "../thresholds";
 
 interface Props {
   risk: Map<string, RiskDistrict>;
   plan: PlanItem[];
   date: string;
   districtMeta: Map<string, DistrictProperties>;
-  kpis: Kpis;
   onSelect: (districtId: string) => void;
 }
 
-type SortKey = "name" | "kabupaten" | "flood_prob" | "drought_prob" | "population" | "status";
+type RiskLevel = "" | "compound" | "flood" | "drought";
+type Coverage = "" | "planned" | "unplanned";
+type SortKey = "name" | "kabupaten" | "flood" | "drought" | "exposure" | "coverage";
 type SortDirection = "asc" | "desc";
 
 interface Filters {
   province: string;
   regency: string;
-  riskLevel: string;
-  status: string;
+  riskLevel: RiskLevel;
+  coverage: Coverage;
 }
 
-const EMPTY_FILTERS: Filters = { province: "", regency: "", riskLevel: "", status: "" };
+interface PriorityRow extends RiskDistrict {
+  province: string;
+  exposure: number;
+  level: Exclude<RiskLevel, "">;
+  assignments: PlanItem[];
+}
 
-export default function Insiden({ risk, plan, date, districtMeta, kpis, onSelect }: Props) {
+const EMPTY_FILTERS: Filters = { province: "", regency: "", riskLevel: "", coverage: "" };
+
+export default function Insiden({ risk, plan, date, districtMeta, onSelect }: Props) {
   const [query, setQuery] = useState("");
-  const [draftFilters, setDraftFilters] = useState<Filters>(EMPTY_FILTERS);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
-  const [sort, setSort] = useState<{ key: SortKey; direction: SortDirection }>({ key: "population", direction: "desc" });
+  const [sort, setSort] = useState<{ key: SortKey; direction: SortDirection }>({ key: "exposure", direction: "desc" });
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [actionFor, setActionFor] = useState<string | null>(null);
-  const actionRef = useRef<HTMLDivElement>(null);
-  const served = useMemo(() => new Set(plan.map((item) => item.district_id)), [plan]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const baseRows = useMemo(
-    () => [...risk.values()].filter((district) => Math.max(district.flood_prob, district.drought_prob) >= 0.5),
-    [risk],
-  );
+  const assignmentsByDistrict = useMemo(() => {
+    const grouped = new Map<string, PlanItem[]>();
+    for (const item of plan) grouped.set(item.district_id, [...(grouped.get(item.district_id) ?? []), item]);
+    return grouped;
+  }, [plan]);
 
-  const provinces = useMemo(
-    () => [...new Set(baseRows.map((row) => districtMeta.get(row.district_id)?.provinsi).filter(Boolean) as string[])].sort(),
-    [baseRows, districtMeta],
-  );
-  const regencies = useMemo(
-    () => [...new Set(baseRows.filter((row) => !draftFilters.province || districtMeta.get(row.district_id)?.provinsi === draftFilters.province).map((row) => row.kabupaten))].sort(),
-    [baseRows, districtMeta, draftFilters.province],
-  );
+  const baseRows = useMemo<PriorityRow[]>(() => [...risk.values()]
+    .filter((district) => Math.max(district.flood_prob, district.drought_prob) >= MONITORING_THRESHOLD)
+    .map((district) => {
+      const compound = district.flood_prob >= MONITORING_THRESHOLD && district.drought_prob >= MONITORING_THRESHOLD;
+      return {
+        ...district,
+        province: districtMeta.get(district.district_id)?.provinsi ?? "—",
+        exposure: Math.round(Math.max(district.flood_prob, district.drought_prob) * district.population),
+        level: compound ? "compound" : district.flood_prob >= district.drought_prob ? "flood" : "drought",
+        assignments: assignmentsByDistrict.get(district.district_id) ?? [],
+      };
+    }), [assignmentsByDistrict, districtMeta, risk]);
+
+  const counts = useMemo(() => ({
+    all: baseRows.length,
+    compound: baseRows.filter((row) => row.level === "compound").length,
+    flood: baseRows.filter((row) => row.level === "flood").length,
+    drought: baseRows.filter((row) => row.level === "drought").length,
+    unplanned: baseRows.filter((row) => row.assignments.length === 0).length,
+  }), [baseRows]);
+
+  const provinces = useMemo(() => [...new Set(baseRows.map((row) => row.province).filter((value) => value !== "—"))].sort(), [baseRows]);
+  const regencies = useMemo(() => [...new Set(baseRows.filter((row) => !filters.province || row.province === filters.province).map((row) => row.kabupaten))].sort(), [baseRows, filters.province]);
 
   const rows = useMemo(() => {
-    const normalizedQuery = query.trim().toLocaleLowerCase("id");
-    const filtered = baseRows.filter((row) => {
-      const meta = districtMeta.get(row.district_id);
-      const isServed = served.has(row.district_id);
-      const both = row.flood_prob >= 0.5 && row.drought_prob >= 0.5;
-      const level = both ? "compound" : row.flood_prob >= row.drought_prob ? "flood" : "drought";
-      return (
-        (!normalizedQuery || `${row.name} ${row.kabupaten} ${meta?.provinsi ?? ""}`.toLocaleLowerCase("id").includes(normalizedQuery)) &&
-        (!filters.province || meta?.provinsi === filters.province) &&
-        (!filters.regency || row.kabupaten === filters.regency) &&
-        (!filters.riskLevel || level === filters.riskLevel) &&
-        (!filters.status || (filters.status === "served" ? isServed : !isServed))
-      );
-    });
-    return filtered.sort((a, b) => {
+    const normalized = query.trim().toLocaleLowerCase("id");
+    return baseRows.filter((row) => (
+      (!normalized || `${row.name} ${row.kabupaten} ${row.province}`.toLocaleLowerCase("id").includes(normalized)) &&
+      (!filters.province || row.province === filters.province) &&
+      (!filters.regency || row.kabupaten === filters.regency) &&
+      (!filters.riskLevel || row.level === filters.riskLevel) &&
+      (!filters.coverage || (filters.coverage === "planned" ? row.assignments.length > 0 : row.assignments.length === 0))
+    )).sort((a, b) => {
       let comparison = 0;
-      if (sort.key === "status") comparison = Number(served.has(a.district_id)) - Number(served.has(b.district_id));
-      else {
-        const av = a[sort.key];
-        const bv = b[sort.key];
-        comparison = typeof av === "number" && typeof bv === "number" ? av - bv : String(av).localeCompare(String(bv), "id");
-      }
+      if (sort.key === "flood") comparison = a.flood_prob - b.flood_prob;
+      else if (sort.key === "drought") comparison = a.drought_prob - b.drought_prob;
+      else if (sort.key === "coverage") comparison = Number(a.assignments.length > 0) - Number(b.assignments.length > 0);
+      else if (sort.key === "exposure") comparison = a.exposure - b.exposure;
+      else comparison = a[sort.key].localeCompare(b[sort.key], "id");
       return sort.direction === "asc" ? comparison : -comparison;
     });
-  }, [baseRows, districtMeta, filters, query, served, sort]);
+  }, [baseRows, filters, query, sort]);
 
   const pageCount = Math.max(1, Math.ceil(rows.length / rowsPerPage));
   const visibleRows = rows.slice((page - 1) * rowsPerPage, page * rowsPerPage);
-  const start = rows.length ? (page - 1) * rowsPerPage + 1 : 0;
-  const end = Math.min(page * rowsPerPage, rows.length);
+  const selected = selectedId ? baseRows.find((row) => row.district_id === selectedId) ?? null : null;
+  const activeFilters = filterChips(filters);
 
-  useEffect(() => setPage(1), [query, filters, rowsPerPage]);
+  useEffect(() => setPage(1), [filters, query, rowsPerPage]);
   useEffect(() => setPage((current) => Math.min(current, pageCount)), [pageCount]);
-  useEffect(() => {
-    const close = (event: MouseEvent) => {
-      if (!actionRef.current?.contains(event.target as Node)) setActionFor(null);
-    };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, []);
 
-  const updateSort = (key: SortKey) => {
-    setSort((current) => ({ key, direction: current.key === key && current.direction === "asc" ? "desc" : "asc" }));
+  const selectSegment = (segment: "all" | "compound" | "flood" | "drought" | "unplanned") => {
+    if (segment === "all") setFilters(EMPTY_FILTERS);
+    else if (segment === "unplanned") setFilters((current) => ({ ...current, coverage: "unplanned" }));
+    else setFilters((current) => ({ ...current, riskLevel: segment, coverage: "" }));
   };
-
-  const resetFilters = () => {
-    setQuery("");
-    setDraftFilters(EMPTY_FILTERS);
-    setFilters(EMPTY_FILTERS);
-  };
+  const updateSort = (key: SortKey) => setSort((current) => ({ key, direction: current.key === key && current.direction === "desc" ? "asc" : "desc" }));
+  const resetFilters = () => { setQuery(""); setFilters(EMPTY_FILTERS); };
 
   return (
-    <div className="page incidents-page">
-      <div className="page-heading">
+    <main className="page priority-page">
+      <header className="operational-page-head">
         <div>
-          <h1>Insiden Aktif</h1>
-          <p>{baseRows.length} kecamatan berisiko tinggi <span>•</span> {formatDate(date)}</p>
+          <span className="operational-page-kicker">Peringatan dini berbasis prediksi</span>
+          <h1>Pemantauan wilayah</h1>
+          <p>{formatDate(date)} · kecamatan yang melewati Ambang Pemantauan 50%</p>
         </div>
-      </div>
+        <div className="terminology-note" title={MONITORING_THRESHOLD_HELP}><strong>Pemantauan · bukan pemicu alokasi</strong><span>50% menandai peringatan visual, bukan insiden terkonfirmasi. Optimizer memakai Ambang Alokasi Kritis 5% secara terpisah.</span></div>
+      </header>
 
-      <KpiStrip kpis={kpis} />
+      <nav className="priority-segments" aria-label="Ringkasan prioritas">
+        <Segment label="Semua dipantau" value={counts.all} active={!filters.riskLevel && !filters.coverage} onClick={() => selectSegment("all")} />
+        <Segment label="Risiko majemuk" value={counts.compound} tone="compound" active={filters.riskLevel === "compound"} onClick={() => selectSegment("compound")} />
+        <Segment label="Banjir dominan" value={counts.flood} tone="flood" active={filters.riskLevel === "flood"} onClick={() => selectSegment("flood")} />
+        <Segment label="Cekaman dominan" value={counts.drought} tone="drought" active={filters.riskLevel === "drought"} onClick={() => selectSegment("drought")} />
+        <Segment label="Belum masuk rencana" value={counts.unplanned} tone="gap" active={filters.coverage === "unplanned"} onClick={() => selectSegment("unplanned")} />
+      </nav>
 
-      <section className="incident-panel">
-        <div className="filter-toolbar">
-          <label className="search-control">
-            <span className="sr-only">Cari kecamatan atau kabupaten/kota</span>
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cari kecamatan, kab/kota..." />
-            <SearchIcon size={18} />
-          </label>
-          <div className="filter-fields">
-            <SelectFilter label="Provinsi" value={draftFilters.province} onChange={(value) => setDraftFilters((current) => ({ ...current, province: value, regency: "" }))} options={provinces} />
-            <SelectFilter label="Kab/Kota" value={draftFilters.regency} onChange={(value) => setDraftFilters((current) => ({ ...current, regency: value }))} options={regencies} />
-            <SelectFilter label="Risiko" value={draftFilters.riskLevel} onChange={(value) => setDraftFilters((current) => ({ ...current, riskLevel: value }))} options={["compound", "flood", "drought"]} optionLabels={{ compound: "Majemuk", flood: "Banjir", drought: "Kekeringan" }} />
-            <SelectFilter label="Status" value={draftFilters.status} onChange={(value) => setDraftFilters((current) => ({ ...current, status: value }))} options={["served", "unserved"]} optionLabels={{ served: "Dilayani", unserved: "Belum dilayani" }} />
-          </div>
-          <div className="filter-actions">
-            <button type="button" className="toolbar-button reset-button" onClick={resetFilters}><ResetIcon size={17} /> Reset</button>
-            <button type="button" className="toolbar-button filter-button" onClick={() => setFilters(draftFilters)}><FilterIcon size={17} /> Filter</button>
-          </div>
-        </div>
-
-        <div className="table-scroll">
-          <table className="data-table incident-table">
-            <thead><tr>
-              <SortableHead label="Kecamatan" sortKey="name" sort={sort} onSort={updateSort} />
-              <SortableHead label="Kab/Kota" sortKey="kabupaten" sort={sort} onSort={updateSort} />
-              <SortableHead label="Risiko Banjir" sortKey="flood_prob" sort={sort} onSort={updateSort} numeric />
-              <SortableHead label="Risiko Kekeringan" sortKey="drought_prob" sort={sort} onSort={updateSort} numeric />
-              <SortableHead label="Populasi" sortKey="population" sort={sort} onSort={updateSort} numeric />
-              <SortableHead label="Status" sortKey="status" sort={sort} onSort={updateSort} />
-              <th className="action-column">Aksi</th>
-            </tr></thead>
-            <tbody>
-              {visibleRows.map((district) => {
-                const both = district.flood_prob >= 0.5 && district.drought_prob >= 0.5;
-                return (
-                  <tr key={district.district_id} onClick={() => onSelect(district.district_id)}>
-                    <td className="strong">{district.name}</td>
-                    <td className="dim">{district.kabupaten}</td>
-                    <td className="num"><RiskPct value={district.flood_prob} kind="flood" /></td>
-                    <td className="num"><RiskPct value={district.drought_prob} kind="drought" /></td>
-                    <td className="num dim">{fmtInt(district.population)}</td>
-                    <td>
-                      {both ? <span className="pill-tag both">Majemuk</span> : district.drought_prob >= district.flood_prob ? <span className="pill-tag dr">Kekeringan</span> : <span className="pill-tag fl">Banjir</span>}
-                      {served.has(district.district_id) && <span className="pill-tag ok">Dilayani</span>}
-                    </td>
-                    <td className="action-column">
-                      <div className="row-action" ref={actionFor === district.district_id ? actionRef : undefined}>
-                        <button type="button" className="icon-button" aria-label={`Aksi untuk ${district.name}`} aria-expanded={actionFor === district.district_id} onClick={(event) => { event.stopPropagation(); setActionFor((current) => current === district.district_id ? null : district.district_id); }}><MoreIcon size={18} /></button>
-                        {actionFor === district.district_id && <div className="row-menu" role="menu"><button type="button" onClick={(event) => { event.stopPropagation(); setActionFor(null); onSelect(district.district_id); }}>Lihat di peta</button></div>}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-              {visibleRows.length === 0 && <tr><td colSpan={7} className="table-empty">Tidak ada insiden yang sesuai dengan filter.</td></tr>}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="table-footer">
-          <span>Menampilkan {start} - {end} dari {rows.length} data</span>
-          <div className="pagination-controls">
-            <label className="rows-select"><span className="sr-only">Baris per halaman</span><select value={rowsPerPage} onChange={(event) => setRowsPerPage(Number(event.target.value))}><option value={10}>10 per halaman</option><option value={20}>20 per halaman</option><option value={50}>50 per halaman</option></select><ChevronDownIcon size={15} /></label>
-            <button type="button" className="page-button arrow" disabled={page === 1} onClick={() => setPage((value) => value - 1)} aria-label="Halaman sebelumnya"><ChevronLeftIcon size={16} /></button>
-            {paginationItems(page, pageCount).map((item, index) => item === "ellipsis" ? <span className="page-ellipsis" key={`ellipsis-${index}`}>…</span> : <button type="button" className={`page-button${item === page ? " active" : ""}`} key={item} onClick={() => setPage(item)}>{item}</button>)}
-            <button type="button" className="page-button arrow" disabled={page === pageCount} onClick={() => setPage((value) => value + 1)} aria-label="Halaman berikutnya"><ChevronRightIcon size={16} /></button>
-          </div>
-        </div>
+      <section className="priority-toolbar">
+        <label className="priority-search"><SearchIcon size={17} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cari kecamatan, kabupaten/kota, atau provinsi..." /><span className="sr-only">Cari wilayah</span></label>
+        <SelectFilter label="Provinsi" value={filters.province} onChange={(value) => setFilters((current) => ({ ...current, province: value, regency: "" }))} options={provinces} />
+        <SelectFilter label="Kab/Kota" value={filters.regency} onChange={(value) => setFilters((current) => ({ ...current, regency: value }))} options={regencies} />
+        <SelectFilter label="Bahaya" value={filters.riskLevel} onChange={(value) => setFilters((current) => ({ ...current, riskLevel: value as RiskLevel }))} options={["compound", "flood", "drought"]} labels={{ compound: "Majemuk", flood: "Banjir", drought: "Cekaman air" }} />
+        <SelectFilter label="Cakupan" value={filters.coverage} onChange={(value) => setFilters((current) => ({ ...current, coverage: value as Coverage }))} options={["planned", "unplanned"]} labels={{ planned: "Masuk rencana", unplanned: "Belum masuk rencana" }} />
+        {(query || activeFilters.length > 0) && <button type="button" className="priority-reset" onClick={resetFilters}><ResetIcon size={15} /> Hapus semua</button>}
       </section>
-    </div>
+
+      {activeFilters.length > 0 && <div className="active-filter-row"><span>Filter aktif</span>{activeFilters.map((chip) => <button key={chip.key} type="button" onClick={() => setFilters((current) => ({ ...current, [chip.key]: "" }))}>{chip.label} ×</button>)}</div>}
+
+      <div className={`priority-workspace${selected ? " has-detail" : ""}`}>
+        <section className="priority-table-panel">
+          <div className="table-scroll">
+            <table className="data-table priority-table">
+              <thead><tr>
+                <SortableHead label="Wilayah" sortKey="name" sort={sort} onSort={updateSort} />
+                <SortableHead label="Banjir · 0–72 jam" sortKey="flood" sort={sort} onSort={updateSort} />
+                <SortableHead label="Cekaman · bulan depan" sortKey="drought" sort={sort} onSort={updateSort} />
+                <SortableHead label="Estimasi paparan" sortKey="exposure" sort={sort} onSort={updateSort} numeric />
+                <SortableHead label="Cakupan rencana" sortKey="coverage" sort={sort} onSort={updateSort} />
+                <th><span className="sr-only">Aksi</span></th>
+              </tr></thead>
+              <tbody>
+                {visibleRows.map((row) => (
+                  <tr key={row.district_id} className={selectedId === row.district_id ? "selected" : ""} onClick={() => setSelectedId(row.district_id)}>
+                    <td><div className="priority-region"><strong>{row.name}</strong><span>{row.kabupaten} · {row.province}</span><em className={`hazard-kind ${row.level}`}>{riskLabel(row.level)}</em></div></td>
+                    <td><RiskBar value={row.flood_prob} tone="flood" /></td>
+                    <td><RiskBar value={row.drought_prob} tone="drought" /></td>
+                    <td className="num"><strong>{fmtInt(row.exposure)}</strong><small className="table-unit">jiwa</small></td>
+                    <td>{row.assignments.length > 0 ? <div className="coverage-cell"><span className="coverage-status planned">Masuk rencana</span>{row.assignments.map((item) => <small key={item.resource}>{item.units} {item.resource_label}</small>)}</div> : <span className="coverage-status unplanned">Belum masuk rencana</span>}</td>
+                    <td><button type="button" className="row-detail-button" onClick={(event) => { event.stopPropagation(); setSelectedId(row.district_id); }}>Detail</button></td>
+                  </tr>
+                ))}
+                {visibleRows.length === 0 && <tr><td colSpan={6} className="table-empty">Tidak ada wilayah yang sesuai. Hapus beberapa filter untuk memperluas hasil.</td></tr>}
+              </tbody>
+            </table>
+          </div>
+          <div className="table-footer">
+            <span>Menampilkan {rows.length ? (page - 1) * rowsPerPage + 1 : 0}–{Math.min(page * rowsPerPage, rows.length)} dari {rows.length} wilayah</span>
+            <div className="pagination-controls">
+              <label className="rows-select"><select value={rowsPerPage} onChange={(event) => setRowsPerPage(Number(event.target.value))}><option value={10}>10 per halaman</option><option value={20}>20 per halaman</option><option value={50}>50 per halaman</option></select><ChevronDownIcon size={15} /><span className="sr-only">Baris per halaman</span></label>
+              <button type="button" className="page-button arrow" disabled={page === 1} onClick={() => setPage((value) => value - 1)} aria-label="Halaman sebelumnya"><ChevronLeftIcon size={16} /></button>
+              <span className="page-position">{page} / {pageCount}</span>
+              <button type="button" className="page-button arrow" disabled={page === pageCount} onClick={() => setPage((value) => value + 1)} aria-label="Halaman berikutnya"><ChevronRightIcon size={16} /></button>
+            </div>
+          </div>
+        </section>
+        {selected && <PriorityDetail row={selected} onClose={() => setSelectedId(null)} onMap={() => onSelect(selected.district_id)} />}
+      </div>
+    </main>
   );
 }
 
-function SelectFilter({ label, value, onChange, options, optionLabels = {} }: { label: string; value: string; onChange: (value: string) => void; options: string[]; optionLabels?: Record<string, string> }) {
-  return <label className="select-filter"><span>{label}</span><select value={value} onChange={(event) => onChange(event.target.value)}><option value="">Semua</option>{options.map((option) => <option key={option} value={option}>{optionLabels[option] ?? option}</option>)}</select><ChevronDownIcon size={15} /></label>;
+function Segment({ label, value, tone = "", active, onClick }: { label: string; value: number; tone?: string; active: boolean; onClick: () => void }) {
+  return <button type="button" className={`priority-segment ${tone}${active ? " active" : ""}`} onClick={onClick}><span>{label}</span><b>{fmtInt(value)}</b></button>;
+}
+
+function RiskBar({ value, tone }: { value: number; tone: "flood" | "drought" }) {
+  const percent = Math.round(value * 100);
+  return <div className={`table-risk ${tone}`}><div><span style={{ width: `${percent}%` }} /></div><b>{percent}%</b></div>;
+}
+
+function PriorityDetail({ row, onClose, onMap }: { row: PriorityRow; onClose: () => void; onMap: () => void }) {
+  return <aside className="priority-detail">
+    <header><div><span>Detail pemantauan</span><h2>{row.name}</h2><p>{row.kabupaten} · {row.province}</p></div><button type="button" onClick={onClose} aria-label="Tutup detail">×</button></header>
+    <div className="detail-risk-pair"><div><span>Banjir · 0–72 jam</span><b>{Math.round(row.flood_prob * 100)}%</b></div><div><span>Cekaman · bulan depan</span><b>{Math.round(row.drought_prob * 100)}%</b></div></div>
+    <div className="detail-exposure"><span>Estimasi paparan</span><strong>{fmtInt(row.exposure)} jiwa</strong><small>Peluang bahaya tertinggi × populasi wilayah.</small></div>
+    <div className="detail-section-title">Alokasi saat ini</div>
+    {row.assignments.length ? row.assignments.map((item) => <div className="detail-assignment" key={item.resource}><strong>{item.units} {item.resource_label}</strong><span>dari {item.from_depot}</span><small>{item.minutes} menit perjalanan · peluang {Math.round(item.hazard_prob * 100)}%</small></div>) : <div className="detail-gap">Wilayah ini belum masuk rencana alokasi saat ini.</div>}
+    <button type="button" className="detail-map-button" onClick={onMap}>Lihat wilayah di peta</button>
+  </aside>;
+}
+
+function SelectFilter({ label, value, onChange, options, labels = {} }: { label: string; value: string; onChange: (value: string) => void; options: string[]; labels?: Record<string, string> }) {
+  return <label className="priority-select"><span>{label}</span><select value={value} onChange={(event) => onChange(event.target.value)}><option value="">Semua</option>{options.map((option) => <option key={option} value={option}>{labels[option] ?? option}</option>)}</select><ChevronDownIcon size={14} /></label>;
 }
 
 function SortableHead({ label, sortKey, sort, onSort, numeric = false }: { label: string; sortKey: SortKey; sort: { key: SortKey; direction: SortDirection }; onSort: (key: SortKey) => void; numeric?: boolean }) {
   return <th className={numeric ? "num" : undefined}><button type="button" className="sort-button" onClick={() => onSort(sortKey)}>{label}<span className={`sort-mark${sort.key === sortKey ? " active" : ""}`}>{sort.key === sortKey && sort.direction === "asc" ? "↑" : "↓"}</span></button></th>;
 }
 
-function RiskPct({ value, kind }: { value: number; kind: "flood" | "drought" }) {
-  const percent = Math.round(value * 100);
-  return <span className={percent >= 50 ? `risk-value ${kind}` : "risk-value low"}>{percent}%</span>;
+function filterChips(filters: Filters) {
+  const labels: Record<string, Record<string, string>> = {
+    riskLevel: { compound: "Risiko majemuk", flood: "Banjir", drought: "Cekaman air" },
+    coverage: { planned: "Masuk rencana", unplanned: "Belum masuk rencana" },
+  };
+  return (Object.entries(filters) as [keyof Filters, string][]).filter(([, value]) => value).map(([key, value]) => ({ key, label: labels[key]?.[value] ?? value }));
 }
 
-function paginationItems(page: number, count: number): Array<number | "ellipsis"> {
-  if (count <= 5) return Array.from({ length: count }, (_, index) => index + 1);
-  if (page <= 3) return [1, 2, 3, "ellipsis", count];
-  if (page >= count - 2) return [1, "ellipsis", count - 2, count - 1, count];
-  return [1, "ellipsis", page, "ellipsis", count];
+function riskLabel(level: PriorityRow["level"]) {
+  return level === "compound" ? "Majemuk" : level === "flood" ? "Banjir" : "Cekaman air";
 }
 
 function formatDate(value: string) {

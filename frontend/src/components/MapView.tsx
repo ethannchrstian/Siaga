@@ -7,7 +7,8 @@ import {
   type PlanItem,
   type RiskDistrict,
 } from "../api/client";
-import { colorFor, type ViewMode } from "../hazard";
+import { mapStyleFor, type ViewMode } from "../hazard";
+import { CRITICAL_ALLOCATION_THRESHOLD, MONITORING_THRESHOLD } from "../thresholds";
 import {
   depotSvg,
   DROUGHT,
@@ -33,14 +34,20 @@ const BASE_STYLE: maplibregl.StyleSpecification = {
   },
   layers: [
     {
+      id: "background",
+      type: "background",
+      paint: { "background-color": "#edf0f1" },
+    },
+    {
       id: "carto",
       type: "raster",
       source: "carto",
       paint: {
-        "raster-saturation": -0.75,
-        "raster-contrast": -0.18,
-        "raster-brightness-max": 0.98,
-        "raster-opacity": 0.62,
+        "raster-saturation": -1,
+        "raster-contrast": -0.2,
+        "raster-brightness-min": 0.42,
+        "raster-brightness-max": 1,
+        "raster-opacity": 0.48,
       },
     },
   ],
@@ -106,7 +113,15 @@ function startRouteAnimation(map: maplibregl.Map) {
 interface DistrictData {
   type: "FeatureCollection";
   features: {
-    properties: { district_id: string; name: string; kabupaten: string; color?: string };
+    properties: {
+      district_id: string;
+      name: string;
+      kabupaten: string;
+      color?: string;
+      outline?: string;
+      opacity?: number;
+      outlineWidth?: number;
+    };
     geometry: GeoJSON.Geometry;
   }[];
 }
@@ -124,6 +139,34 @@ function centroid(geom: GeoJSON.Geometry): [number, number] {
       sx += x; sy += y; n++;
     }
   return n ? [sx / n, sy / n] : [0, 0];
+}
+
+function styleDistricts(
+  data: DistrictData,
+  risk: Map<string, RiskDistrict>,
+  mode: ViewMode,
+): DistrictData {
+  return {
+    ...data,
+    features: data.features.map((feature) => {
+      const districtRisk = risk.get(feature.properties.district_id);
+      const style = mapStyleFor(
+        mode,
+        districtRisk?.flood_prob ?? 0,
+        districtRisk?.drought_prob ?? 0,
+      );
+      return {
+        ...feature,
+        properties: {
+          ...feature.properties,
+          color: style.fill,
+          outline: style.outline,
+          opacity: style.opacity,
+          outlineWidth: style.outlineWidth,
+        },
+      };
+    }),
+  };
 }
 
 export default function MapView({ risk, mode, depots, plan, onSelect, onDepot }: Props) {
@@ -155,7 +198,7 @@ export default function MapView({ risk, mode, depots, plan, onSelect, onDepot }:
       canvasContextAttributes: { preserveDrawingBuffer: true },
     });
     mapRef.current = map;
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
     map.addControl(
       new ResetViewControl(() => {
         if (!boundsRef.current) return;
@@ -164,9 +207,9 @@ export default function MapView({ risk, mode, depots, plan, onSelect, onDepot }:
           duration: 350,
         });
       }),
-      "top-left",
+      "top-right",
     );
-    map.addControl(new maplibregl.FullscreenControl(), "top-left");
+    map.addControl(new maplibregl.FullscreenControl(), "top-right");
     map.on("error", (e) => console.error("[SIAGA] map error:", e.error));
 
     const ro = new ResizeObserver(() => map.resize());
@@ -191,25 +234,22 @@ export default function MapView({ risk, mode, depots, plan, onSelect, onDepot }:
             if (y > maxY) maxY = y;
           }
       }
-      geoRef.current = districts as unknown as DistrictData;
+      geoRef.current = styleDistricts(
+        districts as unknown as DistrictData,
+        riskRef.current,
+        mode,
+      );
 
-      map.addSource("districts", { type: "geojson", data: districts });
+      map.addSource("districts", { type: "geojson", data: geoRef.current as unknown as GeoJSON.FeatureCollection });
       map.addLayer({
         id: "district-fill",
         type: "fill",
         source: "districts",
         paint: {
-          "fill-color": ["coalesce", ["get", "color"], "#e9ecef"],
-          "fill-opacity": 0.68,
+          "fill-color": ["coalesce", ["get", "color"], "#f3f4f4"],
+          "fill-opacity": ["coalesce", ["get", "opacity"], 0.66],
         },
       });
-      map.addLayer({
-        id: "district-line",
-        type: "line",
-        source: "districts",
-        paint: { "line-color": "#98a6b5", "line-width": 0.35 },
-      });
-
       map.addSource("arrows", { type: "geojson", data: emptyFC() });
       // A soft casing under the routes so they read on any basemap color.
       map.addLayer({
@@ -217,7 +257,7 @@ export default function MapView({ risk, mode, depots, plan, onSelect, onDepot }:
         type: "line",
         source: "arrows",
         layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": "#ffffff", "line-width": 5, "line-opacity": 0.7 },
+        paint: { "line-color": "#ffffff", "line-width": 4, "line-opacity": 0.42 },
       });
       map.addLayer({
         id: "arrows",
@@ -226,8 +266,8 @@ export default function MapView({ risk, mode, depots, plan, onSelect, onDepot }:
         layout: { "line-cap": "round", "line-join": "round" },
         paint: {
           "line-color": ["match", ["get", "resource"], "pompa", FLOOD, "truk_tangki", DROUGHT, "#666"],
-          "line-width": 2.6,
-          "line-opacity": 0.95,
+          "line-width": 2.1,
+          "line-opacity": 0.68,
           "line-dasharray": [0, 2, 3],
         },
       });
@@ -242,12 +282,19 @@ export default function MapView({ risk, mode, depots, plan, onSelect, onDepot }:
         const r = riskRef.current.get(id);
         const fp = r ? Math.round(r.flood_prob * 100) : 0;
         const dp = r ? Math.round(r.drought_prob * 100) : 0;
+        const peak = Math.max(r?.flood_prob ?? 0, r?.drought_prob ?? 0);
+        const thresholdContext = peak >= MONITORING_THRESHOLD
+          ? "Melewati Ambang Pemantauan 50%"
+          : peak >= CRITICAL_ALLOCATION_THRESHOLD
+            ? "Di bawah pemantauan · masuk rentang optimizer 5–49%"
+            : "Di bawah kedua ambang";
         popup
           .setLngLat(e.lngLat)
           .setHTML(
             `<strong>${f.properties!.name}</strong><br/>${f.properties!.kabupaten}<br/>` +
               `<span style="color:${FLOOD}">Banjir ${fp}%</span> &middot; ` +
-              `<span style="color:${DROUGHT}">Cekaman air ${dp}%</span>`,
+              `<span style="color:${DROUGHT}">Cekaman air ${dp}%</span><br/>` +
+              `<small>${thresholdContext}</small>`,
           )
           .addTo(map);
       });
@@ -307,12 +354,10 @@ export default function MapView({ risk, mode, depots, plan, onSelect, onDepot }:
     const map = mapRef.current;
     const data = geoRef.current;
     if (!map || !readyRef.current || !data) return;
-    for (const f of data.features) {
-      const r = riskRef.current.get(f.properties.district_id);
-      f.properties.color = colorFor(mode, r?.flood_prob ?? 0, r?.drought_prob ?? 0);
-    }
+    const nextData = styleDistricts(data, riskRef.current, mode);
+    geoRef.current = nextData;
     (map.getSource("districts") as maplibregl.GeoJSONSource).setData(
-      data as unknown as GeoJSON.FeatureCollection,
+      nextData as unknown as GeoJSON.FeatureCollection,
     );
   }
 
@@ -381,8 +426,8 @@ export default function MapView({ risk, mode, depots, plan, onSelect, onDepot }:
         .map((p) => {
           const isPump = p.resource === "pompa";
           const color = isPump ? FLOOD : DROUGHT;
-          const icon = isPump ? pumpSvg(color) : truckSvg(color);
-          return `<span class="alloc-badge" style="border-color:${color}">${icon}<b style="color:${color}">${p.units}</b></span>`;
+          const icon = isPump ? pumpSvg("#ffffff") : truckSvg("#ffffff");
+          return `<span class="alloc-badge alloc-badge-${isPump ? "flood" : "drought"}" style="--marker-color:${color}">${icon}<b>${p.units}</b></span>`;
         })
         .join("");
       el.onclick = () => onSelect(did);

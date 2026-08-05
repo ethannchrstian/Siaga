@@ -3,22 +3,22 @@ import { AlertIcon, FleetIcon, GridIcon, InfoIcon, MapIcon } from "../icons";
 export type View = "peta" | "insiden" | "inventaris" | "ringkasan" | "tentang";
 
 const ITEMS: { key: View; label: string; Icon: typeof MapIcon }[] = [
-  { key: "peta", label: "Peta Risiko", Icon: MapIcon },
-  { key: "insiden", label: "Insiden Aktif", Icon: AlertIcon },
-  { key: "inventaris", label: "Inventaris", Icon: FleetIcon },
-  { key: "ringkasan", label: "Ringkasan", Icon: GridIcon },
-  { key: "tentang", label: "Tentang", Icon: InfoIcon },
+  { key: "peta", label: "Peta & Alokasi", Icon: MapIcon },
+  { key: "insiden", label: "Pemantauan Wilayah", Icon: AlertIcon },
+  { key: "inventaris", label: "Kesiapan Armada", Icon: FleetIcon },
+  { key: "ringkasan", label: "Briefing Operasi", Icon: GridIcon },
+  { key: "tentang", label: "Metode & Data", Icon: InfoIcon },
 ];
 
 export default function NavRail({
   view,
   onView,
-  incidentCount,
+  monitoringCount,
   lastUpdated,
 }: {
   view: View;
   onView: (v: View) => void;
-  incidentCount: number;
+  monitoringCount: number;
   lastUpdated: string;
 }) {
   return (
@@ -27,7 +27,7 @@ export default function NavRail({
         <div className="navrail-brand-name">PUSDALOPS</div>
         <div className="navrail-brand-sub">Pusat Kendali Operasi</div>
       </div>
-      <div className="navrail-section">Modul</div>
+      <div className="navrail-section">Operasi</div>
       {ITEMS.map((it) => (
         <button
           key={it.key}
@@ -36,18 +36,18 @@ export default function NavRail({
         >
           <it.Icon size={18} />
           <span>{it.label}</span>
-          {it.key === "insiden" && incidentCount > 0 && (
-            <span className="nav-badge">{incidentCount}</span>
+          {it.key === "insiden" && monitoringCount > 0 && (
+            <span className="nav-badge">{monitoringCount}</span>
           )}
         </button>
       ))}
       <div className="navrail-foot">
         <div className="system-status-head">
           <span className="system-icon"><FleetIcon size={20} /></span>
-          <strong>Status Sistem</strong>
-          <span className="system-online"><span className="dot-live" /> Online</span>
+          <strong>Konteks data</strong>
+          <span className="system-hindcast">Hindcast</span>
         </div>
-        <div className="system-updated">Terakhir diperbarui<br />{formatDate(lastUpdated)}</div>
+        <div className="system-updated">Tanggal yang dianalisis<br />{formatDate(lastUpdated)}</div>
       </div>
     </nav>
   );

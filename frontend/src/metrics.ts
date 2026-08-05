@@ -1,13 +1,14 @@
 import type { AllocateResponse, RiskDistrict } from "./api/client";
-
-const HI = 0.5;
+import { CRITICAL_ALLOCATION_THRESHOLD, MONITORING_THRESHOLD } from "./thresholds";
 
 export interface Kpis {
   exposed: number; // people under meaningful risk
-  atRisk: number; // districts with either hazard high
-  highFlood: number;
-  highDrought: number;
-  monitored: number;
+  aboveMonitoring: number;
+  floodMonitoring: number;
+  droughtMonitoring: number;
+  totalDistricts: number;
+  coveredMonitoring: number;
+  proactiveAllocations: number;
   served: number; // districts in the plan
   fleetPct: number;
 }
@@ -17,23 +18,31 @@ export function computeKpis(
   result: AllocateResponse | null,
 ): Kpis {
   let exposed = 0;
-  let atRisk = 0;
-  let highFlood = 0;
-  let highDrought = 0;
+  let aboveMonitoring = 0;
+  let floodMonitoring = 0;
+  let droughtMonitoring = 0;
+  let coveredMonitoring = 0;
+  const plannedIds = new Set((result?.plan ?? []).map((item) => item.district_id));
   for (const d of risk.values()) {
     const p = Math.max(d.flood_prob, d.drought_prob);
-    if (p >= 0.05) exposed += p * d.population;
-    if (p >= HI) atRisk += 1;
-    if (d.flood_prob >= HI) highFlood += 1;
-    if (d.drought_prob >= HI) highDrought += 1;
+    if (p >= CRITICAL_ALLOCATION_THRESHOLD) exposed += p * d.population;
+    if (p >= MONITORING_THRESHOLD) {
+      aboveMonitoring += 1;
+      if (plannedIds.has(d.district_id)) coveredMonitoring += 1;
+    }
+    if (d.flood_prob >= MONITORING_THRESHOLD) floodMonitoring += 1;
+    if (d.drought_prob >= MONITORING_THRESHOLD) droughtMonitoring += 1;
   }
+  const served = result?.summary.n_districts_served ?? 0;
   return {
     exposed: Math.round(exposed),
-    atRisk,
-    highFlood,
-    highDrought,
-    monitored: risk.size,
-    served: result?.summary.n_districts_served ?? 0,
+    aboveMonitoring,
+    floodMonitoring,
+    droughtMonitoring,
+    totalDistricts: risk.size,
+    coveredMonitoring,
+    proactiveAllocations: Math.max(served - coveredMonitoring, 0),
+    served,
     fleetPct: result?.summary.fleet_used_pct ?? 0,
   };
 }
@@ -55,7 +64,7 @@ export function topExposed(
   const rows: RankedDistrict[] = [];
   for (const d of risk.values()) {
     const p = Math.max(d.flood_prob, d.drought_prob);
-    if (p < 0.05) continue;
+    if (p < CRITICAL_ALLOCATION_THRESHOLD) continue;
     rows.push({
       district_id: d.district_id,
       name: d.name,
