@@ -159,36 +159,37 @@ export default function Sidebar({
         </div>
       </div>
 
-      {rejects.size > 0 && (
-        <div className="rejected-bar">
-          <span className="rejected-label">Dialihkan · klik untuk batalkan</span>
-          {[...rejects].map((rejectKey) => (
-            <button
-              type="button"
-              key={rejectKey}
-              className="chip reject"
-              onClick={() => onClearReject(rejectKey)}
-              disabled={readonly}
-              title={readonlyTitle}
-            >
-              × {labelFor(rejectKey)}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <div className={`cards decision-group-list${loading ? " solving" : ""}`}>
-        {loading && <DecisionSkeleton />}
-        {!loading && result && result.plan.length === 0 && (
-          <div className="decision-empty">Tidak ada kebutuhan prapenempatan pada tanggal ini. Pilih tanggal lain untuk melihat rekomendasi.</div>
-        )}
-        {!loading && result && result.plan.length > 0 && visibleGroups.length === 0 && (
-          <div className="decision-empty">Tidak ada rekomendasi yang sesuai dengan pencarian atau filter.</div>
+      <div className="decision-scroll-region">
+        {rejects.size > 0 && (
+          <div className="rejected-bar">
+            <span className="rejected-label">Dialihkan · klik untuk batalkan</span>
+            {[...rejects].map((rejectKey) => (
+              <button
+                type="button"
+                key={rejectKey}
+                className="chip reject"
+                onClick={() => onClearReject(rejectKey)}
+                disabled={readonly}
+                title={readonlyTitle}
+              >
+                × {labelFor(rejectKey)}
+              </button>
+            ))}
+          </div>
         )}
 
-        {!loading && visibleGroups.map((group, index) => {
-          const isCompound = new Set(group.items.map((item) => item.resource)).size > 1;
-          return (
+        <div className={`cards decision-group-list${loading ? " solving" : ""}`}>
+          {loading && <DecisionSkeleton />}
+          {!loading && result && result.plan.length === 0 && (
+            <div className="decision-empty">Tidak ada kebutuhan prapenempatan pada tanggal ini. Pilih tanggal lain untuk melihat rekomendasi.</div>
+          )}
+          {!loading && result && result.plan.length > 0 && visibleGroups.length === 0 && (
+            <div className="decision-empty">Tidak ada rekomendasi yang sesuai dengan pencarian atau filter.</div>
+          )}
+
+          {!loading && visibleGroups.map((group, index) => {
+            const isCompound = new Set(group.items.map((item) => item.resource)).size > 1;
+            return (
             <article
               className={`decision-card${isCompound ? " compound" : ""}`}
               key={group.districtId}
@@ -259,8 +260,9 @@ export default function Sidebar({
                 </details>
               )}
             </article>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </aside>
   );

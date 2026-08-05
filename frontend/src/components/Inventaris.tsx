@@ -114,6 +114,9 @@ function CapacityCard({ label, available, used, total, tone, Icon }: { label: st
 function FragmentRow({ row, expanded, onToggle }: { row: DepotRow; expanded: boolean; onToggle: () => void }) {
   const pct = Math.round(row.utilization * 100);
   const status = pct >= 80 ? "critical" : row.teamUsed > 0 ? "active" : "idle";
+  const remainingTeam = Math.max(row.depot.fleet.regu - row.teamUsed, 0);
+  const remainingPump = Math.max(row.depot.fleet.pompa - row.pumpUsed, 0);
+  const remainingTruck = Math.max(row.depot.fleet.truk_tangki - row.truckUsed, 0);
   return <>
     <tr className={expanded ? "expanded" : ""}>
       <td><div className="depot-name-cell"><strong>{row.depot.name}</strong><span>{row.assignments.length} tujuan pengiriman</span></div></td>
@@ -123,7 +126,69 @@ function FragmentRow({ row, expanded, onToggle }: { row: DepotRow; expanded: boo
       <td><span className={`depot-status ${status}`}>{status === "critical" ? "Kritis" : status === "active" ? "Aktif" : "Siap"}</span></td>
       <td><button type="button" className="depot-expand" onClick={onToggle} aria-expanded={expanded}><ChevronDownIcon size={15} /> <span className="sr-only">Rincian {row.depot.name}</span></button></td>
     </tr>
-    {expanded && <tr className="depot-detail-row"><td colSpan={6}><div className="depot-assignment-list"><div><span>Sisa kapasitas</span><strong>{Math.max(row.depot.fleet.regu - row.teamUsed, 0)} regu · {Math.max(row.depot.fleet.pompa - row.pumpUsed, 0)} pompa · {Math.max(row.depot.fleet.truk_tangki - row.truckUsed, 0)} truk</strong></div>{row.assignments.length ? row.assignments.map((item) => <div key={`${item.district_id}:${item.resource}`}><span>{item.district}</span><strong>{item.units} {item.resource_label} · {item.minutes} menit</strong></div>) : <div><span>Belum ada pengiriman</span><strong>Seluruh kapasitas tersedia untuk optimasi.</strong></div>}</div></td></tr>}
+    {expanded && (
+      <tr className="depot-detail-row">
+        <td colSpan={6}>
+          <div className="depot-manifest">
+            <aside className="depot-available">
+              <div className="depot-detail-heading">
+                <span>Kapasitas siap pakai</span>
+                <strong>{remainingTeam} regu tersedia</strong>
+              </div>
+              <div className="depot-resource-grid">
+                <div className="depot-resource-stat team">
+                  <span className="depot-resource-icon">RG</span>
+                  <p><strong>{remainingTeam}</strong><small>Regu</small></p>
+                </div>
+                <div className="depot-resource-stat flood">
+                  <span className="depot-resource-icon"><PumpIcon size={15} /></span>
+                  <p><strong>{remainingPump}</strong><small>Pompa</small></p>
+                </div>
+                <div className="depot-resource-stat drought">
+                  <span className="depot-resource-icon"><TruckIcon size={15} /></span>
+                  <p><strong>{remainingTruck}</strong><small>Truk</small></p>
+                </div>
+              </div>
+            </aside>
+
+            <section className="depot-dispatches" aria-label={`Manifest pengiriman ${row.depot.name}`}>
+              <div className="depot-detail-heading dispatch-heading">
+                <span>Manifest pengiriman</span>
+                <strong>{row.assignments.length} tujuan aktif</strong>
+              </div>
+              {row.assignments.length ? (
+                <div className="dispatch-card-grid">
+                  {row.assignments.map((item) => {
+                    const isPump = item.resource === "pompa";
+                    return (
+                      <article className={`dispatch-card ${isPump ? "flood" : "drought"}`} key={`${item.district_id}:${item.resource}`}>
+                        <div className="dispatch-destination">
+                          <small>Tujuan</small>
+                          <strong>{item.district}</strong>
+                        </div>
+                        <div className="dispatch-resource">
+                          <span>{isPump ? <PumpIcon size={14} /> : <TruckIcon size={14} />}{item.resource_label}</span>
+                          <strong>{item.units}<small> unit</small></strong>
+                        </div>
+                        <div className="dispatch-eta">
+                          <small>Estimasi tiba</small>
+                          <strong>{item.minutes}<span> menit</span></strong>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="dispatch-empty">
+                  <span>00</span>
+                  <div><strong>Belum ada pengiriman aktif</strong><p>Seluruh kapasitas depot tersedia untuk optimasi berikutnya.</p></div>
+                </div>
+              )}
+            </section>
+          </div>
+        </td>
+      </tr>
+    )}
   </>;
 }
 

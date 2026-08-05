@@ -41,8 +41,9 @@ export default function Sparkline({ districtId, end }: Props) {
     };
   }, [districtId, end]);
 
-  if (!series || series.dates.length < 2)
-    return <div className="spark-placeholder" />;
+  // Do not reserve an unexplained blank panel while the history is loading or
+  // when the endpoint has no usable series. The chart appears only with data.
+  if (!series || series.dates.length < 2) return null;
 
   const pts = (vals: number[]) =>
     vals

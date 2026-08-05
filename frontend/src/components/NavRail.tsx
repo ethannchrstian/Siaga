@@ -6,7 +6,7 @@ const ITEMS: { key: View; label: string; Icon: typeof MapIcon }[] = [
   { key: "peta", label: "Peta & Alokasi", Icon: MapIcon },
   { key: "insiden", label: "Pemantauan Wilayah", Icon: AlertIcon },
   { key: "inventaris", label: "Kesiapan Armada", Icon: FleetIcon },
-  { key: "ringkasan", label: "Briefing Operasi", Icon: GridIcon },
+  { key: "ringkasan", label: "Laporan Operasional", Icon: GridIcon },
   { key: "tentang", label: "Metode & Data", Icon: InfoIcon },
 ];
 
@@ -45,7 +45,7 @@ export default function NavRail({
         <div className="system-status-head">
           <span className="system-icon"><FleetIcon size={20} /></span>
           <strong>Konteks data</strong>
-          <span className="system-hindcast">Hindcast</span>
+          <span className="system-hindcast">Simulasi historis</span>
         </div>
         <div className="system-updated">Tanggal yang dianalisis<br />{formatDate(lastUpdated)}</div>
       </div>

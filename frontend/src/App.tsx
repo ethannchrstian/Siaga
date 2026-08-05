@@ -548,7 +548,14 @@ export default function App() {
           <Inventaris depots={scenario?.depots ?? []} result={result} note={scenario?.note} />
         )}
         {view === "ringkasan" && (
-          <Overview risk={risk} result={result} date={date} onSelect={openDistrict} />
+          <Overview
+            risk={risk}
+            result={result}
+            date={date}
+            locks={new Set(locks.keys())}
+            rejects={new Set(rejects.keys())}
+            onSelect={openDistrict}
+          />
         )}
         {view === "tentang" && (
           <About
