@@ -1,7 +1,7 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import type { AllocateResponse, PlanItem } from "../api/client";
 import { useCountUp } from "../hooks/useCountUp";
-import { InfoIcon, SearchIcon } from "../icons";
+import { ChevronDownIcon, InfoIcon, SearchIcon } from "../icons";
 import { CRITICAL_ALLOCATION_THRESHOLD_HELP } from "../thresholds";
 
 interface Props {
@@ -121,13 +121,17 @@ export default function Sidebar({
         </div>
       )}
 
-      <div className="optimizer-threshold-note" title={CRITICAL_ALLOCATION_THRESHOLD_HELP}>
-        <span className="optimizer-threshold-icon"><InfoIcon size={13} /></span>
-        <div>
-          <strong>Ambang Alokasi Kritis · 5%</strong>
-          <p>Optimizer mempertimbangkan kebutuhan mulai peluang 5%. Ini terpisah dari Ambang Pemantauan 50% dan tidak menjamin alokasi otomatis.</p>
-        </div>
-      </div>
+      <details className="optimizer-threshold-note" title={CRITICAL_ALLOCATION_THRESHOLD_HELP}>
+        <summary>
+          <span className="optimizer-threshold-icon"><InfoIcon size={13} /></span>
+          <span className="optimizer-threshold-copy">
+            <strong>Info ambang alokasi</strong>
+            <small>Kritis · 5%</small>
+          </span>
+          <ChevronDownIcon size={15} aria-hidden="true" />
+        </summary>
+        <p>Optimizer mempertimbangkan kebutuhan mulai peluang 5%. Ini terpisah dari Ambang Pemantauan 50% dan tidak menjamin alokasi otomatis.</p>
+      </details>
 
       <div className="decision-tools">
         <label className="decision-search">
@@ -221,8 +225,9 @@ export default function Sidebar({
                     <section className={`decision-resource-row ${flood ? "flood" : "drought"}`} key={itemKey}>
                       <div className="decision-resource-main">
                         <span className="decision-resource-type">{flood ? "Banjir · 0–72 jam" : "Cekaman air · bulan depan"}</span>
+                        <span className="decision-travel-time">{item.minutes} menit</span>
                         <strong>{item.units} {item.resource_label}</strong>
-                        <span>dari {item.from_depot} · {item.minutes} menit</span>
+                        <span className="decision-depot">dari {item.from_depot}</span>
                       </div>
                       <div className="decision-probability">
                         <span>Peluang</span><b>{probability}%</b>

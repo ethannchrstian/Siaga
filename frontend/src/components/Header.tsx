@@ -64,7 +64,7 @@ export default function Header({ date, dateMin, dateMax, monitoringCount, preset
         </span>
       </div>
 
-      <div className="account-static" aria-label="Operator aktif">
+      <div className="account-static" aria-label="Operator aktif" title="Operator SIAGA · PUSDALOPS">
         <span className="account-avatar" aria-hidden="true">OS</span>
         <span className="account-copy"><strong>Operator SIAGA</strong><span>PUSDALOPS</span></span>
       </div>

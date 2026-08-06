@@ -16,10 +16,10 @@ interface Props {
   canDisrupt?: boolean;
 }
 
-const MODES: { key: ViewMode; label: string; horizon: string }[] = [
-  { key: "gabungan", label: "Gabungan", horizon: "Dua horizon" },
-  { key: "banjir", label: "Banjir", horizon: "0–72 jam" },
-  { key: "cekaman", label: "Cekaman air", horizon: "Bulan depan" },
+const MODES: { key: ViewMode; label: string }[] = [
+  { key: "gabungan", label: "Gabungan" },
+  { key: "banjir", label: "Banjir" },
+  { key: "cekaman", label: "Cekaman air" },
 ];
 
 const COMPARE_MODES: { key: CompareMode; label: string; note: string }[] = [
@@ -52,7 +52,6 @@ export default function Controls({
             disabled={disabled}
           >
             <span>{item.label}</span>
-            <small>{item.horizon}</small>
           </button>
         ))}
       </div>

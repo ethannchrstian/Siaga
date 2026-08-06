@@ -478,27 +478,28 @@ export default function App() {
                   disrupting={disruption !== null}
                   canDisrupt={compare === "siaga" && !loading && (result?.plan.length ?? 0) > 0}
                 />
-                {replay ? (
+                {replay && (
                   <ReplayControl
                     dates={replay.dates}
                     idx={replay.idx}
                     onStop={() => stopReplay(false)}
                     restoring={replayLoading}
                   />
-                ) : (
-                  result?.comparison && (
-                    <CompareBanner comparison={result.comparison} compare={compare} />
-                  )
                 )}
-                <Legend
-                  mode={mode}
-                  dispatched={
-                    (compare === "siaga"
-                      ? result?.summary
-                      : result?.baseline?.summary
-                    )?.total_dispatched
-                  }
-                />
+                <div className="map-left-stack">
+                  {!replay && result?.comparison && (
+                    <CompareBanner comparison={result.comparison} compare={compare} />
+                  )}
+                  <Legend
+                    mode={mode}
+                    dispatched={
+                      (compare === "siaga"
+                        ? result?.summary
+                        : result?.baseline?.summary
+                      )?.total_dispatched
+                    }
+                  />
+                </div>
                 {selected && (
                   <DistrictDrawer
                     props={propsRef.current.get(selected) ?? null}
