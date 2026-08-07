@@ -6,7 +6,6 @@ import json
 from functools import lru_cache
 from pathlib import Path
 
-import geopandas as gpd
 import pandas as pd
 
 from app.services.allocator import Depot
@@ -16,17 +15,16 @@ DATA = Path(__file__).resolve().parents[1].parent / "data"
 
 @lru_cache(maxsize=1)
 def district_meta() -> pd.DataFrame:
-    gj = gpd.read_file(DATA / "districts.geojson")
-    cent = gj.geometry.to_crs(32748).centroid.to_crs(4326)
-    meta = pd.DataFrame(
-        {
-            "district_id": gj["district_id"],
-            "name": gj["name"],
-            "kabupaten": gj["kabupaten"],
-            "provinsi": gj["provinsi"],
-            "lat": cent.y.values,
-            "lon": cent.x.values,
-        }
+    """Kecamatan metadata plus one centroid each, for depot travel times.
+
+    Centroids come from a precomputed CSV rather than being derived from the
+    GeoJSON at request time. They never change, and computing them here meant
+    importing geopandas, which pulls GDAL into the production image for no
+    runtime benefit. Regenerate with: python ml/build_centroids.py
+    """
+    meta = pd.read_csv(
+        DATA / "district_centroids.csv",
+        usecols=["district_id", "name", "kabupaten", "provinsi", "lat", "lon"],
     )
     pop = pd.read_csv(DATA / "population.csv")
     return meta.merge(pop, on="district_id", how="left").fillna({"population": 0})

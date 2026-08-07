@@ -1,0 +1,19 @@
+# Everything in production, plus what the ml/ pipeline and the tests need.
+#
+#   pip install -r requirements-dev.txt
+#
+# geopandas/rasterio/shapely carry the GDAL toolchain and are used only by the
+# ml/ scripts (fetching rasters, building district boundaries, precomputing
+# centroids). xgboost and scikit-learn train and calibrate the hazard models.
+# None of it is on the request path.
+-r requirements.txt
+
+geopandas==1.1.4
+rasterio==1.5.0
+shapely==2.1.2
+scikit-learn==1.9.0
+scipy==1.18.0
+xgboost==3.3.0
+httpx==0.28.1
+requests==2.34.2
+pytest==9.1.1

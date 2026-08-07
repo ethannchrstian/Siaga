@@ -19,3 +19,7 @@ frontend/dist/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# deployment build artifacts
+backend/app/static/
+backend/.venv-prod/

@@ -1,0 +1,15 @@
+# Render blueprint. Point Render at this repo and it picks these settings up.
+#
+# The free plan sleeps after ~15 minutes idle and takes 30-60s to wake, which is
+# fine for a link judges click later and wrong for anything live. Run the demo
+# itself from a laptop, or move this to the starter plan to stop it sleeping.
+services:
+  - type: web
+    name: siaga
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    region: singapore
+    healthCheckPath: /health
+    autoDeploy: true

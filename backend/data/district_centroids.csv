@@ -1,0 +1,325 @@
+district_id,name,kabupaten,provinsi,lat,lon
+IDN.7.5.1_1,Cilincing,Jakarta Utara,Jakarta Raya,-6.1267,106.943912
+IDN.7.5.2_1,Danau Sunter Dll,Jakarta Utara,Jakarta Raya,-6.150955,106.848191
+IDN.7.5.3_1,Kelapa Gading,Jakarta Utara,Jakarta Raya,-6.160569,106.903534
+IDN.7.5.4_1,Koja,Jakarta Utara,Jakarta Raya,-6.121032,106.904793
+IDN.7.5.5_1,Pademangan,Jakarta Utara,Jakarta Raya,-6.129496,106.83692
+IDN.7.5.6_1,Penjaringan,Jakarta Utara,Jakarta Raya,-6.11815,106.766697
+IDN.7.5.7_1,Tanjung Priok,Jakarta Utara,Jakarta Raya,-6.132198,106.874805
+IDN.9.4.1_1,Babelan,Bekasi,Jawa Barat,-6.125149,107.03426
+IDN.9.4.2_1,Bojongmangu,Bekasi,Jawa Barat,-6.438184,107.179065
+IDN.9.4.3_1,Cabangbungin,Bekasi,Jawa Barat,-6.07861,107.136792
+IDN.9.4.4_1,Cibarusah,Bekasi,Jawa Barat,-6.435444,107.109394
+IDN.9.4.5_1,Cibitung,Bekasi,Jawa Barat,-6.235044,107.100737
+IDN.9.4.6_1,Cikarang Barat,Bekasi,Jawa Barat,-6.296806,107.09439
+IDN.9.4.7_1,Cikarang Pusat,Bekasi,Jawa Barat,-6.359647,107.18362
+IDN.9.4.8_1,Cikarang Selatan,Bekasi,Jawa Barat,-6.338439,107.128492
+IDN.9.4.9_1,Cikarang Timur,Bekasi,Jawa Barat,-6.288409,107.209488
+IDN.9.4.10_1,Cikarang Utara,Bekasi,Jawa Barat,-6.275376,107.155703
+IDN.9.4.11_1,Karangbahagia,Bekasi,Jawa Barat,-6.218005,107.197231
+IDN.9.4.12_1,Kedungwaringin,Bekasi,Jawa Barat,-6.250954,107.248355
+IDN.9.4.13_1,Muara Gembong,Bekasi,Jawa Barat,-5.995716,107.049982
+IDN.9.4.14_1,Pebayuran,Bekasi,Jawa Barat,-6.159602,107.248346
+IDN.9.4.15_1,Serang Baru,Bekasi,Jawa Barat,-6.39641,107.114627
+IDN.9.4.16_1,Setu,Bekasi,Jawa Barat,-6.363617,107.037849
+IDN.9.4.17_1,Sukakarya,Bekasi,Jawa Barat,-6.145553,107.185564
+IDN.9.4.18_1,Sukatani,Bekasi,Jawa Barat,-6.192395,107.155639
+IDN.9.4.19_1,Sukawangi,Bekasi,Jawa Barat,-6.120412,107.092699
+IDN.9.4.20_1,Tambelang,Bekasi,Jawa Barat,-6.167626,107.12775
+IDN.9.4.21_1,Tambun Selatan,Bekasi,Jawa Barat,-6.256714,107.05519
+IDN.9.4.22_1,Tambun Utara,Bekasi,Jawa Barat,-6.192465,107.061109
+IDN.9.4.23_1,Tarumajaya,Bekasi,Jawa Barat,-6.12198,106.997539
+IDN.9.9.1_1,Arjawinangun,Cirebon,Jawa Barat,-6.641649,108.408356
+IDN.9.9.2_1,Astanajapura,Cirebon,Jawa Barat,-6.803672,108.621769
+IDN.9.9.3_1,Babakan,Cirebon,Jawa Barat,-6.866146,108.716631
+IDN.9.9.4_1,Beber,Cirebon,Jawa Barat,-6.825512,108.524069
+IDN.9.9.5_1,Ciledug,Cirebon,Jawa Barat,-6.898203,108.747699
+IDN.9.9.6_1,Ciwaringin,Cirebon,Jawa Barat,-6.676141,108.38215
+IDN.9.9.7_1,Depok,Cirebon,Jawa Barat,-6.73533,108.447024
+IDN.9.9.8_1,Dukupuntang,Cirebon,Jawa Barat,-6.760242,108.40961
+IDN.9.9.9_1,Gebang,Cirebon,Jawa Barat,-6.829323,108.733076
+IDN.9.9.10_1,Gegesik,Cirebon,Jawa Barat,-6.57442,108.429894
+IDN.9.9.11_1,Gempol,Cirebon,Jawa Barat,-6.706703,108.397369
+IDN.9.9.12_1,Greged,Cirebon,Jawa Barat,-6.815895,108.561151
+IDN.9.9.13_1,Gunungjati,Cirebon,Jawa Barat,-6.665679,108.535718
+IDN.9.9.14_1,Jamblang,Cirebon,Jawa Barat,-6.665973,108.475329
+IDN.9.9.15_1,Kaliwedi,Cirebon,Jawa Barat,-6.580139,108.388583
+IDN.9.9.16_1,Kapetakan,Cirebon,Jawa Barat,-6.574332,108.514029
+IDN.9.9.17_1,Karangsembung,Cirebon,Jawa Barat,-6.843477,108.664372
+IDN.9.9.18_1,Karangwareng,Cirebon,Jawa Barat,-6.883339,108.649046
+IDN.9.9.19_1,Kedawung,Cirebon,Jawa Barat,-6.716446,108.533057
+IDN.9.9.20_1,Klangenan,Cirebon,Jawa Barat,-6.66782,108.451642
+IDN.9.9.21_1,Lemahabang,Cirebon,Jawa Barat,-6.834036,108.615549
+IDN.9.9.22_1,Losari,Cirebon,Jawa Barat,-6.805985,108.8062
+IDN.9.9.23_1,Mundu,Cirebon,Jawa Barat,-6.775037,108.581489
+IDN.9.9.24_1,Pabedilan,Cirebon,Jawa Barat,-6.861662,108.770389
+IDN.9.9.25_1,Pabuaran,Cirebon,Jawa Barat,-6.894627,108.720868
+IDN.9.9.26_1,Palimanan,Cirebon,Jawa Barat,-6.710978,108.427523
+IDN.9.9.27_1,Pangenan,Cirebon,Jawa Barat,-6.795721,108.666807
+IDN.9.9.28_1,Panguragan,Cirebon,Jawa Barat,-6.616984,108.461621
+IDN.9.9.29_1,Pasaleman,Cirebon,Jawa Barat,-6.953731,108.736598
+IDN.9.9.30_1,Plered,Cirebon,Jawa Barat,-6.681698,108.504806
+IDN.9.9.31_1,Plumbon,Cirebon,Jawa Barat,-6.705503,108.477278
+IDN.9.9.32_1,Sedong,Cirebon,Jawa Barat,-6.871759,108.574508
+IDN.9.9.33_1,Sumber,Cirebon,Jawa Barat,-6.761999,108.479169
+IDN.9.9.34_1,Suranenggala,Cirebon,Jawa Barat,-6.631684,108.523037
+IDN.9.9.35_1,Susukan,Cirebon,Jawa Barat,-6.625455,108.359637
+IDN.9.9.36_1,Susukanlebak,Cirebon,Jawa Barat,-6.862852,108.617613
+IDN.9.9.37_1,Talun,Cirebon,Jawa Barat,-6.768398,108.509623
+IDN.9.9.38_1,Tengah Tani,Cirebon,Jawa Barat,-6.699532,108.523639
+IDN.9.9.39_1,Waled,Cirebon,Jawa Barat,-6.90985,108.685649
+IDN.9.9.40_1,Weru,Cirebon,Jawa Barat,-6.71728,108.496173
+IDN.9.12.1_1,Anjatan,Indramayu,Jawa Barat,-6.376267,107.946694
+IDN.9.12.2_1,Arahan,Indramayu,Jawa Barat,-6.363329,108.246569
+IDN.9.12.3_1,Balongan,Indramayu,Jawa Barat,-6.383954,108.375624
+IDN.9.12.4_1,Bangodua,Indramayu,Jawa Barat,-6.516761,108.278442
+IDN.9.12.5_1,Bongas,Indramayu,Jawa Barat,-6.380254,108.017267
+IDN.9.12.6_1,Cantigi,Indramayu,Jawa Barat,-6.297662,108.238472
+IDN.9.12.7_1,Cikedung,Indramayu,Jawa Barat,-6.53707,108.174948
+IDN.9.12.8_1,Gabuswetan,Indramayu,Jawa Barat,-6.42749,108.068084
+IDN.9.12.9_1,Gantar,Indramayu,Jawa Barat,-6.546271,107.949862
+IDN.9.12.10_1,Haurgeulis,Indramayu,Jawa Barat,-6.446408,107.937607
+IDN.9.12.11_1,Indramayu,Indramayu,Jawa Barat,-6.346269,108.339862
+IDN.9.12.12_1,Jatibarang,Indramayu,Jawa Barat,-6.440294,108.312925
+IDN.9.12.13_1,Juntinyuat,Indramayu,Jawa Barat,-6.435782,108.41051
+IDN.9.12.14_1,Kandanghaur,Indramayu,Jawa Barat,-6.356004,108.092412
+IDN.9.12.15_1,Karangampel,Indramayu,Jawa Barat,-6.470586,108.452553
+IDN.9.12.16_1,Kedokan Bunder,Indramayu,Jawa Barat,-6.498267,108.413388
+IDN.9.12.17_1,Kertasemaya,Indramayu,Jawa Barat,-6.519129,108.367096
+IDN.9.12.18_1,Krangkeng,Indramayu,Jawa Barat,-6.515295,108.486773
+IDN.9.12.19_1,Kroya,Indramayu,Jawa Barat,-6.499676,108.040961
+IDN.9.12.20_1,Lelea,Indramayu,Jawa Barat,-6.460807,108.225344
+IDN.9.12.21_1,Lohbener,Indramayu,Jawa Barat,-6.399961,108.256355
+IDN.9.12.22_1,Losarang,Indramayu,Jawa Barat,-6.37091,108.174948
+IDN.9.12.23_1,Pasekan,Indramayu,Jawa Barat,-6.274497,108.304341
+IDN.9.12.24_1,Patrol,Indramayu,Jawa Barat,-6.319632,108.001131
+IDN.9.12.25_1,Sindang,Indramayu,Jawa Barat,-6.332043,108.29737
+IDN.9.12.26_1,Sliyeg,Indramayu,Jawa Barat,-6.450034,108.348723
+IDN.9.12.27_1,Sukagumiwang,Indramayu,Jawa Barat,-6.581813,108.323933
+IDN.9.12.28_1,Sukra,Indramayu,Jawa Barat,-6.291104,107.947864
+IDN.9.12.29_1,Terisi,Indramayu,Jawa Barat,-6.560471,108.067332
+IDN.9.12.30_1,Tukdana,Indramayu,Jawa Barat,-6.561049,108.272816
+IDN.9.12.31_1,Widasari,Indramayu,Jawa Barat,-6.46644,108.273351
+IDN.9.13.1_1,Banyusari,Karawang,Jawa Barat,-6.302711,107.539951
+IDN.9.13.2_1,Batujaya,Karawang,Jawa Barat,-6.05099,107.195083
+IDN.9.13.3_1,Ciampel,Karawang,Jawa Barat,-6.429857,107.332958
+IDN.9.13.4_1,Cibuaya,Karawang,Jawa Barat,-6.015958,107.328351
+IDN.9.13.5_1,Cikampek,Karawang,Jawa Barat,-6.413583,107.436376
+IDN.9.13.6_1,Cilamaya Kulon,Karawang,Jawa Barat,-6.218878,107.515148
+IDN.9.13.7_1,Cilamaya Wetan,Karawang,Jawa Barat,-6.227175,107.578478
+IDN.9.13.8_1,Cilebar,Karawang,Jawa Barat,-6.133018,107.41351
+IDN.9.13.9_1,Jatisari,Karawang,Jawa Barat,-6.355822,107.522253
+IDN.9.13.10_1,Jayakerta,Karawang,Jawa Barat,-6.105031,107.297594
+IDN.9.13.11_1,Karawang Barat,Karawang,Jawa Barat,-6.273333,107.296064
+IDN.9.13.12_1,Karawang Timur,Karawang,Jawa Barat,-6.299618,107.333182
+IDN.9.13.13_1,Klari,Karawang,Jawa Barat,-6.394801,107.38028
+IDN.9.13.14_1,Kotabaru,Karawang,Jawa Barat,-6.396725,107.487566
+IDN.9.13.15_1,Kutawaluya,Karawang,Jawa Barat,-6.174435,107.346287
+IDN.9.13.16_1,Lemahabang,Karawang,Jawa Barat,-6.2841,107.456382
+IDN.9.13.17_1,Majalaya,Karawang,Jawa Barat,-6.305585,107.367983
+IDN.9.13.18_1,Pakisjaya,Karawang,Jawa Barat,-6.005083,107.125558
+IDN.9.13.19_1,Pangkalan,Karawang,Jawa Barat,-6.463308,107.228228
+IDN.9.13.20_1,Pedes,Karawang,Jawa Barat,-6.090821,107.371895
+IDN.9.13.21_1,Purwasari,Karawang,Jawa Barat,-6.369258,107.409567
+IDN.9.13.22_1,Rawamerta,Karawang,Jawa Barat,-6.233991,107.352337
+IDN.9.13.23_1,Rengasdengklok,Karawang,Jawa Barat,-6.176134,107.301782
+IDN.9.13.24_1,Talagasari,Karawang,Jawa Barat,-6.271192,107.414066
+IDN.9.13.25_1,Tegalwaru,Karawang,Jawa Barat,-6.522292,107.242923
+IDN.9.13.26_1,Telukjambe Barat,Karawang,Jawa Barat,-6.357314,107.245645
+IDN.9.13.27_1,Telukjambe Timur,Karawang,Jawa Barat,-6.341309,107.289455
+IDN.9.13.28_1,Tempuran,Karawang,Jawa Barat,-6.196353,107.443723
+IDN.9.13.29_1,Tirtajaya,Karawang,Jawa Barat,-6.02938,107.253338
+IDN.9.13.30_1,Tirtamulya,Karawang,Jawa Barat,-6.341033,107.462616
+IDN.9.15.1_1,Bantargebang,Kota Bekasi,Jawa Barat,-6.339228,106.991572
+IDN.9.15.2_1,Bekasi Barat,Kota Bekasi,Jawa Barat,-6.23371,106.962797
+IDN.9.15.3_1,Bekasi Selatan,Kota Bekasi,Jawa Barat,-6.258081,106.977578
+IDN.9.15.4_1,Bekasi Timur,Kota Bekasi,Jawa Barat,-6.24192,107.018941
+IDN.9.15.5_1,Bekasi Utara,Kota Bekasi,Jawa Barat,-6.207525,107.006181
+IDN.9.15.6_1,Jatiasih,Kota Bekasi,Jawa Barat,-6.307306,106.952512
+IDN.9.15.7_1,Jatisampurna,Kota Bekasi,Jawa Barat,-6.365191,106.924699
+IDN.9.15.8_1,Medan Satria,Kota Bekasi,Jawa Barat,-6.197296,106.982071
+IDN.9.15.9_1,Mustikajaya,Kota Bekasi,Jawa Barat,-6.307125,107.015932
+IDN.9.15.10_1,Pondokgede,Kota Bekasi,Jawa Barat,-6.269032,106.929978
+IDN.9.15.11_1,Pondokmelati,Kota Bekasi,Jawa Barat,-6.31005,106.928393
+IDN.9.15.12_1,Rawalumbu,Kota Bekasi,Jawa Barat,-6.280794,106.994297
+IDN.9.17.1_1,Harjamukti,Kota Cirebon,Jawa Barat,-6.761552,108.548254
+IDN.9.17.2_1,Kejaksan,Kota Cirebon,Jawa Barat,-6.704182,108.556137
+IDN.9.17.3_1,Kesambi,Kota Cirebon,Jawa Barat,-6.733022,108.542761
+IDN.9.17.4_1,Lemahwungkuk,Kota Cirebon,Jawa Barat,-6.731962,108.576277
+IDN.9.17.5_1,Pekalipan,Kota Cirebon,Jawa Barat,-6.723692,108.564173
+IDN.9.23.1_1,Binong,Subang,Jawa Barat,-6.400388,107.800298
+IDN.9.23.2_1,Blanakan,Subang,Jawa Barat,-6.263671,107.665641
+IDN.9.23.3_1,Ciasem,Subang,Jawa Barat,-6.320082,107.661322
+IDN.9.23.4_1,Ciater,Subang,Jawa Barat,-6.73729,107.670022
+IDN.9.23.5_1,Cibogo,Subang,Jawa Barat,-6.567957,107.837856
+IDN.9.23.6_1,Cijambe,Subang,Jawa Barat,-6.630916,107.775863
+IDN.9.23.7_1,Cikaum,Subang,Jawa Barat,-6.413665,107.737129
+IDN.9.23.8_1,Cipeundeuy,Subang,Jawa Barat,-6.498888,107.594667
+IDN.9.23.9_1,Cipunagara,Subang,Jawa Barat,-6.488921,107.863627
+IDN.9.23.10_1,Cisalak,Subang,Jawa Barat,-6.76113,107.74741
+IDN.9.23.11_1,Compreng,Subang,Jawa Barat,-6.387498,107.87446
+IDN.9.23.12_1,Dawuan,Subang,Jawa Barat,-6.574355,107.686569
+IDN.9.23.13_1,Jalancagak,Subang,Jawa Barat,-6.668056,107.700766
+IDN.9.23.14_1,Kalijati,Subang,Jawa Barat,-6.52759,107.649803
+IDN.9.23.15_1,Kasomalang,Subang,Jawa Barat,-6.694184,107.753331
+IDN.9.23.16_1,Legonkulon,Subang,Jawa Barat,-6.232277,107.806844
+IDN.9.23.17_1,Pabuaran,Subang,Jawa Barat,-6.421099,107.594327
+IDN.9.23.19_1,Pagaden,Subang,Jawa Barat,-6.480543,107.800105
+IDN.9.23.18_1,Pagaden Barat,Subang,Jawa Barat,-6.485564,107.767201
+IDN.9.23.20_1,Pamanukan,Subang,Jawa Barat,-6.291575,107.822749
+IDN.9.23.21_1,Patokbeusi,Subang,Jawa Barat,-6.367929,107.61656
+IDN.9.23.22_1,Purwadadi,Subang,Jawa Barat,-6.443782,107.686266
+IDN.9.23.23_1,Pusakajaya,Subang,Jawa Barat,-6.311337,107.892601
+IDN.9.23.24_1,Pusakanagara,Subang,Jawa Barat,-6.253242,107.875817
+IDN.9.23.25_1,Sagalaherang,Subang,Jawa Barat,-6.683928,107.64588
+IDN.9.23.26_1,Serangpanjang,Subang,Jawa Barat,-6.647094,107.611738
+IDN.9.23.27_1,Subang,Subang,Jawa Barat,-6.573954,107.778253
+IDN.9.23.28_1,Sukasari,Subang,Jawa Barat,-6.289359,107.756864
+IDN.9.23.29_1,Tambakdahan,Subang,Jawa Barat,-6.342624,107.810948
+IDN.9.23.30_1,Tanjungsiang,Subang,Jawa Barat,-6.743299,107.813391
+IDN.10.6.1_1,Banjarharjo,Brebes,Jawa Tengah,-7.022322,108.813034
+IDN.10.6.2_1,Bantarkawung,Brebes,Jawa Tengah,-7.221708,108.914313
+IDN.10.6.3_1,Brebes,Brebes,Jawa Tengah,-6.844593,109.052668
+IDN.10.6.4_1,Bulakamba,Brebes,Jawa Tengah,-6.880024,108.944901
+IDN.10.6.5_1,Bumiayu,Brebes,Jawa Tengah,-7.244377,108.985329
+IDN.10.6.6_1,Jatibarang,Brebes,Jawa Tengah,-6.946117,109.051845
+IDN.10.6.7_1,Kersana,Brebes,Jawa Tengah,-6.927646,108.863942
+IDN.10.6.8_1,Ketanggungan,Brebes,Jawa Tengah,-7.033476,108.883529
+IDN.10.6.9_1,Larangan,Brebes,Jawa Tengah,-7.030269,108.946634
+IDN.10.6.10_1,Losari,Brebes,Jawa Tengah,-6.866651,108.816766
+IDN.10.6.11_1,Paguyangan,Brebes,Jawa Tengah,-7.291342,109.05623
+IDN.10.6.12_1,Salem,Brebes,Jawa Tengah,-7.16076,108.792439
+IDN.10.6.13_1,Sirampog,Brebes,Jawa Tengah,-7.231021,109.089202
+IDN.10.6.14_1,Songgom,Brebes,Jawa Tengah,-7.004041,109.004701
+IDN.10.6.15_1,Tanjung,Brebes,Jawa Tengah,-6.87391,108.862882
+IDN.10.6.16_1,Tonjong,Brebes,Jawa Tengah,-7.174288,109.017679
+IDN.10.6.17_1,Wanasari,Brebes,Jawa Tengah,-6.874696,109.006622
+IDN.10.8.1_1,Bonang,Demak,Jawa Tengah,-6.847104,110.591689
+IDN.10.8.2_1,Demak,Demak,Jawa Tengah,-6.87222,110.654147
+IDN.10.8.3_1,Dempet,Demak,Jawa Tengah,-6.959142,110.739379
+IDN.10.8.4_1,Gajah,Demak,Jawa Tengah,-6.900865,110.746893
+IDN.10.8.5_1,Guntur,Demak,Jawa Tengah,-6.980557,110.60279
+IDN.10.8.6_1,Karang Tengah,Demak,Jawa Tengah,-6.919687,110.575501
+IDN.10.8.7_1,Karanganyar,Demak,Jawa Tengah,-6.847034,110.774064
+IDN.10.8.8_1,Karangawen,Demak,Jawa Tengah,-7.075909,110.561166
+IDN.10.8.9_1,Kebonagung,Demak,Jawa Tengah,-7.002742,110.709367
+IDN.10.8.10_1,Mijen,Demak,Jawa Tengah,-6.810514,110.70352
+IDN.10.8.11_1,Mranggen,Demak,Jawa Tengah,-7.038465,110.518303
+IDN.10.8.12_1,Sayung,Demak,Jawa Tengah,-6.924531,110.521498
+IDN.10.8.13_1,Wedung,Demak,Jawa Tengah,-6.766834,110.618186
+IDN.10.8.14_1,Wonosalam,Demak,Jawa Tengah,-6.91887,110.667528
+IDN.10.13.1_1,Boja,Kendal,Jawa Tengah,-7.105264,110.297585
+IDN.10.13.2_1,Brangsong,Kendal,Jawa Tengah,-6.956481,110.221433
+IDN.10.13.3_1,Cepiring,Kendal,Jawa Tengah,-6.908358,110.152556
+IDN.10.13.4_1,Gemuh,Kendal,Jawa Tengah,-6.997718,110.117114
+IDN.10.13.6_1,Kaliwungu,Kendal,Jawa Tengah,-6.948581,110.271127
+IDN.10.13.5_1,Kaliwungu Selatan,Kendal,Jawa Tengah,-7.005469,110.240272
+IDN.10.13.7_1,Kangkung,Kendal,Jawa Tengah,-6.91215,110.117218
+IDN.10.13.8_1,Kota Kendal,Kendal,Jawa Tengah,-6.916067,110.209456
+IDN.10.13.9_1,Limbangan,Kendal,Jawa Tengah,-7.164229,110.286628
+IDN.10.13.10_1,Ngampel,Kendal,Jawa Tengah,-6.988324,110.184802
+IDN.10.13.11_1,Pageruyung,Kendal,Jawa Tengah,-7.032373,110.037505
+IDN.10.13.12_1,Patean,Kendal,Jawa Tengah,-7.079659,110.102867
+IDN.10.13.13_1,Patebon,Kendal,Jawa Tengah,-6.895131,110.183378
+IDN.10.13.14_1,Pegandon,Kendal,Jawa Tengah,-7.000704,110.159182
+IDN.10.13.15_1,Plantungan,Kendal,Jawa Tengah,-7.096174,109.975406
+IDN.10.13.16_1,Ringinarum,Kendal,Jawa Tengah,-6.993762,110.106779
+IDN.10.13.17_1,Rowosari,Kendal,Jawa Tengah,-6.924907,110.064878
+IDN.10.13.18_1,Singorojo,Kendal,Jawa Tengah,-7.101723,110.217436
+IDN.10.13.19_1,Sukorejo,Kendal,Jawa Tengah,-7.130587,109.997035
+IDN.10.13.20_1,Weleri,Kendal,Jawa Tengah,-6.982294,110.073677
+IDN.10.16.1_1,Pekalongan Barat,Kota Pekalongan,Jawa Tengah,-6.896299,109.660231
+IDN.10.16.2_1,Pekalongan Selatan,Kota Pekalongan,Jawa Tengah,-6.919171,109.674447
+IDN.10.16.3_1,Pekalongan Timur,Kota Pekalongan,Jawa Tengah,-6.894654,109.688989
+IDN.10.16.4_1,Pekalongan Utara,Kota Pekalongan,Jawa Tengah,-6.870638,109.68512
+IDN.10.17.1_1,Banyumanik,Kota Semarang,Jawa Tengah,-7.070143,110.420348
+IDN.10.17.2_1,Candisari,Kota Semarang,Jawa Tengah,-7.015768,110.427602
+IDN.10.17.3_1,Gajahmungkur,Kota Semarang,Jawa Tengah,-7.012694,110.405331
+IDN.10.17.4_1,Gayamsari,Kota Semarang,Jawa Tengah,-6.980519,110.446632
+IDN.10.17.5_1,Genuk,Kota Semarang,Jawa Tengah,-6.963178,110.476885
+IDN.10.17.6_1,Gunungpati,Kota Semarang,Jawa Tengah,-7.064563,110.375235
+IDN.10.17.7_1,Mijen,Kota Semarang,Jawa Tengah,-7.053363,110.315743
+IDN.10.17.8_1,Ngaliyan,Kota Semarang,Jawa Tengah,-7.000111,110.327406
+IDN.10.17.9_1,Pedurungan,Kota Semarang,Jawa Tengah,-7.002262,110.473985
+IDN.10.17.10_1,Semarang Barat,Kota Semarang,Jawa Tengah,-6.97891,110.384257
+IDN.10.17.11_1,Semarang Selatan,Kota Semarang,Jawa Tengah,-6.996917,110.424702
+IDN.10.17.12_1,Semarang Tengah,Kota Semarang,Jawa Tengah,-6.980468,110.420686
+IDN.10.17.13_1,Semarang Timur,Kota Semarang,Jawa Tengah,-6.972055,110.437183
+IDN.10.17.14_1,Semarang Utara,Kota Semarang,Jawa Tengah,-6.958196,110.417261
+IDN.10.17.15_1,Tembalang,Kota Semarang,Jawa Tengah,-7.048792,110.460904
+IDN.10.17.16_1,Tugu,Kota Semarang,Jawa Tengah,-6.961678,110.329683
+IDN.10.18.1_1,Margadana,Kota Tegal,Jawa Tengah,-6.873476,109.096639
+IDN.10.18.2_1,Tegal Barat,Kota Tegal,Jawa Tengah,-6.857595,109.116671
+IDN.10.18.3_1,Tegal Selatan,Kota Tegal,Jawa Tengah,-6.886212,109.122125
+IDN.10.18.4_1,Tegal Timur,Kota Tegal,Jawa Tengah,-6.86353,109.144711
+IDN.10.22.1_1,Bojong,Pekalongan,Jawa Tengah,-6.972189,109.582427
+IDN.10.22.2_1,Buaran,Pekalongan,Jawa Tengah,-6.934369,109.658315
+IDN.10.22.3_1,Doro,Pekalongan,Jawa Tengah,-7.061174,109.687036
+IDN.10.22.4_1,Kajen,Pekalongan,Jawa Tengah,-7.059287,109.575384
+IDN.10.22.5_1,Kandangserang,Pekalongan,Jawa Tengah,-7.161603,109.532482
+IDN.10.22.6_1,Karanganyar,Pekalongan,Jawa Tengah,-7.048887,109.627088
+IDN.10.22.7_1,Karangdadap,Pekalongan,Jawa Tengah,-6.978159,109.69071
+IDN.10.22.8_1,Kedungwuni,Pekalongan,Jawa Tengah,-6.965184,109.650201
+IDN.10.22.9_1,Kesesi,Pekalongan,Jawa Tengah,-7.026151,109.516704
+IDN.10.22.10_1,Lebakbarang,Pekalongan,Jawa Tengah,-7.132837,109.657553
+IDN.10.22.11_1,Paninggaran,Pekalongan,Jawa Tengah,-7.155139,109.583903
+IDN.10.22.12_1,Petungkriyono,Pekalongan,Jawa Tengah,-7.153854,109.733812
+IDN.10.22.13_1,Siwalan,Pekalongan,Jawa Tengah,-6.889259,109.587345
+IDN.10.22.14_1,Sragi,Pekalongan,Jawa Tengah,-6.947944,109.55269
+IDN.10.22.15_1,Talun,Pekalongan,Jawa Tengah,-7.044414,109.732039
+IDN.10.22.16_1,Tirto,Pekalongan,Jawa Tengah,-6.900661,109.637059
+IDN.10.22.17_1,Wiradesa,Pekalongan,Jawa Tengah,-6.906213,109.612272
+IDN.10.22.18_1,Wonokerto,Pekalongan,Jawa Tengah,-6.863535,109.625093
+IDN.10.22.19_1,Wonopringgo,Pekalongan,Jawa Tengah,-6.99112,109.635301
+IDN.10.23.1_1,Ampelgading,Pemalang,Jawa Tengah,-6.948212,109.477834
+IDN.10.23.2_1,Bantarbolang,Pemalang,Jawa Tengah,-7.044684,109.396813
+IDN.10.23.3_1,Belik,Pemalang,Jawa Tengah,-7.1607,109.336304
+IDN.10.23.4_1,Bodeh,Pemalang,Jawa Tengah,-7.033121,109.477003
+IDN.10.23.5_1,Comal,Pemalang,Jawa Tengah,-6.884617,109.53207
+IDN.10.23.6_1,Moga,Pemalang,Jawa Tengah,-7.127419,109.242313
+IDN.10.23.7_1,Pemalang,Pemalang,Jawa Tengah,-6.933274,109.36433
+IDN.10.23.8_1,Petarukan,Pemalang,Jawa Tengah,-6.880571,109.47181
+IDN.10.23.9_1,Pulosari,Pemalang,Jawa Tengah,-7.189614,109.240249
+IDN.10.23.10_1,Randudongkal,Pemalang,Jawa Tengah,-7.056501,109.318687
+IDN.10.23.11_1,Taman,Pemalang,Jawa Tengah,-6.90884,109.422788
+IDN.10.23.12_1,Ulujami,Pemalang,Jawa Tengah,-6.840689,109.541017
+IDN.10.23.13_1,Warungpring,Pemalang,Jawa Tengah,-7.081358,109.263805
+IDN.10.23.14_1,Watukumpul,Pemalang,Jawa Tengah,-7.160279,109.456686
+IDN.10.28.1_1,Ambarawa,Semarang,Jawa Tengah,-7.258443,110.395724
+IDN.10.28.2_1,Bancak,Semarang,Jawa Tengah,-7.254595,110.598619
+IDN.10.28.3_1,Bandungan,Semarang,Jawa Tengah,-7.221543,110.363342
+IDN.10.28.4_1,Banyubiru,Semarang,Jawa Tengah,-7.32328,110.411469
+IDN.10.28.5_1,Bawen,Semarang,Jawa Tengah,-7.232247,110.446919
+IDN.10.28.6_1,Bergas,Semarang,Jawa Tengah,-7.174029,110.405576
+IDN.10.28.7_1,Bringin,Semarang,Jawa Tengah,-7.22881,110.551279
+IDN.10.28.8_1,Getasan,Semarang,Jawa Tengah,-7.388332,110.443688
+IDN.10.28.9_1,Jambu,Semarang,Jawa Tengah,-7.291394,110.351039
+IDN.10.28.10_1,Kaliwungu,Semarang,Jawa Tengah,-7.470291,110.619089
+IDN.10.28.11_1,Pabelan,Semarang,Jawa Tengah,-7.304681,110.542483
+IDN.10.28.12_1,Pringapus,Semarang,Jawa Tengah,-7.17145,110.502339
+IDN.10.28.13_1,Sumowono,Semarang,Jawa Tengah,-7.225451,110.298756
+IDN.10.28.14_1,Suruh,Semarang,Jawa Tengah,-7.349717,110.591242
+IDN.10.28.15_1,Susukan,Semarang,Jawa Tengah,-7.410049,110.600781
+IDN.10.28.16_1,Tengaran,Semarang,Jawa Tengah,-7.400409,110.531991
+IDN.10.28.17_1,Tuntang,Semarang,Jawa Tengah,-7.278558,110.477025
+IDN.10.28.18_1,Ungaran Barat,Semarang,Jawa Tengah,-7.133844,110.382994
+IDN.10.28.19_1,Ungaran Timur,Semarang,Jawa Tengah,-7.122055,110.450428
+IDN.10.28.20_1,Waduk Rawapening,Semarang,Jawa Tengah,-7.286437,110.433415
+IDN.10.32.1_1,Adiwerna,Tegal,Jawa Tengah,-6.936316,109.109896
+IDN.10.32.2_1,Balapulang,Tegal,Jawa Tengah,-7.083466,109.109072
+IDN.10.32.3_1,Bojong,Tegal,Jawa Tengah,-7.155692,109.176894
+IDN.10.32.4_1,Bumijawa,Tegal,Jawa Tengah,-7.187212,109.1254
+IDN.10.32.5_1,Dukuhturi,Tegal,Jawa Tengah,-6.902016,109.107475
+IDN.10.32.6_1,Dukuhwaru,Tegal,Jawa Tengah,-6.97188,109.09641
+IDN.10.32.7_1,Jatinegara,Tegal,Jawa Tengah,-7.045849,109.226908
+IDN.10.32.8_1,Kedungbanteng,Tegal,Jawa Tengah,-6.978286,109.225552
+IDN.10.32.9_1,Kramat,Tegal,Jawa Tengah,-6.880388,109.194156
+IDN.10.32.10_1,Lebaksiu,Tegal,Jawa Tengah,-7.031276,109.126165
+IDN.10.32.11_1,Margasari,Tegal,Jawa Tengah,-7.098852,109.018661
+IDN.10.32.12_1,Pagerbarang,Tegal,Jawa Tengah,-7.015657,109.054145
+IDN.10.32.13_1,Pangkah,Tegal,Jawa Tengah,-6.988963,109.164709
+IDN.10.32.14_1,Slawi,Tegal,Jawa Tengah,-6.986629,109.133301
+IDN.10.32.15_1,Suradadi,Tegal,Jawa Tengah,-6.909481,109.257326
+IDN.10.32.16_1,Talang,Tegal,Jawa Tengah,-6.911441,109.150363
+IDN.10.32.17_1,Tarub,Tegal,Jawa Tengah,-6.924817,109.184234
+IDN.10.32.18_1,Warureja,Tegal,Jawa Tengah,-6.916773,109.316188
