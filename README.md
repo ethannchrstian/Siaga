@@ -1,3 +1,14 @@
+---
+title: SIAGA
+emoji: 🌊
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 8000
+pinned: false
+license: mit
+---
+
 # SIAGA — purwarupa
 
 Papan kendali Pusdalops untuk peringatan dini banjir dan kekeringan pesisir
