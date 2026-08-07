@@ -110,7 +110,7 @@ export default function Overview({ risk, result, date, locks, rejects, onSelect 
                 <span className="hazard-prob flood">B {Math.round(district.flood_prob * 100)}%</span>
                 <span className="hazard-prob drought">C {Math.round(district.drought_prob * 100)}%</span>
                 <span className={`report-status ${plannedIds.has(district.district_id) ? "planned" : "open"}`}>
-                  {plannedIds.has(district.district_id) ? "Dalam rencana" : "Belum dialokasikan"}
+                  {plannedIds.has(district.district_id) ? "Dalam rencana" : "Di luar kapasitas"}
                 </span>
               </button>
             ))}
@@ -284,7 +284,7 @@ function rejectedNames(rejects: Set<string>, risk: Map<string, RiskDistrict>) {
 }
 
 function exposureOf(district: RiskDistrict) {
-  return Math.max(district.flood_prob, district.drought_prob) * district.population;
+  return district.people_exposed;
 }
 
 function situationSummary(monitored: number, compound: number, served: number, proactive: number) {

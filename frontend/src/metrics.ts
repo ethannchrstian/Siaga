@@ -25,7 +25,10 @@ export function computeKpis(
   const plannedIds = new Set((result?.plan ?? []).map((item) => item.district_id));
   for (const d of risk.values()) {
     const p = Math.max(d.flood_prob, d.drought_prob);
-    if (p >= CRITICAL_ALLOCATION_THRESHOLD) exposed += p * d.population;
+    // people_exposed comes from the backend at full precision. Recomputing it
+    // from the rounded probabilities above is what made this page disagree
+    // with the plan panel about the same kecamatan.
+    if (p >= CRITICAL_ALLOCATION_THRESHOLD) exposed += d.people_exposed;
     if (p >= MONITORING_THRESHOLD) {
       aboveMonitoring += 1;
       if (plannedIds.has(d.district_id)) coveredMonitoring += 1;
@@ -69,7 +72,7 @@ export function topExposed(
       district_id: d.district_id,
       name: d.name,
       kabupaten: d.kabupaten,
-      exposed: Math.round(p * d.population),
+      exposed: d.people_exposed,
       flood: d.flood_prob,
       drought: d.drought_prob,
       dominant: d.drought_prob >= d.flood_prob ? "drought" : "flood",
@@ -83,7 +86,8 @@ export function fmtInt(n: number): string {
 }
 
 export function fmtCompact(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)} jt`;
+  // Indonesian uses a comma as the decimal separator: 24,1 jt, not 24.1 jt.
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(".", ",")} jt`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(0)} rb`;
-  return String(n);
+  return fmtInt(n);
 }

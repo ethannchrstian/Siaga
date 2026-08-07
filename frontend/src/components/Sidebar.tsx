@@ -1,7 +1,15 @@
-import { useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import type { AllocateResponse, PlanItem } from "../api/client";
 import { useCountUp } from "../hooks/useCountUp";
-import { ChevronDownIcon, InfoIcon, SearchIcon } from "../icons";
+import {
+  AlertIcon,
+  ChevronDownIcon,
+  ClockIcon,
+  FleetIcon,
+  InfoIcon,
+  PeopleIcon,
+  SearchIcon,
+} from "../icons";
 import { CRITICAL_ALLOCATION_THRESHOLD_HELP } from "../thresholds";
 
 interface Props {
@@ -12,6 +20,7 @@ interface Props {
   onLock: (plan: PlanItem) => void;
   onReject: (plan: PlanItem) => void;
   onClearReject: (key: string) => void;
+  onClearLocks: () => void;
   onSelect: (districtId: string) => void;
   labelFor: (key: string) => string;
   /** SIAGA recommendations remain visible while the map shows the baseline. */
@@ -19,6 +28,10 @@ interface Props {
   /** Expected-covered change caused by the latest lock/reject decision. */
   coverageDelta?: number | null;
   crew?: { used: number; total: number };
+  /** Kecamatan selected on the map; its card scrolls into view and flashes. */
+  selectedId?: string | null;
+  /** Reports the card under the cursor so the map can outline it. */
+  onHover?: (districtId: string | null) => void;
 }
 
 interface DecisionGroup {
@@ -41,14 +54,28 @@ export default function Sidebar({
   onLock,
   onReject,
   onClearReject,
+  onClearLocks,
   onSelect,
   labelFor,
   readonly = false,
   coverageDelta,
   crew,
+  selectedId,
+  onHover,
 }: Props) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<DecisionFilter>("all");
+  // On a first visit the top card's evidence is open, so a new viewer sees
+  // that a "why" exists at all. Returning users keep it collapsed.
+  const [expandFirst] = useState(() => {
+    try {
+      if (localStorage.getItem("siaga_seen_evidence")) return false;
+      localStorage.setItem("siaga_seen_evidence", "1");
+      return true;
+    } catch {
+      return false;
+    }
+  });
   const summary = result?.summary;
   const covered = useCountUp(result?.comparison?.siaga.expected_covered ?? 0, 600);
   const groups = useMemo(() => groupPlan(result?.plan ?? []), [result]);
@@ -71,6 +98,13 @@ export default function Sidebar({
     ? "Kembali ke mode Terpadu untuk mengubah rencana"
     : undefined;
 
+  // Clicking a kecamatan on the map should surface its card rather than leave
+  // the operator scrolling a list of nine to find it.
+  const selectedCardRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    selectedCardRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [selectedId]);
+
   return (
     <aside className="sidebar decision-sidebar">
       <div className="sidebar-head">
@@ -79,6 +113,13 @@ export default function Sidebar({
           <div className="sidebar-title">Rencana prapenempatan</div>
           <span className="plan-count">{groups.length}</span>
         </div>
+        {/* Locks persist across a reload, so there has to be one obvious way
+            back to the optimizer's own recommendation. */}
+        {locks.size > 0 && !readonly && (
+          <button type="button" className="clear-locks" onClick={onClearLocks}>
+            {locks.size} keputusan dikunci · lepas semua
+          </button>
+        )}
         {summary && (
           <div className="decision-summary-line">
             <span><b>{summary.n_districts_served}</b> kecamatan</span>
@@ -195,9 +236,12 @@ export default function Sidebar({
             const isCompound = new Set(group.items.map((item) => item.resource)).size > 1;
             return (
             <article
-              className={`decision-card${isCompound ? " compound" : ""}`}
+              className={`decision-card${isCompound ? " compound" : ""}${selectedId === group.districtId ? " is-selected" : ""}`}
               key={group.districtId}
+              ref={selectedId === group.districtId ? selectedCardRef : undefined}
               style={{ "--i": index } as CSSProperties}
+              onMouseEnter={() => onHover?.(group.districtId)}
+              onMouseLeave={() => onHover?.(null)}
             >
               <header className="decision-card-head">
                 <span className="decision-rank">{String(index + 1).padStart(2, "0")}</span>
@@ -225,7 +269,9 @@ export default function Sidebar({
                     <section className={`decision-resource-row ${flood ? "flood" : "drought"}`} key={itemKey}>
                       <div className="decision-resource-main">
                         <span className="decision-resource-type">{flood ? "Banjir · 0–72 jam" : "Cekaman air · bulan depan"}</span>
-                        <span className="decision-travel-time">{item.minutes} menit</span>
+                        <span className="decision-travel-time" title={`Waktu tempuh dari ${item.from_depot}`}>
+                          <ClockIcon size={12} /> {item.minutes} mnt
+                        </span>
                         <strong>{item.units} {item.resource_label}</strong>
                         <span className="decision-depot">dari {item.from_depot}</span>
                       </div>
@@ -258,10 +304,47 @@ export default function Sidebar({
                 })}
               </div>
 
-              {group.items[0]?.reason && (
-                <details className="decision-reason">
+              {group.items[0] && (
+                // The backend `reason` string is a prose serialisation of
+                // fields we already hold. Rendering it as a paragraph makes
+                // four facts unreadable; render the fields as evidence and
+                // keep the sentence only as the tooltip.
+                <details className="decision-reason" open={index === 0 && expandFirst}>
                   <summary>Mengapa diprioritaskan?</summary>
-                  <p>{group.items[0].reason}</p>
+                  <div className="evidence-grid" title={group.items[0].reason}>
+                    <div className="evidence-cell">
+                      <span className="evidence-icon hazard" aria-hidden="true"><AlertIcon size={13} /></span>
+                      <div>
+                        <small>Peluang bahaya</small>
+                        <b>{Math.round(group.items[0].hazard_prob * 100)}%</b>
+                        <em>{group.items[0].resource === "pompa" ? "banjir 0–72 jam" : "cekaman air bulan depan"}</em>
+                      </div>
+                    </div>
+                    <div className="evidence-cell">
+                      <span className="evidence-icon people" aria-hidden="true"><PeopleIcon size={13} /></span>
+                      <div>
+                        <small>Jiwa terpapar</small>
+                        <b>{idNum(group.exposure)}</b>
+                        <em>peluang × populasi</em>
+                      </div>
+                    </div>
+                    <div className="evidence-cell">
+                      <span className="evidence-icon travel" aria-hidden="true"><ClockIcon size={13} /></span>
+                      <div>
+                        <small>Waktu tempuh</small>
+                        <b>{group.items[0].minutes} menit</b>
+                        <em>dari {group.items[0].from_depot}</em>
+                      </div>
+                    </div>
+                    <div className="evidence-cell">
+                      <span className="evidence-icon fleet" aria-hidden="true"><FleetIcon size={13} /></span>
+                      <div>
+                        <small>Dikirim</small>
+                        <b>{group.items.reduce((sum, i) => sum + i.units, 0)} unit</b>
+                        <em>{group.items.map((i) => i.resource_label).join(" + ")}</em>
+                      </div>
+                    </div>
+                  </div>
                 </details>
               )}
             </article>

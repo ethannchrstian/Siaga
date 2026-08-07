@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import {
@@ -8,6 +8,7 @@ import {
   type RiskDistrict,
 } from "../api/client";
 import { mapStyleFor, type ViewMode } from "../hazard";
+import { playDispatch, playRedirect } from "./dispatchAnimation";
 import { CRITICAL_ALLOCATION_THRESHOLD, MONITORING_THRESHOLD } from "../thresholds";
 import {
   depotSvg,
@@ -53,6 +54,12 @@ const BASE_STYLE: maplibregl.StyleSpecification = {
   ],
 };
 
+// Allocation badges are anchored on a kecamatan's centroid and can be ~100px
+// wide when a district gets both a pump and a truck. Cilincing sits at the far
+// west end of the corridor, so a tight fit clipped half its badge against the
+// canvas edge. Pad enough for the widest marker on either side.
+const CORRIDOR_PADDING = { top: 84, bottom: 34, left: 76, right: 76 };
+
 interface Props {
   risk: Map<string, RiskDistrict>;
   mode: ViewMode;
@@ -60,6 +67,19 @@ interface Props {
   plan: PlanItem[];
   onSelect: (districtId: string) => void;
   onDepot: (depotId: string) => void;
+  /** Kecamatan under the cursor in the decision list; outlined on the map. */
+  highlightedId?: string | null;
+  /** "districtId:resource" keys the operator has locked; drawn as committed. */
+  lockedKeys?: Set<string>;
+}
+
+export interface MapHandle {
+  /** Pan to a kecamatan and pulse it, so a card click has a visible target. */
+  focusDistrict: (districtId: string) => void;
+  /** Send a unit along its route; resolves on arrival. */
+  dispatch: (item: PlanItem) => void;
+  /** Show a route being cut before the optimizer re-solves around it. */
+  redirect: (item: PlanItem) => void;
 }
 
 class ResetViewControl implements maplibregl.IControl {
@@ -169,7 +189,10 @@ function styleDistricts(
   };
 }
 
-export default function MapView({ risk, mode, depots, plan, onSelect, onDepot }: Props) {
+function MapView(
+  { risk, mode, depots, plan, onSelect, onDepot, highlightedId, lockedKeys }: Props,
+  ref: React.Ref<MapHandle>,
+) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const readyRef = useRef(false);
@@ -181,10 +204,13 @@ export default function MapView({ risk, mode, depots, plan, onSelect, onDepot }:
   riskRef.current = risk;
   const planRef = useRef<PlanItem[]>(plan);
   planRef.current = plan;
+  const lockedKeysRef = useRef<Set<string>>(lockedKeys ?? new Set());
+  lockedKeysRef.current = lockedKeys ?? new Set();
   const depotMarkersRef = useRef<maplibregl.Marker[]>([]);
   const allocMarkersRef = useRef<maplibregl.Marker[]>([]);
   const boundsRef = useRef<[[number, number], [number, number]] | null>(null);
   const fadeTokenRef = useRef(0);
+  const dispatchTokenRef = useRef(0);
   const hadPlanRef = useRef(false);
 
   useEffect(() => {
@@ -203,20 +229,38 @@ export default function MapView({ risk, mode, depots, plan, onSelect, onDepot }:
       new ResetViewControl(() => {
         if (!boundsRef.current) return;
         map.fitBounds(boundsRef.current, {
-          padding: { top: 80, bottom: 24, left: 24, right: 24 },
+          padding: CORRIDOR_PADDING,
           duration: 350,
         });
       }),
       "top-right",
     );
     map.addControl(new maplibregl.FullscreenControl(), "top-right");
+
+    async function fetchDistrictsWithRetry(attempts = 4) {
+      for (let i = 0; i < attempts; i++) {
+        try {
+          return await getDistricts();
+        } catch (e) {
+          if (i === attempts - 1) {
+            console.error("[SIAGA] gagal memuat batas kecamatan:", e);
+            return null;
+          }
+          await new Promise((r) => setTimeout(r, 400 * 2 ** i));
+        }
+      }
+      return null;
+    }
     map.on("error", (e) => console.error("[SIAGA] map error:", e.error));
 
     const ro = new ResizeObserver(() => map.resize());
     ro.observe(containerRef.current);
 
     map.on("load", async () => {
-      const districts = await getDistricts();
+      // A cold backend loses this race and the map silently ends up with no
+      // polygons and no click handlers. Retry rather than fail closed.
+      const districts = await fetchDistrictsWithRetry();
+      if (!districts) return;
       let minX = 180, minY = 90, maxX = -180, maxY = -90;
       for (const f of districts.features) {
         centroidsRef.current.set(f.properties.district_id, centroid(f.geometry));
@@ -248,6 +292,32 @@ export default function MapView({ risk, mode, depots, plan, onSelect, onDepot }:
         paint: {
           "fill-color": ["coalesce", ["get", "color"], "#f3f4f4"],
           "fill-opacity": ["coalesce", ["get", "opacity"], 0.66],
+        },
+      });
+      // The kecamatan the operator is pointing at in the plan list. A fill
+      // tint plus an outline: an outline alone is easy to lose among 324
+      // polygons, and the point is to make "this card is that place" instant.
+      // Filtered rather than re-baked, so hovering costs nothing.
+      map.addLayer({
+        id: "district-highlight-fill",
+        type: "fill",
+        source: "districts",
+        filter: ["==", ["get", "district_id"], "__none__"],
+        paint: {
+          "fill-color": "#12182d",
+          "fill-opacity": 0.24,
+        },
+      });
+      map.addLayer({
+        id: "district-highlight",
+        type: "line",
+        source: "districts",
+        filter: ["==", ["get", "district_id"], "__none__"],
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: {
+          "line-color": "#12182d",
+          "line-width": 2.6,
+          "line-opacity": 0.95,
         },
       });
       map.addSource("arrows", { type: "geojson", data: emptyFC() });
@@ -312,7 +382,7 @@ export default function MapView({ risk, mode, depots, plan, onSelect, onDepot }:
       boundsRef.current = [[minX, minY], [maxX, maxY]];
       const fit = () =>
         mapRef.current?.fitBounds(boundsRef.current!, {
-          padding: { top: 80, bottom: 24, left: 24, right: 24 },
+          padding: CORRIDOR_PADDING,
           duration: 0,
         });
       // Re-fit after each resize so the settled canvas shows the whole corridor.
@@ -420,18 +490,32 @@ export default function MapView({ risk, mode, depots, plan, onSelect, onDepot }:
     for (const [did, items] of byDistrict) {
       const c = centroidsRef.current.get(did);
       if (!c) continue;
+      // Compound districts need both a pump and a truck on the same day: the
+      // thesis case. Flag it on the map so it isn't just another grey polygon.
+      const isCompound = new Set(items.map((p) => p.resource)).size > 1;
       const el = document.createElement("div");
-      el.className = "alloc-marker";
-      el.innerHTML = items
+      el.className = `alloc-marker${isCompound ? " alloc-marker-compound" : ""}`;
+      const badges = items
         .map((p) => {
           const isPump = p.resource === "pompa";
           const color = isPump ? FLOOD : DROUGHT;
           const icon = isPump ? pumpSvg("#ffffff") : truckSvg("#ffffff");
-          return `<span class="alloc-badge alloc-badge-${isPump ? "flood" : "drought"}" style="--marker-color:${color}">${icon}<b>${p.units}</b></span>`;
+          // A locked allocation is a committed decision, so it stays visibly
+          // different: the travelling unit lands and becomes this.
+          const locked = lockedKeysRef.current.has(`${p.district_id}:${p.resource}`);
+          return `<span class="alloc-badge alloc-badge-${isPump ? "flood" : "drought"}${locked ? " is-locked" : ""}" style="--marker-color:${color}">${icon}<b>${p.units}</b>${locked ? '<i class="alloc-lock" aria-hidden="true">&#10003;</i>' : ""}</span>`;
         })
         .join("");
+      // Stacked in normal flow, never absolutely positioned: a MapLibre marker
+      // element owns its own position/transform, and overriding either detaches
+      // it from its coordinate.
+      el.innerHTML = isCompound
+        ? `<span class="alloc-flag" aria-hidden="true">DUA BAHAYA</span><span class="alloc-badges">${badges}</span>`
+        : badges;
       el.onclick = () => onSelect(did);
-      el.title = items.map((p) => `${p.units} ${p.resource_label}`).join(" + ");
+      el.title = isCompound
+        ? `Dua bahaya bersamaan · ${items.map((p) => `${p.units} ${p.resource_label}`).join(" + ")}`
+        : items.map((p) => `${p.units} ${p.resource_label}`).join(" + ");
       // Mount transparent; the CSS transition fades it in on the next frame.
       el.style.opacity = "0";
       requestAnimationFrame(() => {
@@ -500,9 +584,113 @@ export default function MapView({ risk, mode, depots, plan, onSelect, onDepot }:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan]);
 
-  return <div ref={containerRef} style={{ width: "100%", height: "100%" }} />;
+  useEffect(() => {
+    const map = mapRef.current;
+    // Guard both layers, not just one: filtering a layer that does not exist
+    // yet throws, and they can be briefly out of step during a hot reload.
+    if (
+      !map ||
+      !readyRef.current ||
+      !map.getLayer("district-highlight") ||
+      !map.getLayer("district-highlight-fill")
+    ) {
+      return;
+    }
+    const filter: maplibregl.FilterSpecification = [
+      "==",
+      ["get", "district_id"],
+      highlightedId ?? "__none__",
+    ];
+    map.setFilter("district-highlight", filter);
+    map.setFilter("district-highlight-fill", filter);
+  }, [highlightedId]);
+
+  // Locking does not always change the plan, so the badges need their own
+  // repaint trigger to pick up the committed state.
+  useEffect(() => {
+    paintAllocMarkers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lockedKeys]);
+
+  // The drawer no longer overlaps the canvas (it takes its own width via
+  // .map-wrap.with-drawer), so framing only needs room for the floating
+  // controls at the top and the legend at the bottom left.
+  const FRAME_PADDING = { top: 74, bottom: 46, left: 56, right: 56 };
+
+  useImperativeHandle(ref, () => ({
+    focusDistrict(districtId: string) {
+      const map = mapRef.current;
+      const center = centroidsRef.current.get(districtId);
+      if (!map || !center) return;
+      // Wait a frame so the canvas has finished shrinking for the drawer,
+      // otherwise we centre against the old width and it lands off to one side.
+      window.setTimeout(() => {
+        const m = mapRef.current;
+        if (!m) return;
+        m.resize();
+        m.easeTo({ center, zoom: Math.max(m.getZoom(), 8.6), duration: 700 });
+        pulseAt(m, center);
+      }, 240);
+    },
+    dispatch(item: PlanItem) {
+      const map = mapRef.current;
+      const to = centroidsRef.current.get(item.district_id);
+      const dep = depotsRef.current.find((d) => d.name === item.from_depot);
+      if (!map || !to || !dep) return;
+      const token = ++dispatchTokenRef.current;
+      const from: [number, number] = [dep.lon, dep.lat];
+      // Frame the whole route first, otherwise the unit can travel entirely
+      // off-screen and the operator sees nothing at all.
+      map.fitBounds(
+        [
+          [Math.min(from[0], to[0]), Math.min(from[1], to[1])],
+          [Math.max(from[0], to[0]), Math.max(from[1], to[1])],
+        ],
+        { padding: FRAME_PADDING, maxZoom: 10, duration: 600 },
+      );
+      window.setTimeout(() => {
+        if (token !== dispatchTokenRef.current || !mapRef.current) return;
+        playDispatch(map, from, to, item.resource, () => token !== dispatchTokenRef.current)
+          .then(() => {
+            if (token === dispatchTokenRef.current) {
+              pulseAt(map, to, item.resource === "pompa" ? "flood" : "drought");
+            }
+          });
+      }, 640);
+    },
+    redirect(item: PlanItem) {
+      const map = mapRef.current;
+      const to = centroidsRef.current.get(item.district_id);
+      const dep = depotsRef.current.find((d) => d.name === item.from_depot);
+      if (!map || !to || !dep) return;
+      dispatchTokenRef.current += 1; // cancel any unit still in flight
+      const from: [number, number] = [dep.lon, dep.lat];
+      map.fitBounds(
+        [
+          [Math.min(from[0], to[0]), Math.min(from[1], to[1])],
+          [Math.max(from[0], to[0]), Math.max(from[1], to[1])],
+        ],
+        { padding: FRAME_PADDING, maxZoom: 10, duration: 500 },
+      );
+      playRedirect(map, from, to);
+    },
+  }));
+
+  // Sized by CSS, not inline style, so the wrapper can shrink the canvas when a
+  // drawer opens. The ResizeObserver above turns that into a map.resize().
+  return <div ref={containerRef} className="map-canvas" />;
 }
 
 function emptyFC(): GeoJSON.FeatureCollection {
   return { type: "FeatureCollection", features: [] };
 }
+
+/** One-shot ring at a coordinate: gives a click or an arrival a visible target. */
+function pulseAt(map: maplibregl.Map, at: [number, number], tone = "flood") {
+  const el = document.createElement("div");
+  el.className = `map-pulse map-pulse-${tone}`;
+  const marker = new maplibregl.Marker({ element: el }).setLngLat(at).addTo(map);
+  window.setTimeout(() => marker.remove(), 1100);
+}
+
+export default forwardRef<MapHandle, Props>(MapView);

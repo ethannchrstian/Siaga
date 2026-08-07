@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import MapView from "./components/MapView";
+import MapView, { type MapHandle } from "./components/MapView";
 import Controls, { type CompareMode } from "./components/Controls";
 import CompareBanner from "./components/CompareBanner";
 import Legend from "./components/Legend";
@@ -15,6 +15,7 @@ import Toasts, { type Toast } from "./components/Toasts";
 import Header from "./components/Header";
 import ReplayControl from "./components/ReplayControl";
 import {
+  friendlyError,
   getDistricts,
   getRisk,
   getRiskRange,
@@ -30,7 +31,8 @@ import {
   type ScenarioResponse,
 } from "./api/client";
 import type { ViewMode } from "./hazard";
-import { computeKpis } from "./metrics";
+import { computeKpis, fmtCompact, fmtInt } from "./metrics";
+import { EyeIcon, ShieldIcon, TargetIcon } from "./icons";
 import "./App.css";
 import "./redesign.css";
 
@@ -41,6 +43,17 @@ const PRESETS = [
 ];
 
 const keyOf = (p: PlanItem) => `${p.district_id}:${p.resource}`;
+
+function loadLocks(): Map<string, Lock> {
+  try {
+    const raw = sessionStorage.getItem("siaga_locks");
+    if (!raw) return new Map();
+    const items = JSON.parse(raw) as Lock[];
+    return new Map(items.map((l) => [`${l.district_id}:${l.resource}`, l]));
+  } catch {
+    return new Map();
+  }
+}
 
 type DisruptionTarget = Pick<
   PlanItem,
@@ -58,11 +71,28 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [locks, setLocks] = useState<Map<string, Lock>>(new Map());
+  // Locks are deliberate operator decisions, so they survive a reload; losing
+  // them on an accidental refresh mid-demo is worse than carrying them over.
+  // Rejects are not persisted: most come from the scripted "jalur putus"
+  // simulation, and restoring a disruption you can't see the cause of is
+  // confusing. Session-scoped, so closing the tab still gives a clean slate.
+  const [locks, setLocks] = useState<Map<string, Lock>>(loadLocks);
   const [rejects, setRejects] = useState<Map<string, Reject>>(new Map());
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem("siaga_locks", JSON.stringify([...locks.values()]));
+    } catch {
+      // storage disabled; locks simply stay in memory
+    }
+  }, [locks]);
 
   const [selected, setSelected] = useState<string | null>(null);
   const [selectedDepot, setSelectedDepot] = useState<string | null>(null);
+  // Kecamatan under the cursor in the plan list, outlined on the map so a card
+  // and a place are obviously the same thing.
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const mapHandleRef = useRef<MapHandle>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   // Hindcast replay: sweep the 3 weeks leading into the selected date. While
@@ -87,7 +117,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    getScenario().then(setScenario).catch((e) => setError(String(e)));
+    getScenario().then(setScenario).catch((e) => setError(friendlyError(e)));
     getDistricts()
       .then((fc) => {
         const next = new Map<string, DistrictProperties>();
@@ -107,11 +137,11 @@ export default function App() {
         setRisk(m);
         setError(null);
       })
-      .catch((e) => setError(String(e)));
+      .catch((e) => setError(friendlyError(e)));
   }, [date]);
 
   // Coverage delta between consecutive re-solves on the same date: the
-  // visible cost/benefit of each Kunci/Tolak decision.
+  // visible cost/benefit of each Kunci/Alihkan decision.
   const [coverageDelta, setCoverageDelta] = useState<number | null>(null);
   const prevCoveredRef = useRef<{ date: string; covered: number } | null>(null);
   const deltaTimerRef = useRef<number | null>(null);
@@ -170,7 +200,7 @@ export default function App() {
       })
       .catch((e) => {
         if (requestId !== allocationRequestRef.current) return;
-        const message = String(e);
+        const message = friendlyError(e);
         setError(message);
         if (disruptionRef.current) {
           pushToast("Pengalihan rute gagal. Periksa koneksi backend lalu coba lagi.", "reject");
@@ -203,12 +233,15 @@ export default function App() {
       else next.set(k, { district_id: p.district_id, resource: p.resource, units: p.units });
       return next;
     });
-    if (isLocking)
+    if (isLocking) {
+      // Send the unit down its route so locking reads as a dispatch, not just
+      // a button changing colour.
+      mapHandleRef.current?.dispatch(p);
       pushToast(
-        `Dikunci: ${p.units} ${p.resource_label} ke ${p.district}. Rencana dioptimasi ulang di sekitarnya.`,
+        `Dikunci: ${p.units} ${p.resource_label} berangkat ke ${p.district}.`,
         "lock",
       );
-    else pushToast(`Kunci dilepas untuk ${p.district}.`, "info");
+    } else pushToast(`Kunci dilepas untuk ${p.district}.`, "info");
   };
   const onReject = (p: PlanItem) => {
     const k = keyOf(p);
@@ -219,8 +252,10 @@ export default function App() {
       next.delete(k);
       return next;
     });
+    // Cut the route on the map while the optimizer re-solves around it.
+    mapHandleRef.current?.redirect(p);
     pushToast(
-      `Ditolak: ${p.resource_label} untuk ${p.district}. Sumber daya dialihkan.`,
+      `Rute ke ${p.district} ditutup. Mengalihkan ${p.resource_label}…`,
       "reject",
     );
   };
@@ -275,7 +310,7 @@ export default function App() {
       })
       .catch((e) => {
         if (requestId !== replayRequestRef.current) return;
-        setError(String(e));
+        setError(friendlyError(e));
         pushToast("Gagal mengembalikan risiko ke tanggal aktif.", "reject");
       })
       .finally(() => {
@@ -329,7 +364,7 @@ export default function App() {
       })
       .catch((e) => {
         if (requestId !== replayRequestRef.current) return;
-        const message = String(e);
+        const message = friendlyError(e);
         setError(message);
         setReplayLoading(false);
         pushToast("Putar ulang tidak dapat dimulai untuk tanggal ini.", "reject");
@@ -338,7 +373,7 @@ export default function App() {
 
   // Scripted disruption: a field report cuts the route to the top flood
   // allocation; the operator rejects it and watches the plan re-route. Same
-  // mechanics as a manual Tolak — only the narrative differs.
+  // mechanics as a manual Alihkan, only the narrative differs.
   const simulateDisruption = useCallback(() => {
     if (loading || disruptionRef.current) return;
     const p = result?.plan ?? [];
@@ -391,6 +426,9 @@ export default function App() {
     [replay, compare, plan, result],
   );
   const kpis = useMemo(() => computeKpis(risk, result), [risk, result]);
+  // Stable identity so MapView's repaint effect only fires on real changes.
+  const lockedKeySet = useMemo(() => new Set(locks.keys()), [locks]);
+
   // Crew usage for the plan currently on the map (one crew per unit).
   const crew = useMemo(() => {
     const dispatch =
@@ -415,6 +453,9 @@ export default function App() {
     setView("peta");
     setSelectedDepot(null);
     setSelected(id);
+    // Selecting from a list should move the map, otherwise the operator has to
+    // find the kecamatan themselves to see what the card is talking about.
+    mapHandleRef.current?.focusDistrict(id);
   };
   const onDepot = (depotId: string) => {
     setSelected(null);
@@ -424,6 +465,11 @@ export default function App() {
 
   return (
     <div className="app">
+      {/* The rail is full height and sits beside the command bar, so there is
+          one navigation surface rather than two competing strips of chrome. */}
+      <NavRail view={view} onView={setView} monitoringCount={kpis.aboveMonitoring} lastUpdated={date} />
+
+      <div className="app-main">
       <Header
         date={date}
         dateMin={scenario?.date_min ?? "2015-01-30"}
@@ -434,37 +480,59 @@ export default function App() {
         disabled={replayLoading || replay !== null}
       />
 
-      {error && <div className="errbar">Gagal memuat data: {error}</div>}
+      {error && (
+        <div className="errbar" role="alert">
+          <span>{error}</span>
+          <button type="button" onClick={() => { setError(null); setDate((d) => d); reallocate(); }}>
+            Coba lagi
+          </button>
+        </div>
+      )}
+      {/* Screen readers get told when a re-solve lands; the visual delta badge
+          is the only signal otherwise. */}
+      <div className="sr-only" aria-live="polite">
+        {loading ? "Menghitung ulang rencana alokasi" : result ? `Rencana diperbarui: ${result.summary.n_districts_served} kecamatan` : ""}
+      </div>
 
       <div className="body">
-        <NavRail view={view} onView={setView} monitoringCount={kpis.aboveMonitoring} lastUpdated={date} />
 
         {view === "peta" && (
           <div className="peta">
-            <section className="briefing-band" aria-label="Ringkasan situasi">
-              <div className="briefing-intro">
-                <div className="briefing-eyebrow">
-                  <span className="briefing-pulse" /> Situasi koridor Pantura
-                </div>
-                <h1>Peta &amp; alokasi</h1>
-                <p>Banjir 0–72 jam · cekaman air bulan depan</p>
-              </div>
-              <MapSituationStrip
+            {/* Page identity on its own line: a title and the task model are
+                not metrics and were competing with the numbers beside them. */}
+            <div className="page-lede">
+              <h1>Peta &amp; alokasi</h1>
+              <p>
+                Menempatkan armada terbatas <b>sebelum</b> bencana terjadi.
+                Kunci untuk menyetujui, Alihkan untuk menolak; sistem menghitung ulang.
+              </p>
+            </div>
+            <section className="stat-row" aria-label="Ringkasan situasi">
+              {/* The coordination gain is the point of the whole system, so it
+                  leads the row rather than sitting in a map corner. */}
+              {!replay && result?.comparison && (
+                <CompareBanner comparison={result.comparison} compare={compare} />
+              )}
+              <SituationFunnel
                 monitored={kpis.aboveMonitoring}
                 planned={kpis.served}
                 proactive={kpis.proactiveAllocations}
-                fleetPct={kpis.fleetPct}
+                protectedPeople={result?.comparison?.siaga.expected_covered ?? 0}
+                crew={crew}
               />
             </section>
             <main className="content">
-              <div className="map-wrap">
+              <div className={`map-wrap${selected || selectedDepot ? " with-drawer" : ""}`}>
                 <MapView
+                  ref={mapHandleRef}
                   risk={risk}
                   mode={mode}
                   depots={scenario?.depots ?? []}
                   plan={mapPlan}
                   onSelect={openDistrict}
                   onDepot={onDepot}
+                  highlightedId={hoveredId ?? selected}
+                  lockedKeys={lockedKeySet}
                 />
                 <Controls
                   mode={mode}
@@ -487,9 +555,6 @@ export default function App() {
                   />
                 )}
                 <div className="map-left-stack">
-                  {!replay && result?.comparison && (
-                    <CompareBanner comparison={result.comparison} compare={compare} />
-                  )}
                   <Legend
                     mode={mode}
                     dispatched={
@@ -504,7 +569,6 @@ export default function App() {
                   <DistrictDrawer
                     props={propsRef.current.get(selected) ?? null}
                     risk={risk.get(selected)}
-                    population={risk.get(selected)?.population}
                     assignments={assignmentsForSelected}
                     date={date}
                     onClose={() => setSelected(null)}
@@ -526,13 +590,27 @@ export default function App() {
                 onLock={onLock}
                 onReject={onReject}
                 onClearReject={onClearReject}
+                onClearLocks={() => {
+                  setLocks(new Map());
+                  pushToast("Semua kunci dilepas. Rencana kembali ke rekomendasi optimizer.", "info");
+                }}
                 onSelect={openDistrict}
                 labelFor={labelFor}
                 readonly={compare === "terpisah"}
                 coverageDelta={coverageDelta}
                 crew={crew}
+                selectedId={selected}
+                onHover={setHoveredId}
               />
             </main>
+            {/* Honesty line. Kept on the primary screen rather than buried in
+                Metode & Data, because a judge reads the map first. */}
+            <footer className="source-note">
+              <b>Hindcast 2015–2024, bukan kondisi waktu nyata.</b>{" "}
+              Curah hujan ERA5 &amp; debit sungai GloFAS via Open-Meteo · batas kecamatan GADM ·
+              populasi WorldPop. Lokasi depot memakai kedudukan BPBD sebenarnya; jumlah armada dan
+              regu bersifat skenario karena inventaris BNPB tidak terbuka.
+            </footer>
           </div>
         )}
 
@@ -566,19 +644,75 @@ export default function App() {
           />
         )}
       </div>
+      </div>
 
       <Toasts toasts={toasts} onDismiss={(id) => setToasts((t) => t.filter((x) => x.id !== id))} />
     </div>
   );
 }
 
-function MapSituationStrip({ monitored, planned, proactive, fleetPct }: { monitored: number; planned: number; proactive: number; fleetPct: number }) {
+// The three numbers read as one sentence: this many qualify, the fleet only
+// reaches this many, and that protects this many people. Presented as four
+// independent tiles, the 306-vs-9 gap reads as the system ignoring 297 places;
+// the answer (crews exhausted) has to sit inside the middle stage.
+function SituationFunnel({
+  monitored,
+  planned,
+  proactive,
+  protectedPeople,
+  crew,
+}: {
+  monitored: number;
+  planned: number;
+  proactive: number;
+  protectedPeople: number;
+  crew: { used: number; total: number };
+}) {
+  const crewPct = crew.total ? Math.round((crew.used / crew.total) * 100) : 0;
+  const exhausted = crew.total > 0 && crew.used >= crew.total;
   return (
-    <div className="map-situation-strip" aria-label="Ringkasan keputusan peta">
-      <div title="Ambang Pemantauan 50% hanya menandai wilayah untuk kesadaran situasi; tidak memicu alokasi otomatis."><span>Ambang Pemantauan</span><b>{monitored.toLocaleString("id-ID")}</b><small>peluang ≥50% · visual</small></div>
-      <div><span>Dipilih optimizer</span><b>{planned.toLocaleString("id-ID")}</b><small>kecamatan dalam rencana</small></div>
-      <div className={proactive > 0 ? "is-proactive" : ""} title="Wilayah di bawah Ambang Pemantauan dapat tetap dipilih optimizer mulai peluang 5%."><span>Alokasi preventif</span><b>{proactive.toLocaleString("id-ID")}</b><small>di bawah pemantauan 50%</small></div>
-      <div><span>Armada digunakan</span><b>{fleetPct}%</b><small>pompa &amp; truk</small></div>
+    <div className="situation-funnel" aria-label="Alur keputusan: dipantau, dipilih, terlindungi">
+      <article className="stat-card funnel-stage stage-monitor">
+        <span className="funnel-icon" aria-hidden="true"><EyeIcon size={18} /></span>
+        <div className="funnel-body">
+          <b>{fmtInt(monitored)}</b>
+          <strong>kecamatan dipantau</strong>
+          <small>peluang bahaya ≥50%</small>
+        </div>
+      </article>
+
+      <span className="funnel-arrow" aria-hidden="true" />
+
+      <article className="stat-card funnel-stage stage-select">
+        <span className="funnel-icon" aria-hidden="true"><TargetIcon size={18} /></span>
+        <div className="funnel-body">
+          <b>{fmtInt(planned)}</b>
+          <strong>dipilih optimizer</strong>
+          <div className="funnel-meter" title={`Regu terpakai: ${crew.used} dari ${crew.total}`}>
+            <i><em style={{ width: `${Math.min(crewPct, 100)}%` }} /></i>
+            <small>
+              regu {fmtInt(crew.used)}/{fmtInt(crew.total)}
+              {exhausted ? " · armada habis" : " terpakai"}
+            </small>
+          </div>
+          {proactive > 0 && (
+            <span className="funnel-badge" title="Wilayah di bawah Ambang Pemantauan 50% tetap dapat dipilih optimizer mulai peluang 5%.">
+              termasuk {fmtInt(proactive)} di bawah ambang pemantauan
+            </span>
+          )}
+        </div>
+      </article>
+
+      <span className="funnel-arrow" aria-hidden="true" />
+
+      <article className="stat-card funnel-stage stage-protect">
+        <span className="funnel-icon" aria-hidden="true"><ShieldIcon size={18} /></span>
+        <div className="funnel-body">
+          <b>{fmtCompact(protectedPeople)}</b>
+          <strong>jiwa terlindungi</strong>
+          <small>rata-rata 30 skenario</small>
+        </div>
+      </article>
     </div>
   );
 }

@@ -1,4 +1,10 @@
-const BASE = "http://localhost:8000";
+// In production the API is served from the same origin as this bundle, so the
+// base is empty and every call is a relative path. In dev, Vite serves the UI
+// on :5173 while uvicorn runs on :8000, so point at that unless VITE_API_BASE
+// says otherwise (set it to deploy the frontend separately from the API).
+const BASE =
+  import.meta.env.VITE_API_BASE ??
+  (import.meta.env.DEV ? "http://localhost:8000" : "");
 
 async function getJSON<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}${path}`);
@@ -17,6 +23,21 @@ async function postJSON<T>(path: string, body: unknown): Promise<T> {
   });
   if (!res.ok) throw new Error(`${path} -> ${res.status} ${res.statusText}`);
   return res.json() as Promise<T>;
+}
+
+// Raw fetch rejections ("TypeError: Failed to fetch") tell an operator nothing
+// and look like a crash during a demo. Translate to something actionable.
+export function friendlyError(e: unknown): string {
+  const raw = String(e);
+  if (/Failed to fetch|NetworkError|ERR_CONNECTION|load failed/i.test(raw))
+    return "Tidak dapat terhubung ke server SIAGA. Periksa apakah layanan backend sedang berjalan.";
+  if (/-> 5\d\d/.test(raw))
+    return "Server SIAGA gagal memproses permintaan. Coba beberapa saat lagi.";
+  if (/-> 42\d/.test(raw))
+    return "Rentang tanggal tidak valid untuk data yang tersedia.";
+  if (/-> 4\d\d/.test(raw))
+    return "Data tidak tersedia untuk tanggal ini.";
+  return "Terjadi gangguan saat memuat data.";
 }
 
 export interface DistrictProperties {
@@ -38,6 +59,10 @@ export interface RiskDistrict {
   population: number;
   flood_prob: number;
   drought_prob: number;
+  // Canonical: max(flood, drought) x population, computed backend-side at full
+  // precision. Always render this rather than recomputing from the rounded
+  // probabilities above.
+  people_exposed: number;
 }
 
 export interface RiskResponse {

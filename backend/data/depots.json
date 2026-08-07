@@ -1,5 +1,5 @@
 {
-  "_note": "SCENARIO DATA. BPBD/BNPB fleet inventories are not public. Depot locations sit at real BPBD kota/kabupaten seats along the Pantura corridor; vehicle and crew counts are plausible placeholders for the demo. A deployed system would read real inventory via Pusdalops integration.",
+  "_note": "DATA SKENARIO. Inventaris armada BPBD/BNPB tidak tersedia untuk publik. Lokasi depot memakai kedudukan BPBD kota/kabupaten yang nyata di koridor Pantura; jumlah kendaraan dan regu adalah angka contoh yang masuk akal untuk demo. Sistem yang dioperasikan akan membaca inventaris sebenarnya melalui integrasi Pusdalops.",
   "resources": ["truk_tangki", "pompa", "regu"],
   "resource_labels": {
     "truk_tangki": "Truk tangki air",

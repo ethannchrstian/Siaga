@@ -99,6 +99,21 @@ export const EyeIcon = ({ size, className }: P) => (
   </svg>
 );
 
+export const ClockIcon = ({ size, className }: P) => (
+  <svg {...base(size)} className={className}>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="M12 7.2V12l3.1 1.9" />
+  </svg>
+);
+
+export const TargetIcon = ({ size, className }: P) => (
+  <svg {...base(size)} className={className}>
+    <circle cx="12" cy="12" r="8" />
+    <circle cx="12" cy="12" r="3.2" />
+    <path d="M12 1.8v3.4M12 18.8v3.4M1.8 12h3.4M18.8 12h3.4" />
+  </svg>
+);
+
 export const SearchIcon = ({ size, className }: P) => (
   <svg {...base(size)} className={className}>
     <circle cx="11" cy="11" r="7" />

@@ -9,7 +9,6 @@ import Sparkline from "./Sparkline";
 interface Props {
   props: DistrictProperties | null;
   risk: RiskDistrict | undefined;
-  population: number | undefined;
   assignments: PlanItem[];
   date: string;
   onClose: () => void;
@@ -28,11 +27,9 @@ function Bar({ label, value, color }: { label: string; value: number; color: str
   );
 }
 
-export default function DistrictDrawer({ props, risk, population, assignments, date, onClose }: Props) {
+export default function DistrictDrawer({ props, risk, assignments, date, onClose }: Props) {
   if (!props) return null;
-  const exposure = population == null
-    ? null
-    : Math.round(Math.max(risk?.flood_prob ?? 0, risk?.drought_prob ?? 0) * population);
+  const exposure = risk?.people_exposed ?? null;
   const compound = (risk?.flood_prob ?? 0) >= MONITORING_THRESHOLD
     && (risk?.drought_prob ?? 0) >= MONITORING_THRESHOLD;
   const aboveMonitoring = Math.max(risk?.flood_prob ?? 0, risk?.drought_prob ?? 0)

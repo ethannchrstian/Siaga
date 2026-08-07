@@ -54,7 +54,7 @@ export default function Insiden({ risk, plan, date, districtMeta, onSelect }: Pr
       return {
         ...district,
         province: districtMeta.get(district.district_id)?.provinsi ?? "—",
-        exposure: Math.round(Math.max(district.flood_prob, district.drought_prob) * district.population),
+        exposure: district.people_exposed,
         level: compound ? "compound" : district.flood_prob >= district.drought_prob ? "flood" : "drought",
         assignments: assignmentsByDistrict.get(district.district_id) ?? [],
       };
@@ -110,7 +110,6 @@ export default function Insiden({ risk, plan, date, districtMeta, onSelect }: Pr
     <main className="page priority-page">
       <header className="operational-page-head">
         <div>
-          <span className="operational-page-kicker">Peringatan dini berbasis prediksi</span>
           <h1>Pemantauan wilayah</h1>
           <p>{formatDate(date)} · kecamatan yang melewati Ambang Pemantauan 50%</p>
         </div>
@@ -122,7 +121,7 @@ export default function Insiden({ risk, plan, date, districtMeta, onSelect }: Pr
         <Segment label="Risiko majemuk" value={counts.compound} tone="compound" active={filters.riskLevel === "compound"} onClick={() => selectSegment("compound")} />
         <Segment label="Banjir dominan" value={counts.flood} tone="flood" active={filters.riskLevel === "flood"} onClick={() => selectSegment("flood")} />
         <Segment label="Cekaman dominan" value={counts.drought} tone="drought" active={filters.riskLevel === "drought"} onClick={() => selectSegment("drought")} />
-        <Segment label="Belum masuk rencana" value={counts.unplanned} tone="gap" active={filters.coverage === "unplanned"} onClick={() => selectSegment("unplanned")} />
+        <Segment label="Di luar kapasitas armada" value={counts.unplanned} tone="gap" active={filters.coverage === "unplanned"} onClick={() => selectSegment("unplanned")} />
       </nav>
 
       <section className="priority-toolbar">
@@ -130,7 +129,7 @@ export default function Insiden({ risk, plan, date, districtMeta, onSelect }: Pr
         <SelectFilter label="Provinsi" value={filters.province} onChange={(value) => setFilters((current) => ({ ...current, province: value, regency: "" }))} options={provinces} />
         <SelectFilter label="Kab/Kota" value={filters.regency} onChange={(value) => setFilters((current) => ({ ...current, regency: value }))} options={regencies} />
         <SelectFilter label="Bahaya" value={filters.riskLevel} onChange={(value) => setFilters((current) => ({ ...current, riskLevel: value as RiskLevel }))} options={["compound", "flood", "drought"]} labels={{ compound: "Majemuk", flood: "Banjir", drought: "Cekaman air" }} />
-        <SelectFilter label="Cakupan" value={filters.coverage} onChange={(value) => setFilters((current) => ({ ...current, coverage: value as Coverage }))} options={["planned", "unplanned"]} labels={{ planned: "Masuk rencana", unplanned: "Belum masuk rencana" }} />
+        <SelectFilter label="Cakupan" value={filters.coverage} onChange={(value) => setFilters((current) => ({ ...current, coverage: value as Coverage }))} options={["planned", "unplanned"]} labels={{ planned: "Masuk rencana", unplanned: "Di luar kapasitas armada" }} />
         {(query || activeFilters.length > 0) && <button type="button" className="priority-reset" onClick={resetFilters}><ResetIcon size={15} /> Hapus semua</button>}
       </section>
 
@@ -155,7 +154,7 @@ export default function Insiden({ risk, plan, date, districtMeta, onSelect }: Pr
                     <td><RiskBar value={row.flood_prob} tone="flood" /></td>
                     <td><RiskBar value={row.drought_prob} tone="drought" /></td>
                     <td className="num"><strong>{fmtInt(row.exposure)}</strong><small className="table-unit">jiwa</small></td>
-                    <td>{row.assignments.length > 0 ? <div className="coverage-cell"><span className="coverage-status planned">Masuk rencana</span>{row.assignments.map((item) => <small key={item.resource}>{item.units} {item.resource_label}</small>)}</div> : <span className="coverage-status unplanned">Belum masuk rencana</span>}</td>
+                    <td>{row.assignments.length > 0 ? <div className="coverage-cell"><span className="coverage-status planned">Masuk rencana</span>{row.assignments.map((item) => <small key={item.resource}>{item.units} {item.resource_label}</small>)}</div> : <span className="coverage-status unplanned">Di luar kapasitas</span>}</td>
                     <td><button type="button" className="row-detail-button" onClick={(event) => { event.stopPropagation(); setSelectedId(row.district_id); }}>Detail</button></td>
                   </tr>
                 ))}
@@ -210,7 +209,7 @@ function SortableHead({ label, sortKey, sort, onSort, numeric = false }: { label
 function filterChips(filters: Filters) {
   const labels: Record<string, Record<string, string>> = {
     riskLevel: { compound: "Risiko majemuk", flood: "Banjir", drought: "Cekaman air" },
-    coverage: { planned: "Masuk rencana", unplanned: "Belum masuk rencana" },
+    coverage: { planned: "Masuk rencana", unplanned: "Di luar kapasitas armada" },
   };
   return (Object.entries(filters) as [keyof Filters, string][]).filter(([, value]) => value).map(([key, value]) => ({ key, label: labels[key]?.[value] ?? value }));
 }

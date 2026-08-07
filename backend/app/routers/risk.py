@@ -71,6 +71,15 @@ def risk(date: str | None = Query(default=None, description="YYYY-MM-DD")):
                 "population": int(r["population"]),
                 "flood_prob": round(r["flood_prob"], 4),
                 "drought_prob": round(r["drought_prob"], 4),
+                # Canonical exposure. Computed here from full-precision
+                # probabilities so every screen shows one number: recomputing
+                # it client-side from the rounded probs above lands ~20 people
+                # off and made two pages disagree about the same kecamatan.
+                "people_exposed": int(
+                    round(
+                        max(r["flood_prob"], r["drought_prob"]) * int(r["population"])
+                    )
+                ),
             }
             for r in records
         ],

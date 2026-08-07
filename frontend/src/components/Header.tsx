@@ -14,22 +14,18 @@ interface Props {
 export default function Header({ date, dateMin, dateMax, monitoringCount, presets, onDate, disabled = false }: Props) {
   return (
     <header className="topbar global-commandbar">
-      <div className="brand-lockup">
-        <div className="brand-mark siaga-logo-mark" aria-hidden="true">
-          <img src="/siaga-logo.png" alt="" />
-        </div>
-        <div className="brand-copy">
-          <div className="brand-name">SIAGA</div>
-          <div className="brand-kicker">Pusat kendali ketahanan air</div>
-        </div>
-        <div className="brand-divider" />
-        <div className="brand-subtitle">Peringatan dini banjir &amp; cekaman air<br />Koridor pesisir utara Jawa</div>
+      {/* Brand identity now lives in the dark rail; the command bar carries
+          only the descriptor and the controls. */}
+      <div className="commandbar-context">
+        <strong>Peringatan dini banjir &amp; cekaman air</strong>
+        <span>Koridor pesisir utara Jawa</span>
       </div>
 
       <div className="global-context" aria-label="Konteks data aktif">
-        <span className="global-hindcast">Hindcast 2015–2024</span>
+        {/* Mode and date were two separate chips of different heights saying
+            related things. One control: the mode qualifies the date it applies to. */}
         <label className={`global-date-control${disabled ? " is-disabled" : ""}`}>
-          <span>Tanggal aktif</span>
+          <span>Hindcast · tanggal aktif</span>
           <strong>{formatShortDate(date)}</strong>
           <ChevronDownIcon size={13} />
           <input
@@ -56,10 +52,10 @@ export default function Header({ date, dateMin, dateMax, monitoringCount, preset
         </label>
       </div>
 
-      <div className={`topbar-situation${monitoringCount > 0 ? " is-alert" : ""}`} title={MONITORING_THRESHOLD_HELP}>
+      <div className="topbar-situation" title={MONITORING_THRESHOLD_HELP}>
         <span className="topbar-situation-icon"><AlertIcon size={16} /></span>
         <span className="topbar-situation-copy">
-          <strong>{monitoringCount > 0 ? `${monitoringCount} kecamatan perlu dipantau` : "Tidak ada peringatan pemantauan"}</strong>
+          <strong>{monitoringCount > 0 ? `${monitoringCount} kecamatan dipantau` : "Tidak ada wilayah di atas ambang"}</strong>
           <span>Ambang Pemantauan ≥50% · visual saja <InfoIcon size={11} /></span>
         </span>
       </div>

@@ -28,7 +28,6 @@ export default function About({ dateMin, dateMax, scenarioNote }: Props) {
     <main className="about methodology-page">
       <header className="operational-page-head methodology-head">
         <div>
-          <span className="operational-page-kicker">Transparansi sistem</span>
           <h1>Metode &amp; data</h1>
           <p>Definisi, alur perhitungan, dan batas penggunaan SIAGA.</p>
         </div>
