@@ -78,6 +78,7 @@ export default function DistrictDrawer({
         </div>
         <button className="x" onClick={onClose} aria-label="Tutup detail kecamatan">×</button>
       </div>
+      <div className="drawer-body">
       <div
         className={`drawer-risk-status${compound ? " compound" : aboveMonitoring ? " high" : ""}`}
         title={MONITORING_THRESHOLD_HELP}
@@ -119,6 +120,7 @@ export default function DistrictDrawer({
           {assignment.reason && <small>{assignment.reason}</small>}
         </div>
       ))}
+      </div>
     </div>
   );
 }
