@@ -499,13 +499,27 @@ function MapView(
         .map((p) => {
           const isPump = p.resource === "pompa";
           const color = isPump ? FLOOD : DROUGHT;
-          const icon = isPump ? pumpSvg("#ffffff") : truckSvg("#ffffff");
-          // A locked allocation is a committed decision, so it stays visibly
-          // different: the travelling unit lands and becomes this.
+          // currentColor so one pair of icons serves both the filled locked
+          // badge and the hollow pending one.
+          const icon = isPump ? pumpSvg("currentColor") : truckSvg("currentColor");
+          // Decision state is carried by fill and outline, never by a new hue:
+          // colour on this map means hazard, and nothing else. Locked is a
+          // committed decision, filled and sealed with a check. Pending is
+          // hollow with a dashed edge, so a glance at the map says what is
+          // still open without anything having to move.
           const locked = lockedKeysRef.current.has(`${p.district_id}:${p.resource}`);
-          return `<span class="alloc-badge alloc-badge-${isPump ? "flood" : "drought"}${locked ? " is-locked" : ""}" style="--marker-color:${color}">${icon}<b>${p.units}</b>${locked ? '<i class="alloc-lock" aria-hidden="true">&#10003;</i>' : ""}</span>`;
+          // The one thing worth animating. A compound kecamatan that is still
+          // undecided is where the shared-crew trade-off actually bites, and
+          // there are only ever a handful, so a slow ring there still means
+          // something. Pulsing all thirteen pending badges would mean nothing.
+          const urgent = !locked && isCompound;
+          const state = locked ? " is-locked" : " is-pending";
+          return `<span class="alloc-badge alloc-badge-${isPump ? "flood" : "drought"}${state}${urgent ? " needs-decision" : ""}" style="--marker-color:${color}">${icon}<b>${p.units}</b>${locked ? '<i class="alloc-lock" aria-hidden="true">&#10003;</i>' : ""}</span>`;
         })
         .join("");
+      const pendingHere = items.filter(
+        (p) => !lockedKeysRef.current.has(`${p.district_id}:${p.resource}`),
+      ).length;
       // Stacked in normal flow, never absolutely positioned: a MapLibre marker
       // element owns its own position/transform, and overriding either detaches
       // it from its coordinate.
@@ -513,9 +527,13 @@ function MapView(
         ? `<span class="alloc-flag" aria-hidden="true">DUA BAHAYA</span><span class="alloc-badges">${badges}</span>`
         : badges;
       el.onclick = () => onSelect(did);
+      const load = items.map((p) => `${p.units} ${p.resource_label}`).join(" + ");
+      const status = pendingHere === 0
+        ? "seluruhnya dikunci"
+        : `${pendingHere} menunggu keputusan`;
       el.title = isCompound
-        ? `Dua bahaya bersamaan · ${items.map((p) => `${p.units} ${p.resource_label}`).join(" + ")}`
-        : items.map((p) => `${p.units} ${p.resource_label}`).join(" + ");
+        ? `Dua bahaya bersamaan · ${load} · ${status}`
+        : `${load} · ${status}`;
       // Mount transparent; the CSS transition fades it in on the next frame.
       el.style.opacity = "0";
       requestAnimationFrame(() => {

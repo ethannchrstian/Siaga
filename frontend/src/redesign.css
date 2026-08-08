@@ -2761,6 +2761,9 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 @media (prefers-reduced-motion: reduce) {
   .map-pulse, .dispatch-cut { animation-duration: .01ms; }
   .dispatch-unit { transition: none; }
+  /* The ring still has to be readable without the heartbeat, so it holds at
+     rest instead of disappearing along with the animation. */
+  .peta .alloc-badge.needs-decision::after { animation: none; opacity: .75; }
 }
 
 /* ---------------------------------------------------------------------------
@@ -2798,6 +2801,51 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   position: relative;
   background: var(--marker-color);
   box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--marker-color), 0 3px 9px rgba(11, 31, 51, .3);
+}
+
+/* ---------------------------------------------------------------------------
+   Decision state on the map.
+
+   Only the locked badge used to look any different, so the map could not
+   answer "what still needs me". Pending is now hollow with a dashed edge:
+   filled means settled, outlined means open. The distinction is carried by
+   fill and stroke rather than by a fourth colour, because on this map colour
+   already means hazard (blue banjir, red cekaman air, purple dua bahaya) and
+   a workflow hue would compete with it.
+   --------------------------------------------------------------------------- */
+.peta .alloc-badge.is-pending {
+  color: var(--marker-color);
+  background: #fff;
+  /* The base badge borders in white to cut itself out of the map. A hollow
+     badge is already white inside, so the dash has to be drawn in the hazard
+     colour and the white separation moved outward into the shadow, or the
+     dashes vanish against the fill. */
+  border-style: dashed;
+  border-color: var(--marker-color);
+  box-shadow: 0 0 0 2px #fff, 0 2px 7px rgba(31, 43, 51, .26);
+}
+.peta .alloc-badge.is-pending b { color: var(--marker-color); }
+
+/* Pending and compound at once: the shared-crew trade-off is live here and
+   nobody has ruled on it. Typically one to three badges, which is the only
+   reason a repeating animation is affordable at all. One slow ring, then a
+   long pause, so it reads as a heartbeat rather than a flashing alarm. */
+.peta .alloc-badge.needs-decision { position: relative; }
+.peta .alloc-badge.needs-decision::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border: 2px solid var(--marker-color);
+  border-radius: 9px;
+  opacity: 0;
+  pointer-events: none;
+  animation: alloc-attention 2.8s cubic-bezier(.22, 1, .36, 1) infinite;
+}
+@keyframes alloc-attention {
+  0% { opacity: 0; transform: scale(1); }
+  12% { opacity: .9; transform: scale(1); }
+  50% { opacity: 0; transform: scale(1.5); }
+  100% { opacity: 0; transform: scale(1.5); }
 }
 .alloc-lock {
   position: absolute;
@@ -3274,4 +3322,62 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   display: block;
   color: var(--ink-4);
   font-size: var(--fs-micro);
+}
+
+/* Count on the Menunggu chip: the size of the queue, visible without having to
+   click into it. Neutral by design, since the number is a workload not an
+   alarm. */
+.decision-filters button { display: inline-flex; align-items: center; gap: 5px; }
+.filter-count {
+  min-width: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: #eceff3;
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 15px;
+  text-align: center;
+}
+.decision-filters button.active .filter-count {
+  background: rgba(255, 255, 255, .22);
+  color: #fff;
+}
+
+/* Legend key for the two decision states, drawn the same way the badges are so
+   the mapping is obvious rather than described. Neutral ink here: the swatch
+   is teaching the shape, and hazard colour is a separate row above. */
+.swatch.decision-sq {
+  position: relative;
+  width: 17px;
+  height: 17px;
+  display: inline-grid;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+}
+.swatch.decision-sq.pending {
+  color: var(--ink-2);
+  background: #fff;
+  border-style: dashed;
+  border-color: var(--ink-3);
+  box-shadow: 0 0 0 1px var(--ink-3);
+}
+.swatch.decision-sq.locked {
+  color: #fff;
+  background: var(--ink-2);
+  box-shadow: 0 0 0 1px #fff, 0 0 0 2.5px var(--ink-2);
+}
+/* The key holds its ring still. A legend has to be readable at any instant,
+   and a swatch that spends half its cycle invisible would be identical to the
+   plain pending row above it whenever the reader happened to look. */
+.swatch.decision-sq.ring::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border: 1.5px solid var(--ink-3);
+  border-radius: 7px;
 }

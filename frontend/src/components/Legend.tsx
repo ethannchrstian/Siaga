@@ -52,6 +52,21 @@ export default function Legend({ mode, dispatched }: Props) {
             <span className="swatch allocation-sq red">{dispatched?.truk_tangki ?? 0}</span>
             Truk tangki dikirim (total)
           </div>
+          <div className="legend-sep" />
+          {/* A new encoding on the map needs a key, or it is just decoration. */}
+          <div className="legend-section-label">Status keputusan</div>
+          <div className="legend-row">
+            <span className="swatch decision-sq pending" aria-hidden="true" />
+            Menunggu keputusan operator
+          </div>
+          <div className="legend-row">
+            <span className="swatch decision-sq locked" aria-hidden="true">&#10003;</span>
+            Dikunci, tidak diubah optimasi ulang
+          </div>
+          <div className="legend-row">
+            <span className="swatch decision-sq pending ring" aria-hidden="true" />
+            Dua bahaya &amp; belum diputuskan
+          </div>
           <div className="legend-thresholds">
             <div className="legend-section-label">Ambang sistem</div>
             <div className="legend-threshold-guide" aria-label="Perbedaan ambang sistem">

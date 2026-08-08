@@ -42,7 +42,7 @@ interface DecisionGroup {
   exposure: number;
 }
 
-type DecisionFilter = "all" | "compound" | "flood" | "drought" | "locked";
+type DecisionFilter = "all" | "pending" | "compound" | "flood" | "drought" | "locked";
 
 const key = (plan: PlanItem) => `${plan.district_id}:${plan.resource}`;
 
@@ -85,6 +85,7 @@ export default function Sidebar({
       const resources = new Set(group.items.map((item) => item.resource));
       const matchesFilter =
         filter === "all" ||
+        (filter === "pending" && group.items.some((item) => !locks.has(key(item)))) ||
         (filter === "compound" && resources.size > 1) ||
         (filter === "flood" && resources.has("pompa")) ||
         (filter === "drought" && resources.has("truk_tangki")) ||
@@ -93,6 +94,13 @@ export default function Sidebar({
       return matchesFilter && (!normalized || location.includes(normalized));
     });
   }, [filter, groups, locks, query]);
+
+  // Counted in kecamatan, not in rows, so the number on the chip is the number
+  // of cards the chip reveals.
+  const pendingCount = useMemo(
+    () => groups.filter((group) => group.items.some((item) => !locks.has(key(item)))).length,
+    [groups, locks],
+  );
 
   const readonlyTitle = readonly
     ? "Kembali ke mode Terpadu untuk mengubah rencana"
@@ -187,6 +195,7 @@ export default function Sidebar({
         <div className="decision-filters" aria-label="Filter rekomendasi">
           {([
             ["all", "Semua"],
+            ["pending", "Menunggu"],
             ["compound", "Majemuk"],
             ["flood", "Banjir"],
             ["drought", "Cekaman"],
@@ -197,8 +206,12 @@ export default function Sidebar({
               type="button"
               className={filter === value ? "active" : ""}
               onClick={() => setFilter(value)}
+              title={value === "pending" ? "Kecamatan yang belum diputuskan operator" : undefined}
             >
               {label}
+              {value === "pending" && pendingCount > 0 && (
+                <span className="filter-count">{pendingCount}</span>
+              )}
             </button>
           ))}
         </div>
