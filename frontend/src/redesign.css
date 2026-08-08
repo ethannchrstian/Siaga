@@ -2833,3 +2833,214 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   cursor: pointer;
 }
 .clear-locks:hover { background: #e2f1e8; border-color: #b6d9c6; }
+
+/* ============================================================
+   Dispatch order: getting the plan out of the browser
+   ============================================================ */
+
+/* The lede now carries an action, so the text block takes the slack and the
+   button stays pinned right. */
+.page-lede > div:first-child { flex: 1 1 320px; }
+
+.btn-order {
+  flex: none;
+  height: var(--control-h);
+  padding: 0 14px;
+  border: 1px solid var(--signal-navy, #1c3557);
+  border-radius: 7px;
+  background: var(--signal-navy, #1c3557);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: var(--fs-small);
+  font-weight: 600;
+  letter-spacing: .01em;
+  cursor: pointer;
+}
+.btn-order:hover:not(:disabled) { background: #16293f; border-color: #16293f; }
+.btn-order:disabled { opacity: .45; cursor: not-allowed; }
+.btn-order:focus-visible { outline: 2px solid #2f6feb; outline-offset: 2px; }
+
+.order-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(12, 20, 32, .55);
+  display: flex;
+  justify-content: center;
+  overflow: auto;
+  padding: 28px 16px;
+}
+
+.order-sheet {
+  background: #fff;
+  color: var(--ink-1);
+  width: min(940px, 100%);
+  height: max-content;
+  border-radius: 10px;
+  padding: 30px 34px 34px;
+  box-shadow: 0 18px 48px rgba(10, 18, 30, .3);
+  font-size: var(--fs-body);
+}
+
+.order-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.order-actions .btn-primary,
+.order-actions .btn-quiet {
+  height: var(--control-h);
+  padding: 0 14px;
+  border-radius: 7px;
+  font-family: var(--font-sans);
+  font-size: var(--fs-small);
+  font-weight: 600;
+  cursor: pointer;
+}
+.order-actions .btn-primary {
+  background: var(--signal-navy, #1c3557);
+  border: 1px solid var(--signal-navy, #1c3557);
+  color: #fff;
+}
+.order-actions .btn-quiet {
+  background: #fff;
+  border: 1px solid #c3ccd8;
+  color: var(--ink-2);
+}
+
+.order-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  flex-wrap: wrap;
+  border-bottom: 2px solid var(--ink-1);
+  padding-bottom: 14px;
+}
+.order-head h1 {
+  font-size: var(--fs-page);
+  font-weight: 650;
+  letter-spacing: -.01em;
+  line-height: 1.15;
+}
+.order-sub { color: var(--ink-3); font-size: var(--fs-small); margin-top: 4px; }
+
+.order-meta { display: flex; gap: 22px; flex-wrap: wrap; }
+.order-meta dt {
+  font-size: var(--fs-micro);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--ink-4);
+}
+.order-meta dd {
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  color: var(--ink-1);
+  margin-top: 2px;
+}
+
+.order-summary {
+  display: flex;
+  gap: 34px;
+  flex-wrap: wrap;
+  padding: 16px 0 18px;
+  border-bottom: 1px solid #dde3ea;
+}
+.order-figure {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--fs-metric);
+  font-weight: 600;
+  line-height: 1.1;
+}
+.order-figure-label {
+  display: block;
+  font-size: var(--fs-micro);
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+
+.order-table { width: 100%; border-collapse: collapse; margin-top: 18px; }
+.order-table caption {
+  caption-side: top;
+  text-align: left;
+  font-size: var(--fs-small);
+  color: var(--ink-3);
+  padding-bottom: 8px;
+}
+.order-table th,
+.order-table td {
+  text-align: left;
+  padding: 7px 10px;
+  border-bottom: 1px solid #e4e9ef;
+  font-size: var(--fs-small);
+}
+.order-table thead th {
+  font-size: var(--fs-micro);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--ink-4);
+  border-bottom: 1px solid var(--ink-4);
+  font-weight: 600;
+}
+.order-table .num { text-align: right; font-family: var(--font-mono); }
+.order-table .col-tick { width: 26px; text-align: center; color: #1f7a4d; font-weight: 700; }
+.order-table tr.is-locked { background: #f2f8f4; }
+
+.order-log { margin-top: 26px; }
+.order-log h2 {
+  font-size: var(--fs-lead);
+  font-weight: 650;
+  border-bottom: 1px solid #dde3ea;
+  padding-bottom: 6px;
+}
+
+.order-foot {
+  margin-top: 26px;
+  padding-top: 14px;
+  border-top: 1px solid #dde3ea;
+  color: var(--ink-2);
+  font-size: var(--fs-small);
+  line-height: 1.5;
+}
+.order-foot p + p { margin-top: 8px; }
+.order-sign { margin-top: 26px !important; color: var(--ink-3); }
+
+/* Printing: the sheet is the document, everything else is chrome.
+   The overlay is nested inside the app wrapper rather than portalled to the
+   root, so hiding the root's other children would hide the sheet along with
+   them. Blanking everything by visibility and re-showing the sheet's subtree
+   leaves the ancestor chain intact, which is what makes this work. */
+@media print {
+  body * { visibility: hidden; }
+  .order-backdrop,
+  .order-backdrop * { visibility: visible; }
+  .order-backdrop {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    background: none;
+    padding: 0;
+    overflow: visible;
+    display: block;
+  }
+  .order-sheet {
+    width: 100%;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+    font-size: 10pt;
+  }
+  .order-actions { display: none !important; }
+  .order-table { page-break-inside: auto; }
+  .order-table tr { page-break-inside: avoid; }
+  .order-table thead { display: table-header-group; }
+  .order-log { page-break-before: auto; }
+  .order-foot { page-break-inside: avoid; }
+  /* Row shading is meaningful, so keep it when the printer would drop it. */
+  .order-table tr.is-locked {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

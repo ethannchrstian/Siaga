@@ -14,6 +14,13 @@ import About from "./components/About";
 import Toasts, { type Toast } from "./components/Toasts";
 import Header from "./components/Header";
 import ReplayControl from "./components/ReplayControl";
+import DispatchOrder from "./components/DispatchOrder";
+import {
+  appendDecision,
+  readLog,
+  type DecisionEntry,
+  type DecisionKind,
+} from "./decisionLog";
 import {
   friendlyError,
   getDistricts,
@@ -46,7 +53,7 @@ const keyOf = (p: PlanItem) => `${p.district_id}:${p.resource}`;
 
 function loadLocks(): Map<string, Lock> {
   try {
-    const raw = sessionStorage.getItem("siaga_locks");
+    const raw = localStorage.getItem("siaga_locks");
     if (!raw) return new Map();
     const items = JSON.parse(raw) as Lock[];
     return new Map(items.map((l) => [`${l.district_id}:${l.resource}`, l]));
@@ -71,21 +78,42 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Locks are deliberate operator decisions, so they survive a reload; losing
-  // them on an accidental refresh mid-demo is worse than carrying them over.
+  // Locks are deliberate operator decisions, so they outlive the tab. A control
+  // room runs across shift handovers, and a decision that disappears when
+  // someone closes a browser is not a decision the next shift can rely on.
   // Rejects are not persisted: most come from the scripted "jalur putus"
   // simulation, and restoring a disruption you can't see the cause of is
-  // confusing. Session-scoped, so closing the tab still gives a clean slate.
+  // confusing.
   const [locks, setLocks] = useState<Map<string, Lock>>(loadLocks);
   const [rejects, setRejects] = useState<Map<string, Reject>>(new Map());
+  const [log, setLog] = useState<DecisionEntry[]>(readLog);
+  const [showOrder, setShowOrder] = useState(false);
 
   useEffect(() => {
     try {
-      sessionStorage.setItem("siaga_locks", JSON.stringify([...locks.values()]));
+      localStorage.setItem("siaga_locks", JSON.stringify([...locks.values()]));
     } catch {
       // storage disabled; locks simply stay in memory
     }
   }, [locks]);
+
+  // One place to record a decision, so the audit trail cannot drift from what
+  // the buttons actually did.
+  const record = useCallback(
+    (kind: DecisionKind, p?: PlanItem) =>
+      setLog(
+        appendDecision({
+          kind,
+          planDate: date,
+          districtId: p?.district_id,
+          district: p?.district,
+          resourceLabel: p?.resource_label,
+          units: p?.units,
+          peopleExposed: p?.people_exposed,
+        }),
+      ),
+    [date],
+  );
 
   const [selected, setSelected] = useState<string | null>(null);
   const [selectedDepot, setSelectedDepot] = useState<string | null>(null);
@@ -233,6 +261,7 @@ export default function App() {
       else next.set(k, { district_id: p.district_id, resource: p.resource, units: p.units });
       return next;
     });
+    record(isLocking ? "lock" : "unlock", p);
     if (isLocking) {
       // Send the unit down its route so locking reads as a dispatch, not just
       // a button changing colour.
@@ -252,6 +281,7 @@ export default function App() {
       next.delete(k);
       return next;
     });
+    record("reject", p);
     // Cut the route on the map while the optimizer re-solves around it.
     mapHandleRef.current?.redirect(p);
     pushToast(
@@ -265,6 +295,7 @@ export default function App() {
       next.delete(k);
       return next;
     });
+    record("clear_reject");
     pushToast("Penolakan dibatalkan. Rencana dioptimasi ulang.", "info");
   };
 
@@ -501,11 +532,23 @@ export default function App() {
             {/* Page identity on its own line: a title and the task model are
                 not metrics and were competing with the numbers beside them. */}
             <div className="page-lede">
-              <h1>Peta &amp; alokasi</h1>
-              <p>
-                Menempatkan armada terbatas <b>sebelum</b> bencana terjadi.
-                Kunci untuk menyetujui, Alihkan untuk menolak; sistem menghitung ulang.
-              </p>
+              <div>
+                <h1>Peta &amp; alokasi</h1>
+                <p>
+                  Menempatkan armada terbatas <b>sebelum</b> bencana terjadi.
+                  Kunci untuk menyetujui, Alihkan untuk menolak; sistem menghitung ulang.
+                </p>
+              </div>
+              {/* The plan has to be able to leave the browser. A depot crew
+                  acts on paper or a message, not on a tab someone has open. */}
+              <button
+                className="btn-order"
+                onClick={() => setShowOrder(true)}
+                disabled={!result || result.plan.length === 0}
+                title="Susun perintah prapenempatan untuk dicetak atau disimpan sebagai PDF"
+              >
+                Terbitkan perintah
+              </button>
             </div>
             <section className="stat-row" aria-label="Ringkasan situasi">
               {/* The coordination gain is the point of the whole system, so it
@@ -592,6 +635,7 @@ export default function App() {
                 onClearReject={onClearReject}
                 onClearLocks={() => {
                   setLocks(new Map());
+                  record("clear_all_locks");
                   pushToast("Semua kunci dilepas. Rencana kembali ke rekomendasi optimizer.", "info");
                 }}
                 onSelect={openDistrict}
@@ -646,6 +690,16 @@ export default function App() {
       </div>
       </div>
 
+      {showOrder && result && (
+        <DispatchOrder
+          result={result}
+          locks={lockedKeySet}
+          log={log}
+          planDate={result.date}
+          scenarioNote={scenario?.note}
+          onClose={() => setShowOrder(false)}
+        />
+      )}
       <Toasts toasts={toasts} onDismiss={(id) => setToasts((t) => t.filter((x) => x.id !== id))} />
     </div>
   );
