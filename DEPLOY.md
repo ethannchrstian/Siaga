@@ -45,7 +45,7 @@ menyala, jadi tautannya selalu siap dibuka.
 | `<url>/health` | `{"status":"ok","service":"siaga-api","ui":true}` |
 | Halaman utama | Peta tampil, 9 kecamatan di panel kanan |
 | Tombol Kunci | Unit bergerak dari depot ke kecamatan |
-| Terpadu / Terpisah | Angka berubah ke +46.060 dan kembali |
+| Terpadu / Terpisah | Angka koordinasi berubah lalu kembali |
 
 `"ui":true` menandakan antarmuka ikut terpasang. Bila `false`, build frontend
 gagal dan yang tersaji hanya API.

@@ -80,6 +80,26 @@ export interface Depot {
   fleet: { truk_tangki: number; pompa: number; regu: number };
 }
 
+/** One bin of the reliability curve: what the model said, what happened. */
+export interface CalibrationBin {
+  lo: number;
+  hi: number;
+  predicted: number;
+  observed: number;
+  n: number;
+}
+
+export interface HazardCalibration {
+  brier: number;
+  reliability: number;
+  "worst_gap_above_0.5": number;
+  base_rate: number;
+  test_years: string;
+  curve: CalibrationBin[];
+  precision_at_op?: number;
+  recall_at_op?: number;
+}
+
 export interface ScenarioResponse {
   date_min: string;
   date_max: string;
@@ -87,6 +107,8 @@ export interface ScenarioResponse {
   resource_labels: Record<string, string>;
   note: string;
   depots: Depot[];
+  /** Absent if the reliability run has not been executed. */
+  calibration?: Partial<Record<"flood" | "drought", HazardCalibration>>;
 }
 
 export interface PlanItem {

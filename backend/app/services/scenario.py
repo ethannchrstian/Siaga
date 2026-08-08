@@ -64,6 +64,57 @@ def date_bounds() -> tuple[str, str]:
     return str(r["date"].min().date()), str(r["date"].max().date())
 
 
+# Calibration is measured on the held-out years by ml/run_reliability.py. The
+# API only reads the result, so nothing here needs the training stack.
+RESULTS = DATA.parent / "results"
+
+
+@lru_cache(maxsize=1)
+def calibration() -> dict:
+    """What predicted probabilities actually verified at, per hazard.
+
+    Returns the reliability curve plus headline metrics so the interface can
+    qualify a probability with its observed frequency. Missing files are not
+    an error: the API still serves, the interface simply omits the caveat.
+    """
+    rel_path = RESULTS / "reliability.json"
+    csv_path = RESULTS / "reliability.csv"
+    if not rel_path.exists() or not csv_path.exists():
+        return {}
+
+    summary = json.loads(rel_path.read_text(encoding="utf-8"))
+    bins = pd.read_csv(csv_path)
+    out: dict[str, dict] = {}
+    for hazard, s in summary.items():
+        rows = bins[(bins["hazard"] == hazard) & (bins["n"] >= s["min_bin_n"])]
+        out[hazard] = {
+            "brier": round(s["brier"], 4),
+            "reliability": round(s["reliability"], 5),
+            "worst_gap_above_0.5": round(s["worst_gap_above_0.5"], 3),
+            "base_rate": round(s["base_rate"], 4),
+            "test_years": s["test_years"],
+            "curve": [
+                {
+                    "lo": float(r.bin_lo),
+                    "hi": float(r.bin_hi),
+                    "predicted": round(float(r.mean_predicted), 3),
+                    "observed": round(float(r.observed_freq), 3),
+                    "n": int(r.n),
+                }
+                for r in rows.itertuples()
+            ],
+        }
+
+    metrics_path = Path(__file__).resolve().parents[1] / "artifacts" / "metrics.json"
+    if metrics_path.exists():
+        m = json.loads(metrics_path.read_text(encoding="utf-8"))
+        for hazard in ("flood", "drought"):
+            if hazard in out and hazard in m:
+                out[hazard]["precision_at_op"] = round(m[hazard]["precision_at_op"], 3)
+                out[hazard]["recall_at_op"] = round(m[hazard]["recall_at_op"], 3)
+    return out
+
+
 def _nearest_available_date(date: str | None) -> pd.Timestamp:
     r = risk_history()
     if date is None:

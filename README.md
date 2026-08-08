@@ -102,13 +102,46 @@ kejadian berbasis berita.
 
 ## Metrik model (uji 2023-2024)
 
-| Model | AUC | Average Precision | Brier |
-|-------|-----|-------------------|-------|
-| Banjir (0-72 jam) | 0.93 | 0.45 | 0.036 |
-| Cekaman air (SPI, bulan depan) | 0.96 | 0.87 | 0.069 |
+| Model | AUC | Average Precision | Brier | Reliabilitas |
+|-------|-----|-------------------|-------|--------------|
+| Banjir (0-72 jam) | 0.93 | 0.44 | 0.036 | 0.0005 |
+| Cekaman air (SPI, bulan depan) | 0.96 | 0.86 | 0.065 | 0.0035 |
 
-Pembagian waktu: latih+kalibrasi 2015-2022, uji 2023-2024. Kalibrasi Platt
-tervalidasi silang dengan penjaga fallback ke skor mentah.
+Pembagian waktu: latih+kalibrasi 2015-2022, uji 2023-2024.
+
+Kalibrator dipilih dengan **suku reliabilitas Murphy**, bukan Brier score.
+Brier didominasi baris berpeluang rendah, sehingga kalibrator dapat
+membiarkan wilayah berpeluang tinggi rusak dan tetap terlihat baik. Wilayah
+itu justru yang dipakai optimizer. Dengan kriteria ini regresi isotonik
+terpilih untuk kedua bahaya, dan selisih terbesar di atas peluang 0.5 pada
+kepala cekaman air turun dari 0.329 menjadi 0.190.
+
+## Mereproduksi angka pada makalah
+
+```bash
+cd backend
+venv/Scripts/python -m pytest tests/ -q          # 15 tes
+PYTHONPATH=. venv/Scripts/python ml/run_hindcast.py     # B0/B1/B2/B3, ~4 menit
+PYTHONPATH=. venv/Scripts/python ml/run_reliability.py  # diagram reliabilitas
+python "../New folder/make_figures.py"                  # gambar untuk makalah
+```
+
+Hasil ditulis ke `backend/results/`:
+
+| Berkas | Isi |
+|--------|-----|
+| `hindcast.csv` | 147 tanggal 2023-2024, empat konfigurasi, di luar sampel |
+| `hindcast_contested.csv` | 123 hari ketika kedua bahaya berebut armada |
+| `hindcast_summary.json` | agregat dan rekam jejak menang/seri/kalah |
+| `reliability.csv`, `.json` | kurva reliabilitas dan dekomposisi Brier |
+| `hazard_mix.csv` | permintaan unit tiap bahaya per hari (cache) |
+
+Semua penarikan acak memakai benih 42, jadi angkanya identik antar-jalankan.
+Melatih ulang model (`ml/train.py` lalu `ml/predict_history.py`) akan
+mengubah angka; jalankan ulang kedua skrip evaluasi setelahnya.
+
+Butuh `requirements-dev.txt`; layanan produksi tidak memuat xgboost maupun
+scikit-learn.
 
 ## Skenario demo
 

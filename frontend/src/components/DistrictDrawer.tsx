@@ -1,9 +1,15 @@
-import type { DistrictProperties, PlanItem, RiskDistrict } from "../api/client";
+import type {
+  DistrictProperties,
+  HazardCalibration,
+  PlanItem,
+  RiskDistrict,
+} from "../api/client";
 import {
   CRITICAL_ALLOCATION_THRESHOLD_HELP,
   MONITORING_THRESHOLD,
   MONITORING_THRESHOLD_HELP,
 } from "../thresholds";
+import { frequencyPhrase, verificationNote, verifiedAt } from "../calibration";
 import Sparkline from "./Sparkline";
 
 interface Props {
@@ -11,10 +17,24 @@ interface Props {
   risk: RiskDistrict | undefined;
   assignments: PlanItem[];
   date: string;
+  calibration?: Partial<Record<"flood" | "drought", HazardCalibration>>;
   onClose: () => void;
 }
 
-function Bar({ label, value, color }: { label: string; value: number; color: string }) {
+function Bar({
+  label,
+  value,
+  color,
+  cal,
+}: {
+  label: string;
+  value: number;
+  color: string;
+  cal?: HazardCalibration;
+}) {
+  // A percentage alone reads as a claim about today. The frequency line says
+  // what it is, and the verification line says how well that claim has held.
+  const verified = verifiedAt(value, cal);
   return (
     <div className="bar-row">
       <div className="bar-label">{label}<b>{Math.round(value * 100)}%</b></div>
@@ -23,11 +43,25 @@ function Bar({ label, value, color }: { label: string; value: number; color: str
         <i className="bar-threshold allocation" title={CRITICAL_ALLOCATION_THRESHOLD_HELP} />
         <i className="bar-threshold monitoring" title={MONITORING_THRESHOLD_HELP} />
       </div>
+      <div className="bar-frequency">{frequencyPhrase(value)}</div>
+      {verified?.notable && (
+        <div className="bar-verified" title={verificationNote(verified)}>
+          {verified.gap < 0 ? "↓" : "↑"} teramati {Math.round(verified.observed * 100)}%
+          pada uji 2023–2024
+        </div>
+      )}
     </div>
   );
 }
 
-export default function DistrictDrawer({ props, risk, assignments, date, onClose }: Props) {
+export default function DistrictDrawer({
+  props,
+  risk,
+  assignments,
+  date,
+  calibration,
+  onClose,
+}: Props) {
   if (!props) return null;
   const exposure = risk?.people_exposed ?? null;
   const compound = (risk?.flood_prob ?? 0) >= MONITORING_THRESHOLD
@@ -50,8 +84,18 @@ export default function DistrictDrawer({ props, risk, assignments, date, onClose
       >
         {compound ? "Dua bahaya dipantau" : aboveMonitoring ? "Melewati Ambang Pemantauan" : "Di bawah Ambang Pemantauan"}
       </div>
-      <Bar label="Banjir · 0–72 jam" value={risk?.flood_prob ?? 0} color="#4b7898" />
-      <Bar label="Cekaman air · bulan depan" value={risk?.drought_prob ?? 0} color="#955159" />
+      <Bar
+        label="Banjir · 0–72 jam"
+        value={risk?.flood_prob ?? 0}
+        color="#4b7898"
+        cal={calibration?.flood}
+      />
+      <Bar
+        label="Cekaman air · bulan depan"
+        value={risk?.drought_prob ?? 0}
+        color="#955159"
+        cal={calibration?.drought}
+      />
       {exposure != null && (
         <div className="drawer-stat evidence-stat">
           <span>Estimasi paparan</span>

@@ -33,6 +33,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend/app ./app
 COPY backend/data ./data
+# Measured calibration, read by /scenario so the interface can say what a
+# probability historically verified at. Small, and produced offline by
+# ml/run_reliability.py.
+COPY backend/results ./results
 
 # The built UI lands where main.py looks for it.
 COPY --from=ui /ui/dist ./app/static

@@ -614,6 +614,7 @@ export default function App() {
                     risk={risk.get(selected)}
                     assignments={assignmentsForSelected}
                     date={date}
+                    calibration={scenario?.calibration}
                     onClose={() => setSelected(null)}
                   />
                 )}

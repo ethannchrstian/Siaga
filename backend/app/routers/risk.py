@@ -88,7 +88,14 @@ def risk(date: str | None = Query(default=None, description="YYYY-MM-DD")):
 
 @router.get("/scenario")
 def scenario_info():
-    """Depots, fleet, resource labels, and the available date range."""
+    """Depots, fleet, resource labels, the date range, and how well the
+    hazard models are actually calibrated.
+
+    The calibration block is served so the interface can say what a
+    probability has historically meant instead of presenting it as certainty.
+    A dashboard that shows 86% without mentioning that 86% verified at 69% on
+    held-out years is overstating what the model knows.
+    """
     raw = scenario.depots_raw()
     lo, hi = scenario.date_bounds()
     return {
@@ -97,6 +104,7 @@ def scenario_info():
         "resources": raw["resources"],
         "resource_labels": raw["resource_labels"],
         "note": raw["_note"],
+        "calibration": scenario.calibration(),
         "depots": [
             {
                 "depot_id": d["depot_id"],
