@@ -29,8 +29,19 @@ def _artifacts() -> dict:
 
 
 def _apply_cal(cal: dict, raw: np.ndarray) -> np.ndarray:
-    if cal.get("type") == "platt" and cal.get("model") is not None:
-        return cal["model"].predict_proba(raw.reshape(-1, 1))[:, 1]
+    """Apply the calibrator chosen at training time.
+
+    Must mirror ml/train.py exactly, including the isotonic clip. A mismatch
+    here would silently shift every served probability away from the values the
+    model was validated on.
+    """
+    kind, model = cal.get("type"), cal.get("model")
+    if model is None:
+        return raw
+    if kind == "platt":
+        return model.predict_proba(raw.reshape(-1, 1))[:, 1]
+    if kind == "isotonic":
+        return np.clip(model.predict(raw), 1e-3, 1 - 1e-3)
     return raw
 
 

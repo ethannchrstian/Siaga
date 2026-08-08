@@ -38,6 +38,8 @@ RESULTS = BACKEND / "results"
 
 TEST_FROM_YEAR = 2023
 N_BINS = 10
+# Bins thinner than this are reported but excluded from worst-gap summaries.
+MIN_BIN_N = 20
 
 HAZARDS = {
     "flood": {
@@ -115,10 +117,25 @@ def run_one(name: str, cfg: dict) -> tuple[pd.DataFrame, dict]:
             }
         )
 
+    frame = pd.DataFrame(rows)
     dec = brier_decomposition(y, p, bins)
     dec["title"] = cfg["title"]
     dec["test_years"] = f"{TEST_FROM_YEAR}-2024"
-    return pd.DataFrame(rows), dec
+
+    # Worst gap, restricted to bins holding enough rows to mean anything. A bin
+    # with three observations produces a gap of 0.3 by chance and says nothing
+    # about calibration, so quoting the unrestricted maximum is misleading.
+    solid = frame[frame["n"] >= MIN_BIN_N]
+    gaps = (solid["observed_freq"] - solid["mean_predicted"]).abs()
+    dec["worst_gap"] = float(gaps.max()) if len(gaps) else float("nan")
+    high = solid[solid["bin_lo"] >= 0.5]
+    high_gaps = (high["observed_freq"] - high["mean_predicted"]).abs()
+    dec["worst_gap_above_0.5"] = (
+        float(high_gaps.max()) if len(high_gaps) else float("nan")
+    )
+    dec["n_above_0.5"] = int(solid[solid["bin_lo"] >= 0.5]["n"].sum())
+    dec["min_bin_n"] = MIN_BIN_N
+    return frame, dec
 
 
 def main() -> None:
@@ -132,10 +149,10 @@ def main() -> None:
         print(f"  brier {dec['brier']:.4f} = reliability {dec['reliability']:.5f}"
               f" - resolution {dec['resolution']:.5f}"
               f" + uncertainty {dec['uncertainty']:.5f}")
-        occupied = frame[frame["n"] > 0]
-        gap = (occupied["observed_freq"] - occupied["mean_predicted"]).abs().max()
-        print(f"  largest gap between predicted and observed, "
-              f"any occupied bin: {gap:.3f}\n")
+        print(f"  worst gap (bins with >= {dec['min_bin_n']} rows): "
+              f"{dec['worst_gap']:.3f}")
+        print(f"  worst gap above 0.5: {dec['worst_gap_above_0.5']:.3f}"
+              f"  ({dec['n_above_0.5']:,} rows there)\n")
 
     pd.concat(frames).to_csv(RESULTS / "reliability.csv", index=False)
     (RESULTS / "reliability.json").write_text(

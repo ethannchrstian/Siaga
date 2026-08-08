@@ -1,22 +1,30 @@
 {
   "flood": {
-    "brier": 0.03604168749811897,
-    "reliability": 0.0002926483569538423,
-    "resolution": 0.012916462840933614,
+    "brier": 0.03644995312236409,
+    "reliability": 0.0005101862422100023,
+    "resolution": 0.012980273181692025,
     "uncertainty": 0.04911936522707965,
     "base_rate": 0.05180290633146633,
     "n": 232458,
     "title": "Banjir 0-72 jam",
-    "test_years": "2023-2024"
+    "test_years": "2023-2024",
+    "worst_gap": 0.07864160169946388,
+    "worst_gap_above_0.5": 0.07864160169946388,
+    "n_above_0.5": 2262,
+    "min_bin_n": 20
   },
   "drought": {
-    "brier": 0.06927164006456618,
-    "reliability": 0.007362805060977322,
-    "resolution": 0.08772225692523586,
+    "brier": 0.06499168442320667,
+    "reliability": 0.0034833159243052225,
+    "resolution": 0.08785959584996159,
     "uncertainty": 0.15131363899470118,
     "base_rate": 0.18585614600107353,
     "n": 7452,
     "title": "Cekaman air bulan depan",
-    "test_years": "2023-2024"
+    "test_years": "2023-2024",
+    "worst_gap": 0.19010715990994886,
+    "worst_gap_above_0.5": 0.19010715990994886,
+    "n_above_0.5": 1424,
+    "min_bin_n": 20
   }
 }

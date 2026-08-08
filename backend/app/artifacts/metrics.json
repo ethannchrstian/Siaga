@@ -4,14 +4,14 @@
     "n_test": 232458,
     "test_years": "2023-2024",
     "positive_rate_test": 0.05180290633146633,
-    "auc": 0.9317087892784179,
-    "average_precision": 0.44916815236395236,
-    "brier": 0.03604168817400932,
+    "auc": 0.9314106505735418,
+    "average_precision": 0.4438705629836866,
+    "brier": 0.03644995391368866,
     "brier_uncalibrated": 0.056590598076581955,
-    "operating_threshold": 0.1889979988336563,
-    "precision_at_op": 0.35164975158180817,
-    "recall_at_op": 0.6876764657033715,
-    "f1_at_op": 0.46534236183304767,
+    "operating_threshold": 0.22661122679710388,
+    "precision_at_op": 0.35301153353267833,
+    "recall_at_op": 0.6862647400763993,
+    "f1_at_op": 0.46620783030576557,
     "feature_importance": {
       "rain_30d": 0.35831984877586365,
       "rain_7d": 0.16550301015377045,
@@ -23,18 +23,37 @@
       "coastal": 0.03418084606528282,
       "disc_7d_mean": 0.026674402877688408
     },
-    "calibrator": "platt"
+    "reliability": 0.000510186156238619,
+    "worst_gap_above_0.5": 0.07864161628357913,
+    "calibrator": "isotonic",
+    "calibrator_selection": {
+      "platt": {
+        "reliability": 0.00040189042417631535,
+        "worst_gap": 0.08700747227439587,
+        "brier": 0.05664787441492081
+      },
+      "isotonic": {
+        "reliability": 4.641306517098036e-07,
+        "worst_gap": 0.05154384322788408,
+        "brier": 0.05590434744954109
+      },
+      "identity": {
+        "reliability": 0.018477003355220924,
+        "worst_gap": 0.31875980945465016,
+        "brier": 0.07462098449468613
+      }
+    }
   },
   "drought": {
     "n_train": 29484,
     "n_test": 7452,
     "test_years": "2023-2024",
     "positive_rate_test": 0.18585614600107353,
-    "auc": 0.9634584682834699,
-    "average_precision": 0.8693613830697066,
-    "brier": 0.06927163153886795,
+    "auc": 0.959134192848927,
+    "average_precision": 0.8581755695363171,
+    "brier": 0.06499168276786804,
     "brier_uncalibrated": 0.06927163153886795,
-    "operating_threshold": 0.5736355185508728,
+    "operating_threshold": 0.5,
     "precision_at_op": 0.7703651685393258,
     "recall_at_op": 0.792057761732852,
     "f1_at_op": 0.781060875756497,
@@ -47,6 +66,25 @@
       "spi6": 0.02596462331712246,
       "coastal": 0.016624802723526955
     },
-    "calibrator": "identity"
+    "reliability": 0.0034833122912892663,
+    "worst_gap_above_0.5": 0.19010721634974526,
+    "calibrator": "isotonic",
+    "calibrator_selection": {
+      "platt": {
+        "reliability": 0.0009852963803958995,
+        "worst_gap": 0.19917403546192292,
+        "brier": 0.022632960230112076
+      },
+      "isotonic": {
+        "reliability": 4.795668792376594e-05,
+        "worst_gap": 0.06472395075128434,
+        "brier": 0.020385967567563057
+      },
+      "identity": {
+        "reliability": 0.001142572891466457,
+        "worst_gap": 0.18366211238114727,
+        "brier": 0.021830812096595764
+      }
+    }
   }
 }
