@@ -1,0 +1,221 @@
+{
+  "ensemble": {
+    "n_scenarios": 30,
+    "seed": 42,
+    "cvar_alpha": 0.9,
+    "cvar_beta": 2.0
+  },
+  "min_contested_units": 10,
+  "routine": {
+    "n_dates": 147,
+    "period": [
+      "2023-01-01",
+      "2024-12-31"
+    ],
+    "sample": "out of sample",
+    "configs": {
+      "B0": {
+        "label": "Reaktif (tanpa prapenempatan)",
+        "mean_uncovered": 4620299.238095238,
+        "median_uncovered": 1859055.0,
+        "mean_cvar_uncovered": 5140746.93197279,
+        "coverage_pct": 0.0,
+        "tail_coverage_pct": 0.0,
+        "mean_units": 0.0,
+        "mean_districts_served": 0.0
+      },
+      "B1": {
+        "label": "Prakiraan + greedy top-K",
+        "mean_uncovered": 4524020.047619048,
+        "median_uncovered": 1780555.0,
+        "mean_cvar_uncovered": 5026273.340136054,
+        "coverage_pct": 2.083830191827196,
+        "tail_coverage_pct": 2.2267890902150422,
+        "mean_units": 39.82993197278912,
+        "mean_districts_served": 9.306122448979592
+      },
+      "B2": {
+        "label": "Dua meja independen",
+        "mean_uncovered": 4524039.775510204,
+        "median_uncovered": 1780555.0,
+        "mean_cvar_uncovered": 5026293.748299319,
+        "coverage_pct": 2.083403208851853,
+        "tail_coverage_pct": 2.2263921019264665,
+        "mean_units": 39.82312925170068,
+        "mean_districts_served": 9.306122448979592
+      },
+      "B3": {
+        "label": "SIAGA (MILP terkopel, CVaR)",
+        "mean_uncovered": 4515848.12244898,
+        "median_uncovered": 1780555.0,
+        "mean_cvar_uncovered": 4970381.231292517,
+        "coverage_pct": 2.26070023311562,
+        "tail_coverage_pct": 3.3140262093176664,
+        "mean_units": 43.57823129251701,
+        "mean_districts_served": 6.380952380952381
+      }
+    },
+    "head_to_head_vs_B3": {
+      "B0": {
+        "mean": {
+          "b3_better": 131,
+          "tie": 16,
+          "b3_worse": 0,
+          "median_gain": 113882.0,
+          "mean_gain": 104451.1156462585,
+          "gain_pct_of_demand": 2.2607002331156254
+        },
+        "tail": {
+          "b3_better": 131,
+          "tie": 16,
+          "b3_worse": 0,
+          "median_gain": 141000.0,
+          "mean_gain": 170365.7006802721,
+          "gain_pct_of_demand": 3.3140262093176673
+        }
+      },
+      "B1": {
+        "mean": {
+          "b3_better": 94,
+          "tie": 28,
+          "b3_worse": 25,
+          "median_gain": 1657.0,
+          "mean_gain": 8171.925170068027,
+          "gain_pct_of_demand": 0.1768700412884292
+        },
+        "tail": {
+          "b3_better": 102,
+          "tie": 45,
+          "b3_worse": 0,
+          "median_gain": 24960.0,
+          "mean_gain": 55892.10884353742,
+          "gain_pct_of_demand": 1.0872371191026227
+        }
+      },
+      "B2": {
+        "mean": {
+          "b3_better": 94,
+          "tie": 28,
+          "b3_worse": 25,
+          "median_gain": 1657.0,
+          "mean_gain": 8191.65306122449,
+          "gain_pct_of_demand": 0.1772970242637699
+        },
+        "tail": {
+          "b3_better": 102,
+          "tie": 45,
+          "b3_worse": 0,
+          "median_gain": 26382.0,
+          "mean_gain": 55912.51700680272,
+          "gain_pct_of_demand": 1.0876341073911995
+        }
+      }
+    }
+  },
+  "contested": {
+    "n_dates": 102,
+    "period": [
+      "2015-01-30",
+      "2024-12-31"
+    ],
+    "sample": "2015-2022 in sample",
+    "configs": {
+      "B0": {
+        "label": "Reaktif (tanpa prapenempatan)",
+        "mean_uncovered": 18519643.225490198,
+        "median_uncovered": 18199267.5,
+        "mean_cvar_uncovered": 19530389.029411763,
+        "coverage_pct": 0.0,
+        "tail_coverage_pct": 0.0,
+        "mean_units": 0.0,
+        "mean_districts_served": 0.0
+      },
+      "B1": {
+        "label": "Prakiraan + greedy top-K",
+        "mean_uncovered": 18265336.37254902,
+        "median_uncovered": 17914354.0,
+        "mean_cvar_uncovered": 19246770.88235294,
+        "coverage_pct": 1.3731736073141598,
+        "tail_coverage_pct": 1.4521889278892974,
+        "mean_units": 90.05882352941177,
+        "mean_districts_served": 14.745098039215685
+      },
+      "B2": {
+        "label": "Dua meja independen",
+        "mean_uncovered": 18268278.519607842,
+        "median_uncovered": 17912162.0,
+        "mean_cvar_uncovered": 19246692.54901961,
+        "coverage_pct": 1.357286978057859,
+        "tail_coverage_pct": 1.4525900122364432,
+        "mean_units": 89.99019607843137,
+        "mean_districts_served": 17.07843137254902
+      },
+      "B3": {
+        "label": "SIAGA (MILP terkopel, CVaR)",
+        "mean_uncovered": 18244305.11764706,
+        "median_uncovered": 17912999.0,
+        "mean_cvar_uncovered": 19129452.20588235,
+        "coverage_pct": 1.4867354866975324,
+        "tail_coverage_pct": 2.052887031208761,
+        "mean_units": 92.20588235294117,
+        "mean_districts_served": 12.264705882352942
+      }
+    },
+    "head_to_head_vs_B3": {
+      "B0": {
+        "mean": {
+          "b3_better": 102,
+          "tie": 0,
+          "b3_worse": 0,
+          "median_gain": 258386.5,
+          "mean_gain": 275338.10784313723,
+          "gain_pct_of_demand": 1.486735486697527
+        },
+        "tail": {
+          "b3_better": 102,
+          "tie": 0,
+          "b3_worse": 0,
+          "median_gain": 413463.5,
+          "mean_gain": 400936.82352941175,
+          "gain_pct_of_demand": 2.052887031208756
+        }
+      },
+      "B1": {
+        "mean": {
+          "b3_better": 84,
+          "tie": 0,
+          "b3_worse": 18,
+          "median_gain": 15997.0,
+          "mean_gain": 21031.254901960783,
+          "gain_pct_of_demand": 0.11356187938336544
+        },
+        "tail": {
+          "b3_better": 102,
+          "tie": 0,
+          "b3_worse": 0,
+          "median_gain": 114365.0,
+          "mean_gain": 117318.67647058824,
+          "gain_pct_of_demand": 0.6006981033194594
+        }
+      },
+      "B2": {
+        "mean": {
+          "b3_better": 87,
+          "tie": 0,
+          "b3_worse": 15,
+          "median_gain": 21956.5,
+          "mean_gain": 23973.401960784315,
+          "gain_pct_of_demand": 0.12944850863966773
+        },
+        "tail": {
+          "b3_better": 102,
+          "tie": 0,
+          "b3_worse": 0,
+          "median_gain": 108175.5,
+          "mean_gain": 117240.3431372549,
+          "gain_pct_of_demand": 0.6002970189723151
+        }
+      }
+    }
+  }
+}

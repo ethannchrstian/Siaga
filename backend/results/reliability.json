@@ -1,0 +1,22 @@
+{
+  "flood": {
+    "brier": 0.03604168749811897,
+    "reliability": 0.0002926483569538423,
+    "resolution": 0.012916462840933614,
+    "uncertainty": 0.04911936522707965,
+    "base_rate": 0.05180290633146633,
+    "n": 232458,
+    "title": "Banjir 0-72 jam",
+    "test_years": "2023-2024"
+  },
+  "drought": {
+    "brier": 0.06927164006456618,
+    "reliability": 0.007362805060977322,
+    "resolution": 0.08772225692523586,
+    "uncertainty": 0.15131363899470118,
+    "base_rate": 0.18585614600107353,
+    "n": 7452,
+    "title": "Cekaman air bulan depan",
+    "test_years": "2023-2024"
+  }
+}
