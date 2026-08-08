@@ -41,7 +41,6 @@ export default function Controls({
 }: Props) {
   return (
     <div className={`controls map-mode-control${disabled ? " controls-disabled" : ""}`}>
-      <span className="map-mode-label">Tampilan risiko</span>
       <div className="seg map-risk-seg">
         {MODES.map((item) => (
           <button

@@ -9,6 +9,7 @@ interface Props {
   locks: Set<string>;
   rejects: Set<string>;
   onSelect: (districtId: string) => void;
+  onPublishOrder: () => void;
 }
 
 interface DistrictDecision {
@@ -27,7 +28,7 @@ interface ReportItem {
 
 const planKey = (item: PlanItem) => `${item.district_id}:${item.resource}`;
 
-export default function Overview({ risk, result, date, locks, rejects, onSelect }: Props) {
+export default function Overview({ risk, result, date, locks, rejects, onSelect, onPublishOrder }: Props) {
   const kpis = computeKpis(risk, result);
   const districts = [...risk.values()];
   const plan = result?.plan ?? [];
@@ -57,15 +58,22 @@ export default function Overview({ risk, result, date, locks, rejects, onSelect 
 
   return (
     <main className="overview overview-briefing operation-report">
-      <header className="briefing-page-head">
+      <header className="operational-page-head">
         <div>
-          <div className="briefing-page-kicker">
-            <span className="briefing-page-dot" /> Ringkasan hasil operasi
-          </div>
           <h1>Laporan Operasional</h1>
-          <p className="briefing-page-date">Rekap pelaksanaan · {formatDate(date)}</p>
+          <p>Rekap pelaksanaan · {formatDate(date)}</p>
         </div>
-        <span className="hindcast-badge">Simulasi historis · bukan kondisi waktu nyata</span>
+        <div className="report-header-actions">
+          <span className="hindcast-badge">Simulasi historis · bukan kondisi waktu nyata</span>
+          <button
+            className="btn-order"
+            onClick={onPublishOrder}
+            disabled={!result || result.plan.length === 0}
+            title="Susun perintah prapenempatan untuk dicetak atau disimpan sebagai PDF"
+          >
+            Terbitkan perintah
+          </button>
+        </div>
       </header>
 
       <ReportSection index="01" title="Identitas operasi" className="operation-identity">
@@ -79,8 +87,8 @@ export default function Overview({ risk, result, date, locks, rejects, onSelect 
         </div>
       </ReportSection>
 
-      <section className="report-executive" aria-labelledby="executive-summary-title">
-        <ReportHeading index="02" title="Ringkasan eksekutif" id="executive-summary-title" inverse />
+      <section className="report-section report-executive" aria-labelledby="executive-summary-title">
+        <ReportHeading index="02" title="Ringkasan eksekutif" id="executive-summary-title" />
         <div className="report-executive-body">
           <p>{situationSummary(kpis.aboveMonitoring, compound.length, kpis.served, kpis.proactiveAllocations)}</p>
           <div className="report-executive-metrics">
@@ -212,8 +220,8 @@ function ReportSection({ index, title, className = "", children }: { index: stri
   return <section className={`report-section ${className}`} aria-labelledby={id}><ReportHeading index={index} title={title} id={id} />{children}</section>;
 }
 
-function ReportHeading({ index, title, id, inverse = false }: { index: string; title: string; id: string; inverse?: boolean }) {
-  return <div className={`report-section-heading${inverse ? " inverse" : ""}`}><span>{index}</span><h2 id={id}>{title}</h2></div>;
+function ReportHeading({ index, title, id }: { index: string; title: string; id: string }) {
+  return <div className="report-section-heading"><span>{index}</span><h2 id={id}>{title}</h2></div>;
 }
 
 function IdentityField({ label, value }: { label: string; value: string }) {

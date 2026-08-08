@@ -316,7 +316,7 @@ function MapView(
         layout: { "line-cap": "round", "line-join": "round" },
         paint: {
           "line-color": "#12182d",
-          "line-width": 2.6,
+          "line-width": 1.5,
           "line-opacity": 0.95,
         },
       });

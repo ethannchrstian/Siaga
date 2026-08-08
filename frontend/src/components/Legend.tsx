@@ -13,19 +13,12 @@ interface Props {
 }
 
 export default function Legend({ mode, dispatched }: Props) {
-  const riskLabel = mode === "gabungan"
-    ? "Risiko dua bahaya"
-    : mode === "banjir"
-      ? "Risiko banjir"
-      : "Risiko cekaman air";
-
   return (
     <div className="legend">
       <details className="legend-disclosure">
         <summary className="legend-summary">
           <span className="legend-summary-copy">
-            <small>Legenda risiko &amp; alokasi</small>
-            <strong>{riskLabel}</strong>
+            <small>Legenda risiko</small>
           </span>
           <ChevronDownIcon size={14} aria-hidden="true" />
         </summary>

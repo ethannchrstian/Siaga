@@ -679,6 +679,7 @@ export default function App() {
             locks={new Set(locks.keys())}
             rejects={new Set(rejects.keys())}
             onSelect={openDistrict}
+            onPublishOrder={() => setShowOrder(true)}
           />
         )}
         {view === "tentang" && (
@@ -752,7 +753,7 @@ function SituationFunnel({
           </div>
           {proactive > 0 && (
             <span className="funnel-badge" title="Wilayah di bawah Ambang Pemantauan 50% tetap dapat dipilih optimizer mulai peluang 5%.">
-              termasuk {fmtInt(proactive)} di bawah ambang pemantauan
+              {fmtInt(proactive)} di bawah ambang pemantauan
             </span>
           )}
         </div>

@@ -170,7 +170,8 @@ export default function Sidebar({
         </div>
       )}
 
-      <details className="optimizer-threshold-note" title={CRITICAL_ALLOCATION_THRESHOLD_HELP}>
+      <div className="decision-scroll-region">
+        <details className="optimizer-threshold-note" title={CRITICAL_ALLOCATION_THRESHOLD_HELP}>
         <summary>
           <span className="optimizer-threshold-icon"><InfoIcon size={13} /></span>
           <span className="optimizer-threshold-copy">
@@ -179,10 +180,10 @@ export default function Sidebar({
           </span>
           <ChevronDownIcon size={15} aria-hidden="true" />
         </summary>
-        <p>Optimizer mempertimbangkan kebutuhan mulai peluang 5%. Ini terpisah dari Ambang Pemantauan 50% dan tidak menjamin alokasi otomatis.</p>
-      </details>
+        <p>Batas kritis yang digunakan optimizer untuk mempertimbangkan kebutuhan alokasi.</p>
+        </details>
 
-      <div className="decision-tools">
+        <div className="decision-tools">
         <label className="decision-search">
           <SearchIcon size={15} />
           <input
@@ -215,9 +216,8 @@ export default function Sidebar({
             </button>
           ))}
         </div>
-      </div>
+        </div>
 
-      <div className="decision-scroll-region">
         {rejects.size > 0 && (
           <div className="rejected-bar">
             <span className="rejected-label">Dialihkan · klik untuk batalkan</span>
