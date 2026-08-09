@@ -2404,8 +2404,11 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 }
 .navrail-brand { padding: 16px 18px 14px; border-bottom: 1px solid rgba(255,255,255,.08); }
 .navrail-brand::after { display: none; }
-.navrail-logo { display: flex; align-items: center; gap: 11px; }
-.navrail-logo img { width: 30px; height: 30px; object-fit: contain; flex: 0 0 auto; }
+/* The mark and the wordmark share the nav column's two axes: a 26px logo at
+   padding-left 18 centres on 31, the same as an 18px nav icon at 10 + 12; and
+   an 8px gap starts the wordmark at 52, where the nav labels start. */
+.navrail-logo { display: flex; align-items: center; gap: 8px; }
+.navrail-logo img { width: 26px; height: 26px; object-fit: contain; flex: 0 0 auto; }
 .navrail-brand-name {
   color: #fff;
   font-size: var(--fs-title);
@@ -2540,14 +2543,28 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   font-size: 0;
   border-radius: 50%;
 }
-.navrail.is-collapsed .navrail-brand { flex-direction: column; gap: 10px; padding: 16px 8px; }
+/* Collapsed, every glyph sits on the rail's centre line: the logo, each nav
+   icon, the collapse control and the operator avatar. */
+.navrail.is-collapsed .navrail-brand { padding: 16px 8px 14px; }
 .navrail.is-collapsed .navrail-logo { justify-content: center; }
+/* Hide the wordmark's wrapper, not just its text: an empty flex item still
+   contributes the 8px gap and pushes the mark 4px off the centre line. */
+.navrail.is-collapsed .navrail-logo > div { display: none; }
 .navrail.is-collapsed .navrail-btn { width: calc(100% - 16px); margin: 2px 8px; padding: 0; justify-content: center; }
 .navrail.is-collapsed .navrail-group + .navrail-group { margin-top: 12px; }
-.navrail.is-collapsed .navrail-foot { margin: auto 8px 16px; padding: 10px; }
+.navrail.is-collapsed .navrail-collapse { justify-content: center; padding: 0 8px 10px; }
+.navrail.is-collapsed .navrail-foot { margin: 0 8px 16px; padding: 10px; }
 .navrail.is-collapsed .navrail-operator { justify-content: center; }
 
-.navrail-brand { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+/* Sits at the foot of the rail, so the brand row keeps its full width and the
+   button has a slot that centres cleanly in both states. */
+.navrail-collapse {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: auto;
+  padding: 0 14px 10px;
+}
+.navrail-foot { margin-top: 0; }
 .navrail-toggle {
   display: grid;
   place-items: center;

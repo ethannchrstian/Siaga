@@ -67,18 +67,6 @@ export default function NavRail({
             <div className="navrail-brand-sub">Pusat kendali ketahanan air</div>
           </div>
         </div>
-        {onToggleCollapsed && (
-          <button
-            type="button"
-            className="navrail-toggle"
-            onClick={onToggleCollapsed}
-            title={collapsed ? "Perlebar navigasi" : "Perkecil navigasi"}
-            aria-label={collapsed ? "Perlebar navigasi" : "Perkecil navigasi"}
-            aria-expanded={!collapsed}
-          >
-            {collapsed ? <ChevronRightIcon size={15} /> : <ChevronLeftIcon size={15} />}
-          </button>
-        )}
       </div>
       {/* Filters only. The tagline that used to sit here said nothing the brand
           block does not, and the monitoring count is already the nav badge. */}
@@ -137,6 +125,22 @@ export default function NavRail({
           ))}
         </div>
       ))}
+      {/* Kept out of the brand block: sharing that row squeezed the tagline
+          onto two lines and inherited its left alignment when collapsed. */}
+      {onToggleCollapsed && (
+        <div className="navrail-collapse">
+          <button
+            type="button"
+            className="navrail-toggle"
+            onClick={onToggleCollapsed}
+            title={collapsed ? "Perlebar navigasi" : "Perkecil navigasi"}
+            aria-label={collapsed ? "Perlebar navigasi" : "Perkecil navigasi"}
+            aria-expanded={!collapsed}
+          >
+            {collapsed ? <ChevronRightIcon size={15} /> : <ChevronLeftIcon size={15} />}
+          </button>
+        </div>
+      )}
       <div className="navrail-foot">
         <div className="navrail-operator">
           <span className="account-avatar" aria-hidden="true">OS</span>
