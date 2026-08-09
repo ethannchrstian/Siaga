@@ -461,7 +461,21 @@ export default function App() {
           : result?.baseline?.plan ?? [],
     [replay, compare, plan, result],
   );
-  const kpis = useMemo(() => computeKpis(risk, result), [risk, result]);
+  // Every plan-dependent KPI must follow the comparison toggle. Previously
+  // these always read result.plan/result.summary (SIAGA), so switching to the
+  // baseline only changed the map while the KPI strip kept SIAGA's figures.
+  const activeAllocation = useMemo(
+    () => result
+      ? compare === "siaga"
+        ? { plan: result.plan, summary: result.summary }
+        : { plan: result.baseline.plan, summary: result.baseline.summary }
+      : null,
+    [compare, result],
+  );
+  const kpis = useMemo(
+    () => computeKpis(risk, activeAllocation),
+    [risk, activeAllocation],
+  );
   // Stable identity so MapView's repaint effect only fires on real changes.
   const lockedKeySet = useMemo(() => new Set(locks.keys()), [locks]);
 
@@ -482,8 +496,8 @@ export default function App() {
     return { used, total };
   }, [compare, result, scenario]);
   const assignmentsForSelected = useMemo(
-    () => plan.filter((p) => p.district_id === selected),
-    [plan, selected],
+    () => mapPlan.filter((p) => p.district_id === selected),
+    [mapPlan, selected],
   );
   const openDistrict = (id: string) => {
     setView("peta");
@@ -548,7 +562,11 @@ export default function App() {
                 monitored={kpis.aboveMonitoring}
                 planned={kpis.served}
                 proactive={kpis.proactiveAllocations}
-                protectedPeople={result?.comparison?.siaga.expected_covered ?? 0}
+                protectedPeople={
+                  compare === "siaga"
+                    ? result?.comparison?.siaga.expected_covered ?? 0
+                    : result?.comparison?.baseline.expected_covered ?? 0
+                }
                 crew={crew}
               />
             </section>
@@ -566,7 +584,7 @@ export default function App() {
                   >
                     <ChevronLeftIcon size={16} />
                     <span>Rencana</span>
-                    {(result?.plan.length ?? 0) > 0 && <i>{result?.summary.n_districts_served}</i>}
+                    {(activeAllocation?.plan.length ?? 0) > 0 && <i>{activeAllocation?.summary.n_districts_served}</i>}
                   </button>
                 )}
                 <MapView
