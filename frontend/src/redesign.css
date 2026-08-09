@@ -2518,7 +2518,8 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
    class lands, so only the width animates and no text reflows mid-flight.
    Every nav button carries a title, which becomes the only identification.
    --------------------------------------------------------------------------- */
-.navrail.is-collapsed { width: 66px; }
+/* Width itself comes from --rail-w further down, so the rail and its edge
+   handle read from one source and cannot drift apart. */
 .navrail.is-collapsed .navrail-brand-name,
 .navrail.is-collapsed .navrail-brand-sub,
 .navrail.is-collapsed .navrail-context,
@@ -2552,33 +2553,39 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 .navrail.is-collapsed .navrail-logo > div { display: none; }
 .navrail.is-collapsed .navrail-btn { width: calc(100% - 16px); margin: 2px 8px; padding: 0; justify-content: center; }
 .navrail.is-collapsed .navrail-group + .navrail-group { margin-top: 12px; }
-.navrail.is-collapsed .navrail-collapse { justify-content: center; padding: 0 8px 10px; }
-.navrail.is-collapsed .navrail-foot { margin: 0 8px 16px; padding: 10px; }
+.navrail.is-collapsed .navrail-foot { margin: auto 8px 16px; padding: 10px; }
 .navrail.is-collapsed .navrail-operator { justify-content: center; }
 
-/* Sits at the foot of the rail, so the brand row keeps its full width and the
-   button has a slot that centres cleanly in both states. */
-.navrail-collapse {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: auto;
-  padding: 0 14px 10px;
-}
-.navrail-foot { margin-top: 0; }
-.navrail-toggle {
+/* Handle straddling the rail's right border, vertically centred, mirroring
+   the plan panel's tab on the far side. --rail-w drives both the rail's own
+   width and the handle's position, so the two stay locked together while the
+   collapse animates. */
+.app { position: relative; --rail-w: 214px; }
+.app:has(.navrail.is-collapsed) { --rail-w: 66px; }
+.navrail { width: var(--rail-w); }
+.navrail-foot { margin-top: auto; }
+
+.rail-handle {
+  position: absolute;
+  top: 50%;
+  left: var(--rail-w);
+  z-index: 30;
   display: grid;
   place-items: center;
-  flex: none;
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 46px;
+  padding: 0;
   color: #8b9ab0;
-  background: transparent;
+  background: var(--signal-navy);
   border: 1px solid rgba(255, 255, 255, .14);
-  border-radius: 6px;
+  border-left: 0;
+  border-radius: 0 8px 8px 0;
   cursor: pointer;
+  transform: translateY(-50%);
+  transition: left 200ms cubic-bezier(.22, 1, .36, 1), color 140ms ease, background 140ms ease;
 }
-.navrail-toggle:hover { color: #fff; background: rgba(255, 255, 255, .09); }
-.navrail-toggle:focus-visible { outline: 2px solid #8db5e5; outline-offset: 2px; }
+.rail-handle:hover { color: #fff; background: #16233f; }
+.rail-handle:focus-visible { outline: 2px solid #8db5e5; outline-offset: 2px; }
 .navrail-context {
   margin: 0 10px 8px;
   padding: 12px 8px;
@@ -2788,11 +2795,14 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   .situation-strip { flex: 1 1 100%; }
 }
 @media (max-width: 1180px) {
-  .navrail { width: 196px; }
+  /* Set the variable, not the width: the edge handle reads from it too. */
+  .app { --rail-w: 196px; }
   .strip-stat { padding-left: 11px; padding-right: 11px; gap: 8px; }
 }
 @media (max-width: 900px) {
-  .navrail { width: 62px; }
+  .app, .app:has(.navrail.is-collapsed) { --rail-w: 62px; }
+  /* Already icon-only at this width, so the handle would toggle nothing. */
+  .rail-handle { display: none; }
   .navrail-logo div, .navrail-brand-sub, .navrail-section { display: none; }
   .navrail-logo { justify-content: center; }
   .navrail-brand { padding: 14px 6px; }

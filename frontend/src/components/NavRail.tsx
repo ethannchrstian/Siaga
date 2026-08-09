@@ -55,6 +55,22 @@ export default function NavRail({
   onToggleCollapsed?: () => void;
 }) {
   return (
+    <>
+    {/* Rendered outside the <nav>, not inside it: the rail scrolls, so a
+        handle straddling its border would be clipped. It rides the border
+        line and mirrors the plan panel's tab on the far side. */}
+    {onToggleCollapsed && (
+      <button
+        type="button"
+        className="rail-handle"
+        onClick={onToggleCollapsed}
+        title={collapsed ? "Perlebar navigasi" : "Perkecil navigasi"}
+        aria-label={collapsed ? "Perlebar navigasi" : "Perkecil navigasi"}
+        aria-expanded={!collapsed}
+      >
+        {collapsed ? <ChevronRightIcon size={14} /> : <ChevronLeftIcon size={14} />}
+      </button>
+    )}
     <nav
       className={`navrail navrail-${view}${collapsed ? " is-collapsed" : ""}`}
       aria-label="Navigasi utama"
@@ -125,22 +141,6 @@ export default function NavRail({
           ))}
         </div>
       ))}
-      {/* Kept out of the brand block: sharing that row squeezed the tagline
-          onto two lines and inherited its left alignment when collapsed. */}
-      {onToggleCollapsed && (
-        <div className="navrail-collapse">
-          <button
-            type="button"
-            className="navrail-toggle"
-            onClick={onToggleCollapsed}
-            title={collapsed ? "Perlebar navigasi" : "Perkecil navigasi"}
-            aria-label={collapsed ? "Perlebar navigasi" : "Perkecil navigasi"}
-            aria-expanded={!collapsed}
-          >
-            {collapsed ? <ChevronRightIcon size={15} /> : <ChevronLeftIcon size={15} />}
-          </button>
-        </div>
-      )}
       <div className="navrail-foot">
         <div className="navrail-operator">
           <span className="account-avatar" aria-hidden="true">OS</span>
@@ -148,6 +148,7 @@ export default function NavRail({
         </div>
       </div>
     </nav>
+    </>
   );
 }
 
