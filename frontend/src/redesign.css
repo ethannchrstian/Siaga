@@ -2505,7 +2505,63 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 
 /* The command context now belongs to the navy navigation surface. This removes
    the redundant white top strip and keeps every global control in one place. */
-.navrail { overflow-y: auto; }
+/* Shorter than the plan panel's 300ms on purpose. Both rail widths occupy
+   layout, so unlike the plan panel this cannot animate on a transform and the
+   map genuinely relayouts each frame; fewer frames means less to drop. */
+.navrail { overflow-y: auto; overflow-x: hidden; transition: width 200ms cubic-bezier(.22, 1, .36, 1); }
+
+/* ---------------------------------------------------------------------------
+   Collapsed rail: icons only. Labels go with display:none the instant the
+   class lands, so only the width animates and no text reflows mid-flight.
+   Every nav button carries a title, which becomes the only identification.
+   --------------------------------------------------------------------------- */
+.navrail.is-collapsed { width: 66px; }
+.navrail.is-collapsed .navrail-brand-name,
+.navrail.is-collapsed .navrail-brand-sub,
+.navrail.is-collapsed .navrail-context,
+.navrail.is-collapsed .navrail-section,
+/* :not(.nav-badge) matters — the badge is a span child of the button too. */
+.navrail.is-collapsed .navrail-btn > span:not(.nav-badge),
+.navrail.is-collapsed .navrail-operator > span:last-child { display: none; }
+/* The count has no room, but "there is something here" still has to survive,
+   so the badge becomes a dot on the icon's corner. Explicit colour: the
+   expanded badge's translucent white is invisible at 7px. */
+.navrail.is-collapsed .nav-badge,
+.navrail.is-collapsed .navrail-btn.active .nav-badge {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  min-width: 0;
+  width: 7px;
+  height: 7px;
+  margin: 0;
+  padding: 0;
+  background: #5b8fd6;
+  font-size: 0;
+  border-radius: 50%;
+}
+.navrail.is-collapsed .navrail-brand { flex-direction: column; gap: 10px; padding: 16px 8px; }
+.navrail.is-collapsed .navrail-logo { justify-content: center; }
+.navrail.is-collapsed .navrail-btn { width: calc(100% - 16px); margin: 2px 8px; padding: 0; justify-content: center; }
+.navrail.is-collapsed .navrail-group + .navrail-group { margin-top: 12px; }
+.navrail.is-collapsed .navrail-foot { margin: auto 8px 16px; padding: 10px; }
+.navrail.is-collapsed .navrail-operator { justify-content: center; }
+
+.navrail-brand { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.navrail-toggle {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  color: #8b9ab0;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.navrail-toggle:hover { color: #fff; background: rgba(255, 255, 255, .09); }
+.navrail-toggle:focus-visible { outline: 2px solid #8db5e5; outline-offset: 2px; }
 .navrail-context {
   margin: 0 10px 8px;
   padding: 12px 8px;
@@ -2975,11 +3031,34 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 .btn-order.sidebar-order svg { flex: none; }
 
 /* ---------------------------------------------------------------------------
-   Collapsing the plan panel. Hidden with display:none rather than a width
-   transition: MapView's ResizeObserver turns the layout change into a
-   map.resize(), and animating the width would fire it on every frame.
+   Collapsing the plan panel.
+
+   Animating any layout property here (width, margin) resizes the map on every
+   frame, and re-rendering 324 polygons 60 times a second is what made the
+   first attempt stutter at ~36fps. Instead the panel leaves the flow in a
+   single step by going absolute, so the map relayouts exactly once, and the
+   panel itself slides on a transform, which never touches layout at all.
    --------------------------------------------------------------------------- */
-.content.plan-collapsed > .sidebar { display: none; }
+.peta > .content { position: relative; overflow: hidden; }
+.peta .sidebar {
+  flex: none;
+  transition:
+    transform 300ms cubic-bezier(.22, 1, .36, 1),
+    opacity 200ms ease;
+}
+.content.plan-collapsed > .sidebar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  transform: translateX(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+.plan-reopen { transition: opacity 200ms ease 120ms, transform 200ms ease; }
+@starting-style {
+  .plan-reopen { opacity: 0; transform: translate(14px, -50%); }
+}
 .plan-collapse-btn {
   display: grid;
   place-items: center;
@@ -3514,4 +3593,88 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   inset: -4px;
   border: 1.5px solid var(--ink-3);
   border-radius: 7px;
+}
+
+/* ---------------------------------------------------------------------------
+   Boot splash.
+
+   Cold start pulls the scenario, 324 boundaries, a day of risk and the first
+   MILP solve, so the chrome sits empty for a second or two. The logo PNG has
+   an alpha channel, which lets a flat fill be masked to its shape and raised
+   like a water level: the thing the system actually watches, and no gradient.
+   --------------------------------------------------------------------------- */
+.boot {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  background: #0d1730;
+  transition: opacity 420ms ease, visibility 420ms;
+}
+.boot.is-leaving { opacity: 0; visibility: hidden; }
+.boot-inner { display: flex; flex-direction: column; align-items: center; }
+
+.boot-logo { position: relative; width: 82px; height: 85px; }
+.boot-logo span {
+  position: absolute;
+  inset: 0;
+  -webkit-mask: url(/siaga-logo.png) center / contain no-repeat;
+  mask: url(/siaga-logo.png) center / contain no-repeat;
+}
+/* The empty vessel, then the level rising inside it. */
+.boot-logo-ghost { background: #26344f; }
+.boot-logo-fill {
+  background: #eaf1fa;
+  clip-path: inset(100% 0 0 0);
+  animation: boot-fill 1.5s cubic-bezier(.33, .68, .38, 1) forwards;
+}
+@keyframes boot-fill {
+  from { clip-path: inset(100% 0 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+
+.boot-word {
+  margin-top: 18px;
+  color: #fff;
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-indent: .16em;
+}
+.boot-sub { margin-top: 5px; color: #8b9ab0; font-size: var(--fs-small); }
+
+/* Indeterminate: the work behind it has no reportable progress. */
+.boot-bar {
+  overflow: hidden;
+  width: 176px;
+  height: 2px;
+  margin-top: 22px;
+  background: rgba(255, 255, 255, .1);
+  border-radius: 2px;
+}
+.boot-bar i {
+  display: block;
+  width: 40%;
+  height: 100%;
+  background: #4f7fc4;
+  border-radius: inherit;
+  animation: boot-sweep 1.25s ease-in-out infinite;
+}
+@keyframes boot-sweep {
+  from { transform: translateX(-105%); }
+  to { transform: translateX(355%); }
+}
+
+.boot-status {
+  margin-top: 12px;
+  color: #6f7f96;
+  font-size: var(--fs-micro);
+  letter-spacing: .03em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boot-logo-fill { animation: none; clip-path: inset(0 0 0 0); }
+  .boot-bar i { animation: none; width: 100%; }
+  .peta .sidebar, .navrail, .plan-reopen { transition: none; }
 }

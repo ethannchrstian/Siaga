@@ -12,6 +12,7 @@ import Insiden from "./components/Insiden";
 import Inventaris from "./components/Inventaris";
 import About from "./components/About";
 import Toasts, { type Toast } from "./components/Toasts";
+import BootSplash from "./components/BootSplash";
 import { ChevronLeftIcon, EyeIcon, ShieldIcon, TargetIcon } from "./icons";
 import ReplayControl from "./components/ReplayControl";
 import DispatchOrder from "./components/DispatchOrder";
@@ -87,9 +88,10 @@ export default function App() {
   const [rejects, setRejects] = useState<Map<string, Reject>>(new Map());
   const [log, setLog] = useState<DecisionEntry[]>(readLog);
   const [showOrder, setShowOrder] = useState(false);
-  // Collapsing the plan panel hands its 366px to the map, which matters most
-  // when a district drawer is also docked.
+  // Collapsing either side panel hands its width to the map, which matters
+  // most when a district drawer is also docked.
   const [planOpen, setPlanOpen] = useState(true);
+  const [railOpen, setRailOpen] = useState(true);
 
   useEffect(() => {
     try {
@@ -510,6 +512,8 @@ export default function App() {
         presets={PRESETS}
         onDate={setDate}
         disabled={replayLoading || replay !== null}
+        collapsed={!railOpen}
+        onToggleCollapsed={() => setRailOpen((open) => !open)}
       />
 
       <div className="app-main">
@@ -703,6 +707,9 @@ export default function App() {
         />
       )}
       <Toasts toasts={toasts} onDismiss={(id) => setToasts((t) => t.filter((x) => x.id !== id))} />
+      {/* An error still lifts the splash: a stuck logo is worse than the
+          errbar the user needs to see. */}
+      <BootSplash ready={(scenario !== null && risk.size > 0) || error !== null} />
     </div>
   );
 }

@@ -253,7 +253,17 @@ function MapView(
     }
     map.on("error", (e) => console.error("[SIAGA] map error:", e.error));
 
-    const ro = new ResizeObserver(() => map.resize());
+    // Coalesce to one resize per frame. A panel that animates its width fires
+    // this observer continuously, and an unthrottled map.resize() on every
+    // notification is what makes the collapse stutter.
+    let resizeRaf = 0;
+    const ro = new ResizeObserver(() => {
+      if (resizeRaf) return;
+      resizeRaf = requestAnimationFrame(() => {
+        resizeRaf = 0;
+        map.resize();
+      });
+    });
     ro.observe(containerRef.current);
 
     map.on("load", async () => {
@@ -413,6 +423,7 @@ function MapView(
 
     return () => {
       ro.disconnect();
+      if (resizeRaf) cancelAnimationFrame(resizeRaf);
       map.remove();
       mapRef.current = null;
       readyRef.current = false;

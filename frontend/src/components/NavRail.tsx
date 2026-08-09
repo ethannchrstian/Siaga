@@ -1,4 +1,13 @@
-import { AlertIcon, ChevronDownIcon, FleetIcon, GridIcon, InfoIcon, MapIcon } from "../icons";
+import {
+  AlertIcon,
+  ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  FleetIcon,
+  GridIcon,
+  InfoIcon,
+  MapIcon,
+} from "../icons";
 
 export type View = "peta" | "insiden" | "inventaris" | "ringkasan" | "tentang";
 
@@ -30,6 +39,8 @@ export default function NavRail({
   presets,
   onDate,
   disabled = false,
+  collapsed = false,
+  onToggleCollapsed,
 }: {
   view: View;
   onView: (v: View) => void;
@@ -40,9 +51,14 @@ export default function NavRail({
   presets: { label: string; date: string }[];
   onDate: (date: string) => void;
   disabled?: boolean;
+  collapsed?: boolean;
+  onToggleCollapsed?: () => void;
 }) {
   return (
-    <nav className={`navrail navrail-${view}`} aria-label="Navigasi utama">
+    <nav
+      className={`navrail navrail-${view}${collapsed ? " is-collapsed" : ""}`}
+      aria-label="Navigasi utama"
+    >
       <div className="navrail-brand">
         <div className="navrail-logo">
           <img src="/siaga-logo.png" alt="" aria-hidden="true" />
@@ -51,6 +67,18 @@ export default function NavRail({
             <div className="navrail-brand-sub">Pusat kendali ketahanan air</div>
           </div>
         </div>
+        {onToggleCollapsed && (
+          <button
+            type="button"
+            className="navrail-toggle"
+            onClick={onToggleCollapsed}
+            title={collapsed ? "Perlebar navigasi" : "Perkecil navigasi"}
+            aria-label={collapsed ? "Perlebar navigasi" : "Perkecil navigasi"}
+            aria-expanded={!collapsed}
+          >
+            {collapsed ? <ChevronRightIcon size={15} /> : <ChevronLeftIcon size={15} />}
+          </button>
+        )}
       </div>
       {/* Filters only. The tagline that used to sit here said nothing the brand
           block does not, and the monitoring count is already the nav badge. */}
@@ -97,6 +125,8 @@ export default function NavRail({
               key={it.key}
               className={`navrail-btn${view === it.key ? " active" : ""}`}
               onClick={() => onView(it.key)}
+              /* Collapsed, the icon is all that is left to identify the item. */
+              title={it.label}
             >
               <it.Icon size={18} />
               <span>{it.label}</span>
