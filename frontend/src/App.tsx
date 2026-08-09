@@ -14,6 +14,7 @@ import About from "./components/About";
 import Toasts, { type Toast } from "./components/Toasts";
 import BootSplash from "./components/BootSplash";
 import { ChevronLeftIcon, EyeIcon, ShieldIcon, TargetIcon } from "./icons";
+import { useCountUp } from "./hooks/useCountUp";
 import ReplayControl from "./components/ReplayControl";
 import DispatchOrder from "./components/DispatchOrder";
 import {
@@ -736,12 +737,18 @@ function SituationStrip({
   crew: { used: number; total: number };
 }) {
   const exhausted = crew.total > 0 && crew.used >= crew.total;
+  // Same hook the coordination delta uses, a touch quicker so the headline
+  // beside these lands last. Without it one figure of four moved on a date
+  // change while its neighbours snapped.
+  const monitoredNow = useCountUp(monitored, 600);
+  const plannedNow = useCountUp(planned, 600);
+  const protectedNow = useCountUp(protectedPeople, 600);
   return (
     <div className="situation-strip" aria-label="Alur keputusan: dipantau, dipilih, terlindungi">
       <span className="strip-stat">
         <span className="strip-icon watch" aria-hidden="true"><EyeIcon size={15} /></span>
         <span className="strip-body">
-          <b>{fmtInt(monitored)}</b>
+          <b>{fmtInt(monitoredNow)}</b>
           <small>kecamatan dipantau</small>
         </span>
       </span>
@@ -750,7 +757,7 @@ function SituationStrip({
         <span className="strip-icon pick" aria-hidden="true"><TargetIcon size={15} /></span>
         <span className="strip-body">
           <span className="strip-figure-row">
-            <b>{fmtInt(planned)}</b>
+            <b>{fmtInt(plannedNow)}</b>
             {crew.total > 0 && (
               <i className={`strip-crew${exhausted ? " is-exhausted" : ""}`} title={`Regu terpakai: ${crew.used} dari ${crew.total}`}>
                 regu {fmtInt(crew.used)}/{fmtInt(crew.total)}
@@ -775,7 +782,7 @@ function SituationStrip({
       <span className="strip-stat">
         <span className="strip-icon guard" aria-hidden="true"><ShieldIcon size={15} /></span>
         <span className="strip-body">
-          <b>{fmtCompact(protectedPeople)}</b>
+          <b>{fmtCompact(protectedNow)}</b>
           <small>jiwa terlindungi</small>
         </span>
       </span>

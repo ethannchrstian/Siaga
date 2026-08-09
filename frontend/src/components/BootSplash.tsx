@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 
-/** Below this, the splash would flash rather than read as a deliberate boot. */
-const MIN_MS = 1500;
-/** Matches the fade-out transition in redesign.css. */
-const FADE_MS = 420;
+/**
+ * Long enough for the fill to finish and hold a beat before it lifts. The
+ * fill itself runs 2s, so this leaves ~600ms at full before the fade.
+ */
+const MIN_MS = 2600;
+/** Matches the zoom-and-fade exit in redesign.css. */
+const FADE_MS = 620;
 
 interface Props {
   /** Initial scenario, boundaries and risk are all in. */

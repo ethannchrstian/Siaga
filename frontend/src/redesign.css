@@ -499,7 +499,9 @@ th.num .sort-button { margin-left: auto; }
   margin-top: 6px; padding-left: 8px; border-left: 2px solid var(--border);
   color: #59677b; font-size: 11px; line-height: 1.5;
 }
-.cards .card { animation: card-in 260ms ease backwards; animation-delay: calc(var(--i, 0) * 30ms); }
+/* .decision-card, not .card: the cards were renamed and this selector was left
+   behind, so the stagger silently matched nothing. */
+.cards .decision-card { animation: card-in 260ms ease backwards; animation-delay: calc(var(--i, 0) * 30ms); }
 @keyframes card-in { from { opacity: 0; transform: translateY(4px); } }
 .cards.solving { opacity: .55; pointer-events: none; transition: opacity 150ms ease; }
 
@@ -780,8 +782,15 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* The other four views switched in with nothing, so navigation felt uneven
+   next to Peta. `backwards` rather than `both` on purpose: command-enter ends
+   on translateY(0), and a transform that persists turns the page root into a
+   containing block for any position:fixed descendant. */
+.page, .overview, .about { animation: command-enter .3s ease-out backwards; }
+
 @media (prefers-reduced-motion: reduce) {
-  .stat-strip, .peta > .content, .toast { animation: none; }
+  .stat-strip, .peta > .content, .toast,
+  .page, .overview, .about { animation: none; }
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
 
@@ -3637,10 +3646,30 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   display: grid;
   place-items: center;
   background: #0d1730;
-  transition: opacity 420ms ease, visibility 420ms;
+  /* Backdrop holds while the lockup grows, so the mark stays legible against
+     navy instead of dissolving into the map before it has travelled. */
+  transition: opacity 420ms ease 200ms, visibility 620ms;
 }
 .boot.is-leaving { opacity: 0; visibility: hidden; }
-.boot-inner { display: flex; flex-direction: column; align-items: center; }
+
+/* On the way out the lockup comes toward the viewer. Logo, wordmark and bar
+   sit on one plane, so they scale as a single object; an accelerating ease
+   because something approaching speeds up, where a symmetric one would read
+   as a zoom effect rather than as motion. */
+.boot-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition:
+    transform 620ms cubic-bezier(.35, 0, .65, .25),
+    /* Held back deliberately: fading in step with the scale meant the lockup
+       was already transparent by the time it had grown enough to notice, so
+       the whole thing read as a plain fade. */
+    opacity 400ms ease-in 220ms;
+}
+.boot.is-leaving .boot-inner { transform: scale(1.8); opacity: 0; }
+/* The bar is a loading indicator; it has no reason to travel with them. */
+.boot.is-leaving .boot-bar { opacity: 0; transition: opacity 180ms ease; }
 
 .boot-logo { position: relative; width: 82px; height: 85px; }
 .boot-logo span {
@@ -3654,7 +3683,7 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 .boot-logo-fill {
   background: #eaf1fa;
   clip-path: inset(100% 0 0 0);
-  animation: boot-fill 1.5s cubic-bezier(.33, .68, .38, 1) forwards;
+  animation: boot-fill 2s cubic-bezier(.33, .68, .38, 1) forwards;
 }
 @keyframes boot-fill {
   from { clip-path: inset(100% 0 0 0); }
@@ -3703,5 +3732,6 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 @media (prefers-reduced-motion: reduce) {
   .boot-logo-fill { animation: none; clip-path: inset(0 0 0 0); }
   .boot-bar i { animation: none; width: 100%; }
+  .boot.is-leaving .boot-inner { transform: none; }
   .peta .sidebar, .navrail, .plan-reopen { transition: none; }
 }
