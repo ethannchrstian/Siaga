@@ -12,7 +12,6 @@ import Insiden from "./components/Insiden";
 import Inventaris from "./components/Inventaris";
 import About from "./components/About";
 import Toasts, { type Toast } from "./components/Toasts";
-import Header from "./components/Header";
 import ReplayControl from "./components/ReplayControl";
 import DispatchOrder from "./components/DispatchOrder";
 import {
@@ -498,19 +497,19 @@ export default function App() {
     <div className="app">
       {/* The rail is full height and sits beside the command bar, so there is
           one navigation surface rather than two competing strips of chrome. */}
-      <NavRail view={view} onView={setView} monitoringCount={kpis.aboveMonitoring} lastUpdated={date} />
-
-      <div className="app-main">
-      <Header
+      <NavRail
+        view={view}
+        onView={setView}
+        monitoringCount={kpis.aboveMonitoring}
         date={date}
         dateMin={scenario?.date_min ?? "2015-01-30"}
         dateMax={scenario?.date_max ?? "2024-12-31"}
-        monitoringCount={kpis.aboveMonitoring}
         presets={PRESETS}
         onDate={setDate}
         disabled={replayLoading || replay !== null}
       />
 
+      <div className="app-main">
       {error && (
         <div className="errbar" role="alert">
           <span>{error}</span>

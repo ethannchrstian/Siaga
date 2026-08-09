@@ -2500,6 +2500,60 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 }
 .app-main > .body { flex: 1; min-height: 0; }
 
+/* The command context now belongs to the navy navigation surface. This removes
+   the redundant white top strip and keeps every global control in one place. */
+.navrail { overflow-y: auto; }
+.navrail-context {
+  margin: 0 10px 8px;
+  padding: 14px 8px 13px;
+  border-bottom: 1px solid rgba(255,255,255,.09);
+}
+.navrail-context-title { display: flex; flex-direction: column; padding: 0 2px 11px; }
+.navrail-context-title strong { color: #fff; font-size: var(--fs-small); line-height: 1.35; }
+.navrail-context-title span { margin-top: 3px; color: #8b9ab0; font-size: var(--fs-micro); line-height: 1.35; }
+.navrail-date,
+.navrail-scenario {
+  position: relative;
+  box-sizing: border-box;
+  display: grid;
+  align-items: center;
+  width: 100%;
+  color: #fff;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.11);
+  border-radius: 7px;
+}
+.navrail-date { grid-template-columns: 1fr auto; gap: 1px 6px; padding: 8px 9px; }
+.navrail-date > span { grid-column: 1 / -1; color: #8b9ab0; font-size: var(--fs-micro); }
+.navrail-date > strong { font-family: var(--font-mono); font-size: var(--fs-small); font-weight: 500; }
+.navrail-date input { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; }
+.navrail-scenario { grid-template-columns: 1fr auto; margin-top: 6px; padding: 0 9px; }
+.navrail-scenario select {
+  min-width: 0;
+  height: 34px;
+  color: #dce5ef;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  appearance: none;
+  font: inherit;
+  font-size: var(--fs-micro);
+  cursor: pointer;
+}
+.navrail-scenario select option { color: var(--ink-1); background: #fff; }
+.navrail-date:focus-within, .navrail-scenario:focus-within { outline: 2px solid #8db5e5; outline-offset: 2px; }
+.navrail-date.is-disabled, .navrail-scenario.is-disabled { opacity: .55; }
+.navrail-monitoring { display: flex; align-items: flex-start; gap: 8px; margin-top: 10px; padding: 0 2px; color: #aebed1; }
+.navrail-monitoring > svg { flex: 0 0 auto; margin-top: 1px; }
+.navrail-monitoring span { display: flex; flex-direction: column; min-width: 0; }
+.navrail-monitoring strong { color: #e6edf5; font-size: var(--fs-micro); line-height: 1.35; }
+.navrail-monitoring small { margin-top: 2px; color: #788aa2; font-size: 10px; }
+.navrail-operator { display: flex; align-items: center; gap: 9px; }
+.navrail-operator .account-avatar { flex: 0 0 auto; color: var(--signal-navy); background: #fff; }
+.navrail-operator > span:last-child { display: flex; flex-direction: column; min-width: 0; }
+.navrail-operator strong { color: #e8eef5; font-size: var(--fs-micro); }
+.navrail-operator small { margin-top: 1px; color: #8b9ab0; font-size: 10px; }
+
 /* Source footnote: the honesty line, always visible under the map. */
 .source-note {
   flex: none;
@@ -2677,6 +2731,7 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   .navrail-logo div, .navrail-brand-sub, .navrail-section { display: none; }
   .navrail-logo { justify-content: center; }
   .navrail-brand { padding: 14px 6px; }
+  .navrail-context, .navrail-foot { display: none; }
   .situation-funnel { flex-direction: column; }
   .funnel-arrow { transform: rotate(135deg); margin: -4px 0; }
   .funnel-body small { display: block; }
