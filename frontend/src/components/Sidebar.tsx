@@ -32,6 +32,9 @@ interface Props {
   selectedId?: string | null;
   /** Reports the card under the cursor so the map can outline it. */
   onHover?: (districtId: string | null) => void;
+  /** Publishing is the terminal action of this panel, so the button lives here
+      rather than in a page header the screen no longer has. */
+  onPublishOrder?: () => void;
 }
 
 interface DecisionGroup {
@@ -62,6 +65,7 @@ export default function Sidebar({
   crew,
   selectedId,
   onHover,
+  onPublishOrder,
 }: Props) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<DecisionFilter>("all");
@@ -120,6 +124,22 @@ export default function Sidebar({
         <div className="sidebar-title-row">
           <div className="sidebar-title">Rencana prapenempatan</div>
           <span className="plan-count">{groups.length}</span>
+          {/* The plan has to be able to leave the browser. A depot crew acts on
+              paper or a message, not on a tab someone has open. Short label:
+              the full one does not fit beside the title at 366px. Stays visible
+              in Terpisah: the order always prints the SIAGA plan, and a button
+              that vanishes on the baseline toggle flickers mid-demo. */}
+          {onPublishOrder && (
+            <button
+              type="button"
+              className="btn-order sidebar-order"
+              onClick={onPublishOrder}
+              disabled={groups.length === 0}
+              title="Susun perintah prapenempatan untuk dicetak atau disimpan sebagai PDF"
+            >
+              Terbitkan
+            </button>
+          )}
         </div>
         {/* Locks persist across a reload, so there has to be one obvious way
             back to the optimizer's own recommendation. */}
@@ -161,6 +181,13 @@ export default function Sidebar({
               />
             </span>
           </div>
+        )}
+        {/* Teaches the interaction model at the point of use, then gets out of
+            the way. Someone who has already decided does not need telling. */}
+        {!readonly && locks.size === 0 && rejects.size === 0 && groups.length > 0 && (
+          <p className="decision-hint">
+            Kunci untuk menyetujui, Alihkan untuk menolak. Sistem menghitung ulang.
+          </p>
         )}
       </div>
 

@@ -696,7 +696,10 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 /* Decision queue: show probability, consequence and travel time in scan order. */
 .peta .sidebar-head { padding: 16px 15px 13px; border-bottom-color: #e3e7ed; }
 .sidebar-kicker { color: #cc2f34; font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
-.sidebar-title-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 4px; }
+/* Title takes the slack so the count and the publish button pin right. */
+.sidebar-title-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.sidebar-title-row .sidebar-title { flex: 1 1 auto; min-width: 0; }
+.sidebar-title-row .plan-count { flex: none; }
 .peta .sidebar-title { color: #101e35; font-size: 15px; }
 .plan-count {
   min-width: 25px;
@@ -778,7 +781,7 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .stat-row, .peta > .content, .toast { animation: none; }
+  .stat-strip, .peta > .content, .toast { animation: none; }
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
 
@@ -2505,12 +2508,11 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 .navrail { overflow-y: auto; }
 .navrail-context {
   margin: 0 10px 8px;
-  padding: 14px 8px 13px;
+  padding: 12px 8px;
   border-bottom: 1px solid rgba(255,255,255,.09);
 }
-.navrail-context-title { display: flex; flex-direction: column; padding: 0 2px 11px; }
-.navrail-context-title strong { color: #fff; font-size: var(--fs-small); line-height: 1.35; }
-.navrail-context-title span { margin-top: 3px; color: #8b9ab0; font-size: var(--fs-micro); line-height: 1.35; }
+/* Solid white on the navy rail: at 7% alpha these read as background rather
+   than as the two controls that drive every number on the page. */
 .navrail-date,
 .navrail-scenario {
   position: relative;
@@ -2518,20 +2520,24 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   display: grid;
   align-items: center;
   width: 100%;
-  color: #fff;
-  background: rgba(255,255,255,.07);
-  border: 1px solid rgba(255,255,255,.11);
+  color: var(--ink-1);
+  background: #fff;
+  border: 1px solid rgba(255,255,255,.16);
   border-radius: 7px;
+  box-shadow: 0 1px 3px rgba(6, 12, 26, .28);
 }
+/* The chevrons inherited color:#fff and would disappear on the white face. */
+.navrail-date > svg,
+.navrail-scenario > svg { color: var(--ink-4); }
 .navrail-date { grid-template-columns: 1fr auto; gap: 1px 6px; padding: 8px 9px; }
-.navrail-date > span { grid-column: 1 / -1; color: #8b9ab0; font-size: var(--fs-micro); }
-.navrail-date > strong { font-family: var(--font-mono); font-size: var(--fs-small); font-weight: 500; }
+.navrail-date > span { grid-column: 1 / -1; color: var(--ink-4); font-size: var(--fs-micro); }
+.navrail-date > strong { color: var(--ink-1); font-family: var(--font-mono); font-size: var(--fs-small); font-weight: 500; }
 .navrail-date input { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; }
 .navrail-scenario { grid-template-columns: 1fr auto; margin-top: 6px; padding: 0 9px; }
 .navrail-scenario select {
   min-width: 0;
   height: 34px;
-  color: #dce5ef;
+  color: var(--ink-2);
   background: transparent;
   border: 0;
   outline: 0;
@@ -2543,11 +2549,6 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 .navrail-scenario select option { color: var(--ink-1); background: #fff; }
 .navrail-date:focus-within, .navrail-scenario:focus-within { outline: 2px solid #8db5e5; outline-offset: 2px; }
 .navrail-date.is-disabled, .navrail-scenario.is-disabled { opacity: .55; }
-.navrail-monitoring { display: flex; align-items: flex-start; gap: 8px; margin-top: 10px; padding: 0 2px; color: #aebed1; }
-.navrail-monitoring > svg { flex: 0 0 auto; margin-top: 1px; }
-.navrail-monitoring span { display: flex; flex-direction: column; min-width: 0; }
-.navrail-monitoring strong { color: #e6edf5; font-size: var(--fs-micro); line-height: 1.35; }
-.navrail-monitoring small { margin-top: 2px; color: #788aa2; font-size: 10px; }
 .navrail-operator { display: flex; align-items: center; gap: 9px; }
 .navrail-operator .account-avatar { flex: 0 0 auto; color: var(--signal-navy); background: #fff; }
 .navrail-operator > span:last-child { display: flex; flex-direction: column; min-width: 0; }
@@ -2569,134 +2570,94 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 .source-note b { color: var(--ink-2); font-weight: 600; }
 
 /* ---------------------------------------------------------------------------
-   Page lede + stat cards.
+   Situation strip.
 
-   The page title and the task model are not metrics, so they sit on their own
-   line rather than as a tile competing with numbers. The stats below are
-   discrete cards; chevrons in the gaps keep the causal reading (this many
-   qualify, the fleet reaches this many, that protects this many).
+   One band, not a title plus a row of tiles. Three of these four figures are
+   already printed in the sidebar head and the nav badge, so the band earns its
+   place through the causal reading (this many qualify, the fleet reaches this
+   many, that protects this many) rather than through tile-sized repetition.
+   Chevrons sit between the figures to keep that reading; the crew count rides
+   with the middle number because it is the answer to "why only 13 of 296".
    --------------------------------------------------------------------------- */
-.page-lede {
-  flex: none;
-  display: flex;
-  align-items: baseline;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding: 2px 2px 10px;
-}
-.page-lede h1 {
-  color: #0d1730;
-  font-size: 21px;
-  line-height: 1.15;
-  font-weight: 650;
-  letter-spacing: -.01em;
-}
-.page-lede p {
-  flex: 1 1 340px;
-  min-width: 0;
-  color: var(--ink-3);
-  font-size: var(--fs-small);
-  line-height: 1.45;
-}
-.page-lede p b { color: var(--ink-1); font-weight: 650; }
-
-.stat-row {
+.stat-strip {
   flex: none;
   display: flex;
   align-items: stretch;
   gap: 8px;
   animation: command-enter .28s ease-out both;
 }
-.stat-card {
+.situation-strip {
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 14px;
   min-width: 0;
-  min-height: 72px;
-  padding: 9px 11px;
+  min-height: 48px;
+  padding: 7px 15px;
   background: #fff;
   border: 1px solid var(--border);
   border-radius: 7px;
   box-shadow: 0 2px 10px rgba(17, 38, 67, .05);
 }
-.situation-funnel { flex: 1; display: flex; align-items: stretch; gap: 8px; min-width: 0; }
-.funnel-stage { flex: 1; }
-.funnel-icon {
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  width: 30px;
-  height: 30px;
-  border-radius: 7px;
-}
-.funnel-icon svg { width: 16px; height: 16px; }
-.stage-monitor .funnel-icon { color: #3f5d72; background: #eaf0f3; }
-.stage-select .funnel-icon { color: var(--signal-navy); background: #e8ecf2; }
-.stage-protect .funnel-icon { color: #1f5136; background: #e6f0ea; }
-
-.funnel-body { display: flex; flex-direction: column; min-width: 0; }
-.funnel-body b {
+.strip-stat { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.strip-stat b {
   color: #0b1f33;
   font-family: var(--font-mono);
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 600;
   line-height: 1.05;
+  letter-spacing: -.01em;
 }
-.funnel-body strong { margin-top: 1px; color: var(--ink-2); font-size: 11px; font-weight: 600; }
-.funnel-body small { margin-top: 1px; color: var(--ink-4); font-size: var(--fs-micro); }
-
-/* Crew meter: the answer to the question every viewer asks, which is why the
-   optimizer chose 9 out of 306. */
-.funnel-meter { margin-top: 4px; }
-.funnel-meter i { display: block; height: 4px; overflow: hidden; background: #e3e8ee; border-radius: 3px; }
-.funnel-meter em {
-  display: block;
-  height: 100%;
-  background: var(--signal-navy);
+.strip-stat small { color: var(--ink-3); font-size: var(--fs-small); white-space: nowrap; }
+.strip-crew {
+  padding: 2px 6px;
+  color: var(--ink-3);
+  background: #f1f4f8;
   border-radius: 3px;
-  transition: width 320ms cubic-bezier(.22, 1, .36, 1);
+  font-size: var(--fs-micro);
+  font-style: normal;
+  white-space: nowrap;
 }
-.funnel-meter small { display: block; margin-top: 2px; color: var(--ink-3); font-size: var(--fs-micro); }
-
-.funnel-badge {
-  align-self: flex-start;
-  margin-top: 3px;
-  padding: 1px 5px;
+/* Fleet exhausted is the load-bearing caveat, not decoration. */
+.strip-crew.is-exhausted { color: #8a3d15; background: #fdf0e6; font-weight: 600; }
+.strip-note {
+  margin-left: auto;
+  padding: 2px 7px;
   color: var(--signal-navy);
   background: #eef1f6;
   border-radius: 3px;
   font-size: var(--fs-micro);
   font-weight: 600;
+  white-space: nowrap;
 }
 
-/* Chevrons live in the gaps between cards, not inside them. */
-.funnel-arrow {
+/* Chevrons live in the gaps between figures, not inside them. */
+.strip-arrow {
   flex: 0 0 auto;
-  align-self: center;
-  width: 8px;
-  height: 8px;
-  margin: 0 -4px;
+  width: 7px;
+  height: 7px;
   border-top: 1.6px solid #b9c2cd;
   border-right: 1.6px solid #b9c2cd;
   transform: rotate(45deg);
 }
 
-/* Headline card: the coordination gain leads the row. */
-.stat-row .compare-banner {
+/* Headline: the coordination gain leads the strip. */
+/* Figure and copy on one line, not stacked: a column costs figure height plus
+   copy height and pushes the strip past 48px. */
+.stat-strip .compare-banner {
   position: relative;
   inset: auto;
   z-index: auto;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 4px;
+  flex-direction: row;
+  align-items: center;
+  gap: 9px;
   flex: 0 0 auto;
   width: auto;
-  max-width: 250px;
-  min-height: 72px;
+  max-width: 340px;
+  min-height: 48px;
   margin: 0;
-  padding: 9px 13px;
+  padding: 7px 14px;
   transform: none;
   background: #fff;
   border: 1px solid var(--border);
@@ -2704,27 +2665,31 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   border-radius: 7px;
   box-shadow: 0 2px 10px rgba(17, 38, 67, .05);
 }
-.stat-row .compare-banner .compare-figure {
+.stat-strip .compare-banner .compare-figure {
+  flex: none;
   font-family: var(--font-mono);
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 600;
   line-height: 1.1;
   letter-spacing: -.01em;
 }
-.stat-row .compare-banner .compare-copy {
+.stat-strip .compare-banner .compare-copy {
   font-size: 11px;
   line-height: 1.3;
   color: var(--ink-3);
 }
-.stat-row .compare-banner.off { background: #fff; border-left-color: #a9471c; }
+/* The off state is a full explanatory sentence, so it gets the whole box. */
+.stat-strip .compare-banner.off { max-width: 420px; }
+.stat-strip .compare-banner.off { background: #fff; border-left-color: #a9471c; }
 
 @media (max-width: 1240px) {
-  .stat-row { flex-wrap: wrap; }
-  .situation-funnel { flex: 1 1 100%; }
+  .stat-strip { flex-wrap: wrap; }
+  .situation-strip { flex: 1 1 100%; }
 }
 @media (max-width: 1180px) {
   .navrail { width: 196px; }
-  .funnel-body small { display: none; }
+  .situation-strip { gap: 10px; }
+  .strip-note { display: none; }
 }
 @media (max-width: 900px) {
   .navrail { width: 62px; }
@@ -2732,9 +2697,8 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   .navrail-logo { justify-content: center; }
   .navrail-brand { padding: 14px 6px; }
   .navrail-context, .navrail-foot { display: none; }
-  .situation-funnel { flex-direction: column; }
-  .funnel-arrow { transform: rotate(135deg); margin: -4px 0; }
-  .funnel-body small { display: block; }
+  .situation-strip { flex-wrap: wrap; row-gap: 6px; }
+  .strip-arrow { display: none; }
 }
 
 /* Card and map coupling: hovering a card outlines its kecamatan, selecting a
@@ -2949,10 +2913,6 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
    Dispatch order: getting the plan out of the browser
    ============================================================ */
 
-/* The lede now carries an action, so the text block takes the slack and the
-   button stays pinned right. */
-.page-lede > div:first-child { flex: 1 1 320px; }
-
 .btn-order {
   flex: none;
   height: var(--control-h);
@@ -2970,6 +2930,27 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 .btn-order:hover:not(:disabled) { background: #16293f; border-color: #16293f; }
 .btn-order:disabled { opacity: .45; cursor: not-allowed; }
 .btn-order:focus-visible { outline: 2px solid #2f6feb; outline-offset: 2px; }
+
+/* Same button in a 366px panel head: Laporan Operasional keeps the full size. */
+.btn-order.sidebar-order {
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 5px;
+  font-size: var(--fs-micro);
+  white-space: nowrap;
+}
+
+/* Shows on arrival, gone after the first decision. */
+.decision-hint {
+  margin-top: 9px;
+  padding: 6px 9px;
+  color: var(--ink-3);
+  background: #f5f8fb;
+  border-left: 2px solid #c6d2e0;
+  border-radius: 0 4px 4px 0;
+  font-size: var(--fs-micro);
+  line-height: 1.45;
+}
 
 .order-backdrop {
   position: fixed;

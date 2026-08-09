@@ -24,9 +24,11 @@ export default function CompareBanner({ comparison, compare }: Props) {
       {compare === "siaga" ? (
         <>
           <span className="compare-figure">+{fmtInt(delta)}</span>
+          {/* Compressed to fit the one-row strip. "Koordinasi terpadu" is
+              dropped because the Terpadu/Terpisah toggle names it directly
+              below, and the off-state copy spells the mechanism out. */}
           <span className="compare-copy">
-            jiwa lebih terlindungi dengan koordinasi terpadu
-            {pct > 0 && <b> (+{pct}%)</b>} dibanding penanganan terpisah
+            jiwa lebih terlindungi{pct > 0 && <b> (+{pct}%)</b>} vs penanganan terpisah
           </span>
         </>
       ) : (

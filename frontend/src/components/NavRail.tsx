@@ -1,5 +1,4 @@
 import { AlertIcon, ChevronDownIcon, FleetIcon, GridIcon, InfoIcon, MapIcon } from "../icons";
-import { MONITORING_THRESHOLD_HELP } from "../thresholds";
 
 export type View = "peta" | "insiden" | "inventaris" | "ringkasan" | "tentang";
 
@@ -53,11 +52,9 @@ export default function NavRail({
           </div>
         </div>
       </div>
+      {/* Filters only. The tagline that used to sit here said nothing the brand
+          block does not, and the monitoring count is already the nav badge. */}
       <div className="navrail-context">
-        <div className="navrail-context-title">
-          <strong>Peringatan dini banjir &amp; cekaman air</strong>
-          <span>Koridor pesisir utara Jawa</span>
-        </div>
         <label className={`navrail-date${disabled ? " is-disabled" : ""}`}>
           <span>Hindcast · tanggal aktif</span>
           <strong>{formatDate(date)}</strong>
@@ -84,13 +81,6 @@ export default function NavRail({
           </select>
           <ChevronDownIcon size={13} />
         </label>
-        <div className="navrail-monitoring" title={MONITORING_THRESHOLD_HELP}>
-          <AlertIcon size={15} />
-          <span>
-            <strong>{monitoringCount > 0 ? `${monitoringCount} kecamatan dipantau` : "Tidak ada wilayah di atas ambang"}</strong>
-            <small>Ambang pemantauan ≥50%</small>
-          </span>
-        </div>
       </div>
       {SECTIONS.map((section) => (
         <div className="navrail-group" key={section.label}>

@@ -38,7 +38,6 @@ import {
 } from "./api/client";
 import type { ViewMode } from "./hazard";
 import { computeKpis, fmtCompact, fmtInt } from "./metrics";
-import { EyeIcon, ShieldIcon, TargetIcon } from "./icons";
 import "./App.css";
 import "./redesign.css";
 
@@ -528,34 +527,15 @@ export default function App() {
 
         {view === "peta" && (
           <div className="peta">
-            {/* Page identity on its own line: a title and the task model are
-                not metrics and were competing with the numbers beside them. */}
-            <div className="page-lede">
-              <div>
-                <h1>Peta &amp; alokasi</h1>
-                <p>
-                  Menempatkan armada terbatas <b>sebelum</b> bencana terjadi.
-                  Kunci untuk menyetujui, Alihkan untuk menolak; sistem menghitung ulang.
-                </p>
-              </div>
-              {/* The plan has to be able to leave the browser. A depot crew
-                  acts on paper or a message, not on a tab someone has open. */}
-              <button
-                className="btn-order"
-                onClick={() => setShowOrder(true)}
-                disabled={!result || result.plan.length === 0}
-                title="Susun perintah prapenempatan untuk dicetak atau disimpan sebagai PDF"
-              >
-                Terbitkan perintah
-              </button>
-            </div>
-            <section className="stat-row" aria-label="Ringkasan situasi">
+            {/* No page title: the active nav item already names the screen, and
+                a heading plus a band of cards cost the map ~128px of height. */}
+            <section className="stat-strip" aria-label="Ringkasan situasi">
               {/* The coordination gain is the point of the whole system, so it
                   leads the row rather than sitting in a map corner. */}
               {!replay && result?.comparison && (
                 <CompareBanner comparison={result.comparison} compare={compare} />
               )}
-              <SituationFunnel
+              <SituationStrip
                 monitored={kpis.aboveMonitoring}
                 planned={kpis.served}
                 proactive={kpis.proactiveAllocations}
@@ -645,6 +625,7 @@ export default function App() {
                 crew={crew}
                 selectedId={selected}
                 onHover={setHoveredId}
+                onPublishOrder={() => setShowOrder(true)}
               />
             </main>
             {/* Honesty line. Kept on the primary screen rather than buried in
@@ -707,10 +688,14 @@ export default function App() {
 }
 
 // The three numbers read as one sentence: this many qualify, the fleet only
-// reaches this many, and that protects this many people. Presented as four
-// independent tiles, the 306-vs-9 gap reads as the system ignoring 297 places;
-// the answer (crews exhausted) has to sit inside the middle stage.
-function SituationFunnel({
+// reaches this many, and that protects this many people. The 296-vs-13 gap
+// reads as the system ignoring 283 places unless the answer (crews exhausted)
+// travels with the middle number, so it stays inline rather than in a footnote.
+//
+// One row, not three cards. Two of these figures are already printed in the
+// sidebar head a few hundred pixels to the right, so the band earns its keep
+// through the causal ordering, not through repeating them at tile size.
+function SituationStrip({
   monitored,
   planned,
   proactive,
@@ -723,51 +708,39 @@ function SituationFunnel({
   protectedPeople: number;
   crew: { used: number; total: number };
 }) {
-  const crewPct = crew.total ? Math.round((crew.used / crew.total) * 100) : 0;
   const exhausted = crew.total > 0 && crew.used >= crew.total;
   return (
-    <div className="situation-funnel" aria-label="Alur keputusan: dipantau, dipilih, terlindungi">
-      <article className="stat-card funnel-stage stage-monitor">
-        <span className="funnel-icon" aria-hidden="true"><EyeIcon size={18} /></span>
-        <div className="funnel-body">
-          <b>{fmtInt(monitored)}</b>
-          <strong>kecamatan dipantau</strong>
-          <small>peluang bahaya ≥50%</small>
-        </div>
-      </article>
+    <div className="situation-strip" aria-label="Alur keputusan: dipantau, dipilih, terlindungi">
+      <span className="strip-stat">
+        <b>{fmtInt(monitored)}</b>
+        <small>dipantau</small>
+      </span>
 
-      <span className="funnel-arrow" aria-hidden="true" />
+      <span className="strip-arrow" aria-hidden="true" />
 
-      <article className="stat-card funnel-stage stage-select">
-        <span className="funnel-icon" aria-hidden="true"><TargetIcon size={18} /></span>
-        <div className="funnel-body">
-          <b>{fmtInt(planned)}</b>
-          <strong>dipilih optimizer</strong>
-          <div className="funnel-meter" title={`Regu terpakai: ${crew.used} dari ${crew.total}`}>
-            <i><em style={{ width: `${Math.min(crewPct, 100)}%` }} /></i>
-            <small>
-              regu {fmtInt(crew.used)}/{fmtInt(crew.total)}
-              {exhausted ? " · armada habis" : " terpakai"}
-            </small>
-          </div>
-          {proactive > 0 && (
-            <span className="funnel-badge" title="Wilayah di bawah Ambang Pemantauan 50% tetap dapat dipilih optimizer mulai peluang 5%.">
-              {fmtInt(proactive)} di bawah ambang pemantauan
-            </span>
-          )}
-        </div>
-      </article>
+      <span className="strip-stat">
+        <b>{fmtInt(planned)}</b>
+        <small>dipilih optimizer</small>
+        {crew.total > 0 && (
+          <i className={`strip-crew${exhausted ? " is-exhausted" : ""}`} title={`Regu terpakai: ${crew.used} dari ${crew.total}`}>
+            regu {fmtInt(crew.used)}/{fmtInt(crew.total)}
+            {exhausted ? " · armada habis" : ""}
+          </i>
+        )}
+      </span>
 
-      <span className="funnel-arrow" aria-hidden="true" />
+      <span className="strip-arrow" aria-hidden="true" />
 
-      <article className="stat-card funnel-stage stage-protect">
-        <span className="funnel-icon" aria-hidden="true"><ShieldIcon size={18} /></span>
-        <div className="funnel-body">
-          <b>{fmtCompact(protectedPeople)}</b>
-          <strong>jiwa terlindungi</strong>
-          <small>rata-rata 30 skenario</small>
-        </div>
-      </article>
+      <span className="strip-stat">
+        <b>{fmtCompact(protectedPeople)}</b>
+        <small>jiwa terlindungi</small>
+      </span>
+
+      {proactive > 0 && (
+        <span className="strip-note" title="Wilayah di bawah Ambang Pemantauan 50% tetap dapat dipilih optimizer mulai peluang 5%.">
+          {fmtInt(proactive)} di bawah ambang
+        </span>
+      )}
     </div>
   );
 }
