@@ -12,6 +12,7 @@ import Insiden from "./components/Insiden";
 import Inventaris from "./components/Inventaris";
 import About from "./components/About";
 import Toasts, { type Toast } from "./components/Toasts";
+import { ChevronLeftIcon, EyeIcon, ShieldIcon, TargetIcon } from "./icons";
 import ReplayControl from "./components/ReplayControl";
 import DispatchOrder from "./components/DispatchOrder";
 import {
@@ -86,6 +87,9 @@ export default function App() {
   const [rejects, setRejects] = useState<Map<string, Reject>>(new Map());
   const [log, setLog] = useState<DecisionEntry[]>(readLog);
   const [showOrder, setShowOrder] = useState(false);
+  // Collapsing the plan panel hands its 366px to the map, which matters most
+  // when a district drawer is also docked.
+  const [planOpen, setPlanOpen] = useState(true);
 
   useEffect(() => {
     try {
@@ -543,8 +547,23 @@ export default function App() {
                 crew={crew}
               />
             </section>
-            <main className="content">
+            <main className={`content${planOpen ? "" : " plan-collapsed"}`}>
               <div className={`map-wrap${selected || selectedDepot ? " with-drawer" : ""}`}>
+                {/* Collapsed, the panel leaves behind a tab on the map edge so
+                    there is always one obvious way back to the plan. */}
+                {!planOpen && (
+                  <button
+                    type="button"
+                    className="plan-reopen"
+                    onClick={() => setPlanOpen(true)}
+                    title="Tampilkan rencana prapenempatan"
+                    aria-label="Tampilkan rencana prapenempatan"
+                  >
+                    <ChevronLeftIcon size={16} />
+                    <span>Rencana</span>
+                    {(result?.plan.length ?? 0) > 0 && <i>{result?.summary.n_districts_served}</i>}
+                  </button>
+                )}
                 <MapView
                   ref={mapHandleRef}
                   risk={risk}
@@ -626,6 +645,7 @@ export default function App() {
                 selectedId={selected}
                 onHover={setHoveredId}
                 onPublishOrder={() => setShowOrder(true)}
+                onCollapse={() => setPlanOpen(false)}
               />
             </main>
             {/* Honesty line. Kept on the primary screen rather than buried in
@@ -712,35 +732,46 @@ function SituationStrip({
   return (
     <div className="situation-strip" aria-label="Alur keputusan: dipantau, dipilih, terlindungi">
       <span className="strip-stat">
-        <b>{fmtInt(monitored)}</b>
-        <small>dipantau</small>
-      </span>
-
-      <span className="strip-arrow" aria-hidden="true" />
-
-      <span className="strip-stat">
-        <b>{fmtInt(planned)}</b>
-        <small>dipilih optimizer</small>
-        {crew.total > 0 && (
-          <i className={`strip-crew${exhausted ? " is-exhausted" : ""}`} title={`Regu terpakai: ${crew.used} dari ${crew.total}`}>
-            regu {fmtInt(crew.used)}/{fmtInt(crew.total)}
-            {exhausted ? " · armada habis" : ""}
-          </i>
-        )}
-      </span>
-
-      <span className="strip-arrow" aria-hidden="true" />
-
-      <span className="strip-stat">
-        <b>{fmtCompact(protectedPeople)}</b>
-        <small>jiwa terlindungi</small>
-      </span>
-
-      {proactive > 0 && (
-        <span className="strip-note" title="Wilayah di bawah Ambang Pemantauan 50% tetap dapat dipilih optimizer mulai peluang 5%.">
-          {fmtInt(proactive)} di bawah ambang
+        <span className="strip-icon watch" aria-hidden="true"><EyeIcon size={15} /></span>
+        <span className="strip-body">
+          <b>{fmtInt(monitored)}</b>
+          <small>kecamatan dipantau</small>
         </span>
-      )}
+      </span>
+
+      <span className="strip-stat">
+        <span className="strip-icon pick" aria-hidden="true"><TargetIcon size={15} /></span>
+        <span className="strip-body">
+          <span className="strip-figure-row">
+            <b>{fmtInt(planned)}</b>
+            {crew.total > 0 && (
+              <i className={`strip-crew${exhausted ? " is-exhausted" : ""}`} title={`Regu terpakai: ${crew.used} dari ${crew.total}`}>
+                regu {fmtInt(crew.used)}/{fmtInt(crew.total)}
+                {exhausted ? " · armada habis" : ""}
+              </i>
+            )}
+          </span>
+          {/* "1 di bawah ambang" on its own meant nothing to a first-time
+              reader. Named as proactive and paired with the number it is
+              below, it reads as a deliberate choice rather than a warning. */}
+          <small>
+            dipilih optimizer
+            {proactive > 0 && (
+              <em title="Optimizer mempertimbangkan kebutuhan mulai peluang 5%, terpisah dari Ambang Pemantauan 50%.">
+                {" "}· {fmtInt(proactive)} proaktif di bawah ambang 50%
+              </em>
+            )}
+          </small>
+        </span>
+      </span>
+
+      <span className="strip-stat">
+        <span className="strip-icon guard" aria-hidden="true"><ShieldIcon size={15} /></span>
+        <span className="strip-body">
+          <b>{fmtCompact(protectedPeople)}</b>
+          <small>jiwa terlindungi</small>
+        </span>
+      </span>
     </div>
   );
 }

@@ -2529,14 +2529,24 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 /* The chevrons inherited color:#fff and would disappear on the white face. */
 .navrail-date > svg,
 .navrail-scenario > svg { color: var(--ink-4); }
-.navrail-date { grid-template-columns: 1fr auto; gap: 1px 6px; padding: 8px 9px; }
-.navrail-date > span { grid-column: 1 / -1; color: var(--ink-4); font-size: var(--fs-micro); }
+/* Label sits above the control, so the white face holds only the value. */
+.navrail-field + .navrail-field { margin-top: 11px; }
+.navrail-field-label {
+  display: block;
+  margin: 0 2px 5px;
+  color: #8b9ab0;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+.navrail-date { grid-template-columns: 1fr auto; height: 38px; padding: 0 10px; }
 .navrail-date > strong { color: var(--ink-1); font-family: var(--font-mono); font-size: var(--fs-small); font-weight: 500; }
 .navrail-date input { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; }
-.navrail-scenario { grid-template-columns: 1fr auto; margin-top: 6px; padding: 0 9px; }
+.navrail-scenario { grid-template-columns: 1fr auto; padding: 0 10px; }
 .navrail-scenario select {
   min-width: 0;
-  height: 34px;
+  height: 38px;
   color: var(--ink-2);
   background: transparent;
   border: 0;
@@ -2589,26 +2599,59 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 .situation-strip {
   flex: 1;
   display: flex;
-  align-items: center;
-  gap: 14px;
+  align-items: stretch;
   min-width: 0;
-  min-height: 48px;
-  padding: 7px 15px;
+  min-height: 56px;
   background: #fff;
   border: 1px solid var(--border);
   border-radius: 7px;
   box-shadow: 0 2px 10px rgba(17, 38, 67, .05);
 }
-.strip-stat { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
-.strip-stat b {
+/* Rules between the segments, not chevrons: the sequence is already left to
+   right, and three floating arrowheads read as decoration. */
+.strip-stat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  /* Grow from content width, so the segments fill the strip without forcing
+     the long middle label to wrap into equal thirds. */
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 8px 16px;
+}
+.strip-stat + .strip-stat { border-left: 1px solid var(--border); }
+.strip-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+}
+.strip-icon.gain { color: #1f5136; background: #e6f0ea; }
+.strip-icon.watch { color: #3f5d72; background: #e9eef2; }
+.strip-icon.pick { color: var(--signal-navy); background: #e7ecf3; }
+/* Teal, not amber: this is people protected, not a warning. Distinct from the
+   gain green next to it while staying in the same "good outcome" family. */
+.strip-icon.guard { color: #175f63; background: #e3eff0; }
+
+.strip-body { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+.strip-figure-row { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+.strip-body b {
   color: #0b1f33;
   font-family: var(--font-mono);
   font-size: 19px;
   font-weight: 600;
-  line-height: 1.05;
+  line-height: 1.1;
   letter-spacing: -.01em;
 }
-.strip-stat small { color: var(--ink-3); font-size: var(--fs-small); white-space: nowrap; }
+.strip-body small { color: var(--ink-3); font-size: var(--fs-micro); line-height: 1.35; }
+.strip-body small em {
+  font-style: normal;
+  color: var(--ink-4);
+  border-bottom: 1px dotted #b9c2cd;
+  cursor: help;
+}
 .strip-crew {
   padding: 2px 6px;
   color: var(--ink-3);
@@ -2620,30 +2663,9 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 }
 /* Fleet exhausted is the load-bearing caveat, not decoration. */
 .strip-crew.is-exhausted { color: #8a3d15; background: #fdf0e6; font-weight: 600; }
-.strip-note {
-  margin-left: auto;
-  padding: 2px 7px;
-  color: var(--signal-navy);
-  background: #eef1f6;
-  border-radius: 3px;
-  font-size: var(--fs-micro);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-/* Chevrons live in the gaps between figures, not inside them. */
-.strip-arrow {
-  flex: 0 0 auto;
-  width: 7px;
-  height: 7px;
-  border-top: 1.6px solid #b9c2cd;
-  border-right: 1.6px solid #b9c2cd;
-  transform: rotate(45deg);
-}
 
 /* Headline: the coordination gain leads the strip. */
-/* Figure and copy on one line, not stacked: a column costs figure height plus
-   copy height and pushes the strip past 48px. */
+/* Matches a .strip-stat segment so the two boxes read as one instrument. */
 .stat-strip .compare-banner {
   position: relative;
   inset: auto;
@@ -2651,19 +2673,25 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
   flex: 0 0 auto;
   width: auto;
   max-width: 340px;
-  min-height: 48px;
+  min-height: 56px;
   margin: 0;
-  padding: 7px 14px;
+  padding: 8px 16px;
   transform: none;
   background: #fff;
   border: 1px solid var(--border);
   border-left: 3px solid #1f5136;
   border-radius: 7px;
   box-shadow: 0 2px 10px rgba(17, 38, 67, .05);
+}
+.stat-strip .compare-banner .compare-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
 }
 .stat-strip .compare-banner .compare-figure {
   flex: none;
@@ -2674,12 +2702,12 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   letter-spacing: -.01em;
 }
 .stat-strip .compare-banner .compare-copy {
-  font-size: 11px;
-  line-height: 1.3;
+  font-size: var(--fs-micro);
+  line-height: 1.35;
   color: var(--ink-3);
 }
 /* The off state is a full explanatory sentence, so it gets the whole box. */
-.stat-strip .compare-banner.off { max-width: 420px; }
+.stat-strip .compare-banner.off { max-width: 430px; }
 .stat-strip .compare-banner.off { background: #fff; border-left-color: #a9471c; }
 
 @media (max-width: 1240px) {
@@ -2688,8 +2716,7 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 }
 @media (max-width: 1180px) {
   .navrail { width: 196px; }
-  .situation-strip { gap: 10px; }
-  .strip-note { display: none; }
+  .strip-stat { padding-left: 11px; padding-right: 11px; gap: 8px; }
 }
 @media (max-width: 900px) {
   .navrail { width: 62px; }
@@ -2697,8 +2724,9 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   .navrail-logo { justify-content: center; }
   .navrail-brand { padding: 14px 6px; }
   .navrail-context, .navrail-foot { display: none; }
-  .situation-strip { flex-wrap: wrap; row-gap: 6px; }
-  .strip-arrow { display: none; }
+  .situation-strip { flex-wrap: wrap; }
+  .strip-stat + .strip-stat { border-left: 0; border-top: 1px solid var(--border); }
+  .strip-icon { display: none; }
 }
 
 /* Card and map coupling: hovering a card outlines its kecamatan, selecting a
@@ -2931,13 +2959,75 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 .btn-order:disabled { opacity: .45; cursor: not-allowed; }
 .btn-order:focus-visible { outline: 2px solid #2f6feb; outline-offset: 2px; }
 
-/* Same button in a 366px panel head: Laporan Operasional keeps the full size. */
+/* Full width on its own row: as a chip beside the title it got overlooked,
+   and this is the action the whole panel builds toward. */
 .btn-order.sidebar-order {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 36px;
+  margin-top: 11px;
+  padding: 0 12px;
+  font-size: var(--fs-small);
+}
+.btn-order.sidebar-order svg { flex: none; }
+
+/* ---------------------------------------------------------------------------
+   Collapsing the plan panel. Hidden with display:none rather than a width
+   transition: MapView's ResizeObserver turns the layout change into a
+   map.resize(), and animating the width would fire it on every frame.
+   --------------------------------------------------------------------------- */
+.content.plan-collapsed > .sidebar { display: none; }
+.plan-collapse-btn {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
   height: 26px;
-  padding: 0 10px;
+  color: var(--ink-3);
+  background: transparent;
+  border: 1px solid var(--border);
   border-radius: 5px;
+  cursor: pointer;
+}
+.plan-collapse-btn:hover { color: var(--ink-1); background: #f1f4f8; border-color: var(--border-strong); }
+.plan-collapse-btn:focus-visible { outline: 2px solid #2f6feb; outline-offset: 2px; }
+
+.plan-reopen {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  z-index: 6;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 11px 0 9px;
+  color: var(--ink-1);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-right: 0;
+  border-radius: 7px 0 0 7px;
+  font-family: var(--font-sans);
+  font-size: var(--fs-small);
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: -3px 0 12px rgba(16, 38, 70, .12);
+}
+.plan-reopen:hover { background: #f6f8fb; }
+.plan-reopen:focus-visible { outline: 2px solid #2f6feb; outline-offset: -2px; }
+.plan-reopen i {
+  min-width: 20px;
+  padding: 1px 5px;
+  color: #fff;
+  background: #0d1730;
+  border-radius: 10px;
   font-size: var(--fs-micro);
-  white-space: nowrap;
+  font-style: normal;
+  font-weight: 700;
 }
 
 /* Shows on arrival, gone after the first decision. */

@@ -54,33 +54,40 @@ export default function NavRail({
       </div>
       {/* Filters only. The tagline that used to sit here said nothing the brand
           block does not, and the monitoring count is already the nav badge. */}
+      {/* Each control carries its label above the box rather than inside it,
+          so the white face holds only the value the operator is reading. */}
       <div className="navrail-context">
-        <label className={`navrail-date${disabled ? " is-disabled" : ""}`}>
-          <span>Hindcast · tanggal aktif</span>
-          <strong>{formatDate(date)}</strong>
-          <ChevronDownIcon size={13} />
-          <input
-            type="date"
-            value={date}
-            min={dateMin}
-            max={dateMax}
-            onChange={(event) => onDate(event.target.value)}
-            aria-label="Pilih tanggal data"
-            disabled={disabled}
-          />
-        </label>
-        <label className={`navrail-scenario${disabled ? " is-disabled" : ""}`}>
-          <span className="sr-only">Pilih skenario contoh</span>
-          <select
-            value={presets.some((preset) => preset.date === date) ? date : ""}
-            onChange={(event) => event.target.value && onDate(event.target.value)}
-            disabled={disabled}
-          >
-            <option value="">Pilih skenario</option>
-            {presets.map((preset) => <option key={preset.date} value={preset.date}>{preset.label}</option>)}
-          </select>
-          <ChevronDownIcon size={13} />
-        </label>
+        <div className="navrail-field">
+          <span className="navrail-field-label">Hindcast · tanggal aktif</span>
+          <label className={`navrail-date${disabled ? " is-disabled" : ""}`}>
+            <strong>{formatDate(date)}</strong>
+            <ChevronDownIcon size={13} />
+            <input
+              type="date"
+              value={date}
+              min={dateMin}
+              max={dateMax}
+              onChange={(event) => onDate(event.target.value)}
+              aria-label="Pilih tanggal data"
+              disabled={disabled}
+            />
+          </label>
+        </div>
+        <div className="navrail-field">
+          <span className="navrail-field-label" id="navrail-scenario-label">Skenario contoh</span>
+          <label className={`navrail-scenario${disabled ? " is-disabled" : ""}`}>
+            <select
+              aria-labelledby="navrail-scenario-label"
+              value={presets.some((preset) => preset.date === date) ? date : ""}
+              onChange={(event) => event.target.value && onDate(event.target.value)}
+              disabled={disabled}
+            >
+              <option value="">Pilih skenario</option>
+              {presets.map((preset) => <option key={preset.date} value={preset.date}>{preset.label}</option>)}
+            </select>
+            <ChevronDownIcon size={13} />
+          </label>
+        </div>
       </div>
       {SECTIONS.map((section) => (
         <div className="navrail-group" key={section.label}>

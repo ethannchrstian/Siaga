@@ -4,7 +4,9 @@ import { useCountUp } from "../hooks/useCountUp";
 import {
   AlertIcon,
   ChevronDownIcon,
+  ChevronRightIcon,
   ClockIcon,
+  DocumentIcon,
   FleetIcon,
   InfoIcon,
   PeopleIcon,
@@ -35,6 +37,8 @@ interface Props {
   /** Publishing is the terminal action of this panel, so the button lives here
       rather than in a page header the screen no longer has. */
   onPublishOrder?: () => void;
+  /** Hands the panel's width back to the map. */
+  onCollapse?: () => void;
 }
 
 interface DecisionGroup {
@@ -66,6 +70,7 @@ export default function Sidebar({
   selectedId,
   onHover,
   onPublishOrder,
+  onCollapse,
 }: Props) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<DecisionFilter>("all");
@@ -124,20 +129,15 @@ export default function Sidebar({
         <div className="sidebar-title-row">
           <div className="sidebar-title">Rencana prapenempatan</div>
           <span className="plan-count">{groups.length}</span>
-          {/* The plan has to be able to leave the browser. A depot crew acts on
-              paper or a message, not on a tab someone has open. Short label:
-              the full one does not fit beside the title at 366px. Stays visible
-              in Terpisah: the order always prints the SIAGA plan, and a button
-              that vanishes on the baseline toggle flickers mid-demo. */}
-          {onPublishOrder && (
+          {onCollapse && (
             <button
               type="button"
-              className="btn-order sidebar-order"
-              onClick={onPublishOrder}
-              disabled={groups.length === 0}
-              title="Susun perintah prapenempatan untuk dicetak atau disimpan sebagai PDF"
+              className="plan-collapse-btn"
+              onClick={onCollapse}
+              title="Sembunyikan panel, perlebar peta"
+              aria-label="Sembunyikan panel rencana"
             >
-              Terbitkan
+              <ChevronRightIcon size={16} />
             </button>
           )}
         </div>
@@ -188,6 +188,23 @@ export default function Sidebar({
           <p className="decision-hint">
             Kunci untuk menyetujui, Alihkan untuk menolak. Sistem menghitung ulang.
           </p>
+        )}
+        {/* The plan has to be able to leave the browser: a depot crew acts on
+            paper or a message, not on a tab someone has open. Full width and
+            on its own row, because as a chip beside the title it was missed.
+            Stays visible in Terpisah since the order always prints the SIAGA
+            plan, and a button that vanishes on the toggle flickers mid-demo. */}
+        {onPublishOrder && (
+          <button
+            type="button"
+            className="btn-order sidebar-order"
+            onClick={onPublishOrder}
+            disabled={groups.length === 0}
+            title="Susun perintah prapenempatan untuk dicetak atau disimpan sebagai PDF"
+          >
+            <DocumentIcon size={15} />
+            <span>Terbitkan perintah</span>
+          </button>
         )}
       </div>
 

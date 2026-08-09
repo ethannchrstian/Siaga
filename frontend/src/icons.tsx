@@ -159,3 +159,12 @@ export const ShieldIcon = ({ size, className }: P) => (
     <path d="M7.5 13.5c1.4-1 2.8-1 4.5 0 1.7 1 3.1 1 4.5 0M8.5 10c1.1-.8 2.2-.8 3.5 0 1.3.8 2.4.8 3.5 0" />
   </svg>
 );
+
+export const DocumentIcon = ({ size, className }: P) => (
+  <svg {...base(size)} className={className}>
+    <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 3 14 8 19 8" />
+    <line x1="8.5" y1="13" x2="15.5" y2="13" />
+    <line x1="8.5" y1="16.5" x2="13" y2="16.5" />
+  </svg>
+);

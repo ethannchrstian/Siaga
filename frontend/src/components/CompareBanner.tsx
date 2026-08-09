@@ -1,6 +1,7 @@
 import type { AllocateResponse } from "../api/client";
 import { useCountUp } from "../hooks/useCountUp";
 import { fmtInt } from "../metrics";
+import { PeopleIcon } from "../icons";
 
 interface Props {
   comparison: AllocateResponse["comparison"];
@@ -23,12 +24,15 @@ export default function CompareBanner({ comparison, compare }: Props) {
     <div className={`compare-banner${compare === "terpisah" ? " off" : ""}`}>
       {compare === "siaga" ? (
         <>
-          <span className="compare-figure">+{fmtInt(delta)}</span>
+          <span className="strip-icon gain" aria-hidden="true"><PeopleIcon size={15} /></span>
           {/* Compressed to fit the one-row strip. "Koordinasi terpadu" is
               dropped because the Terpadu/Terpisah toggle names it directly
               below, and the off-state copy spells the mechanism out. */}
-          <span className="compare-copy">
-            jiwa lebih terlindungi{pct > 0 && <b> (+{pct}%)</b>} vs penanganan terpisah
+          <span className="compare-body">
+            <span className="compare-figure">+{fmtInt(delta)}</span>
+            <span className="compare-copy">
+              jiwa lebih terlindungi{pct > 0 && <b> (+{pct}%)</b>} vs penanganan terpisah
+            </span>
           </span>
         </>
       ) : (
