@@ -85,7 +85,7 @@ dengan token HF sebagai repository secret.
 | `<url>/health` | `{"status":"ok","service":"siaga-api","ui":true}` |
 | `<url>/risk?date=2015-02-19` | Mengembalikan data, bukan 404 atau 500 |
 | Halaman utama | Peta tampil, 13 kecamatan di panel kanan |
-| Tombol Kunci | Unit bergerak dari depot ke kecamatan, sekitar 1,5 detik |
+| Tombol Kunci | Unit bergerak dari depot ke kecamatan, median 0,26 detik |
 | Terpadu / Terpisah | Angka koordinasi berubah lalu kembali |
 | Terbitkan perintah | Dokumen terbuka, pratinjau cetak muat di A4 |
 

@@ -29,7 +29,13 @@ import math
 from dataclasses import dataclass
 
 import numpy as np
+import time
+
 import pulp
+
+# CBC stops here and returns its incumbent. Kept as a named constant so the
+# router can tell a genuine optimum from a solve that simply ran out of budget.
+SOLVE_TIME_LIMIT_S = 25
 
 # Demo service factors (documented, not fitted): how many people one unit covers.
 PEOPLE_PER_PUMP = 8000
@@ -253,9 +259,18 @@ def allocate(
 
     # 0.5% MIP gap: indistinguishable plans, ~4x faster re-solves (matters for
     # the interactive lock/reject loop).
-    prob.solve(pulp.PULP_CBC_CMD(msg=0, timeLimit=25, gapRel=0.005))
+    t0 = time.perf_counter()
+    prob.solve(pulp.PULP_CBC_CMD(msg=0, timeLimit=SOLVE_TIME_LIMIT_S, gapRel=0.005))
+    solve_s = time.perf_counter() - t0
 
-    return _extract_plan(prob, x, active, depots, resources, tmin, per_unit, prob_key)
+    out = _extract_plan(prob, x, active, depots, resources, tmin, per_unit, prob_key)
+    # CBC reports "Optimal" even when it stops on the time limit and hands back
+    # the incumbent, so the status alone cannot be trusted. Record the wall time
+    # and let the caller judge. Measured on 60 sampled dates, one (2015-11-15)
+    # consumed the whole budget on only 26 active districts.
+    out["summary"]["solve_seconds"] = round(solve_s, 2)
+    out["summary"]["hit_time_limit"] = solve_s >= SOLVE_TIME_LIMIT_S * 0.95
+    return out
 
 
 RES_LABEL = {"pompa": "pompa banjir", "truk_tangki": "truk tangki air"}
