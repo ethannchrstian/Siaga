@@ -129,13 +129,32 @@ def _nearest_available_date(date: str | None) -> pd.Timestamp:
     return uniq.loc[idx]
 
 
+@lru_cache(maxsize=1)
+def modeled_ids() -> frozenset[str]:
+    """Districts the hazard models actually cover: 318 of 324.
+
+    The remaining six sit on the Cirebon and Indramayu coast and have no
+    modelled river reach, so no flood row was ever produced for them.
+    """
+    return frozenset(risk_history()["district_id"].unique())
+
+
 def risk_on(date: str | None = None) -> tuple[pd.Timestamp, pd.DataFrame]:
     """District metadata joined with flood/drought probability for a date.
-    Districts without a modeled river (no flood row) get flood_prob 0."""
+
+    Districts the models do not cover keep a probability of 0.0 so every
+    downstream consumer -- the optimizer above all, which compares against
+    RISK_FLOOR -- keeps working on plain floats. They are marked `modeled`
+    False instead, and it is the interface's job to render that as "not
+    assessed" rather than as "0%, safe". The distinction matters: all six are
+    on the rob-exposed coast, which is precisely where a confident zero is
+    most misleading.
+    """
     ts = _nearest_available_date(date)
     r = risk_history()
     day = r[r["date"] == ts][["district_id", "flood_prob", "drought_prob"]]
     merged = district_meta().merge(day, on="district_id", how="left")
+    merged["modeled"] = merged["district_id"].isin(modeled_ids())
     merged["flood_prob"] = merged["flood_prob"].fillna(0.0)
     merged["drought_prob"] = merged["drought_prob"].fillna(0.0)
     return ts, merged
@@ -145,7 +164,7 @@ def risk_records(date: str | None = None) -> tuple[pd.Timestamp, list[dict]]:
     ts, df = risk_on(date)
     cols = [
         "district_id", "name", "kabupaten", "lat", "lon",
-        "population", "flood_prob", "drought_prob",
+        "population", "flood_prob", "drought_prob", "modeled",
     ]
     return ts, df[cols].to_dict("records")
 

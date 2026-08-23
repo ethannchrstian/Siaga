@@ -6,6 +6,12 @@ export interface Kpis {
   aboveMonitoring: number;
   floodMonitoring: number;
   droughtMonitoring: number;
+  // Radar counts, computed here for the same reason as the rest: the map mode
+  // switcher and the monitoring page must not arrive at them separately.
+  robWatch: number;
+  blindSpots: number;
+  // Kecamatan the hazard models do not cover at all.
+  unmodeled: number;
   totalDistricts: number;
   coveredMonitoring: number;
   proactiveAllocations: number;
@@ -22,8 +28,13 @@ export function computeKpis(
   let floodMonitoring = 0;
   let droughtMonitoring = 0;
   let coveredMonitoring = 0;
+  let robWatch = 0;
+  let blindSpots = 0;
   const plannedIds = new Set((result?.plan ?? []).map((item) => item.district_id));
   for (const d of risk.values()) {
+    // An unassessed kecamatan is not a quiet one. Counting its zero would put
+    // it in the same bucket as places the models cleared.
+    if (!d.modeled) continue;
     const p = Math.max(d.flood_prob, d.drought_prob);
     // people_exposed comes from the backend at full precision. Recomputing it
     // from the rounded probabilities above is what made this page disagree
@@ -35,13 +46,20 @@ export function computeKpis(
     }
     if (d.flood_prob >= MONITORING_THRESHOLD) floodMonitoring += 1;
     if (d.drought_prob >= MONITORING_THRESHOLD) droughtMonitoring += 1;
+    // Radar has no probability threshold to cross: it reports observed water
+    // against the kecamatan's own seasonal normal, so the bands are the count.
+    if (d.rob && (d.rob.level === "waspada" || d.rob.level === "tinggi")) robWatch += 1;
+    if (d.rob_blind_spot) blindSpots += 1;
   }
   const served = result?.summary.n_districts_served ?? 0;
   return {
     exposed: Math.round(exposed),
+    unmodeled: [...risk.values()].filter((d) => !d.modeled).length,
     aboveMonitoring,
     floodMonitoring,
     droughtMonitoring,
+    robWatch,
+    blindSpots,
     totalDistricts: risk.size,
     coveredMonitoring,
     proactiveAllocations: Math.max(served - coveredMonitoring, 0),
@@ -66,6 +84,9 @@ export function topExposed(
 ): RankedDistrict[] {
   const rows: RankedDistrict[] = [];
   for (const d of risk.values()) {
+    // An unassessed kecamatan is not a quiet one. Counting its zero would put
+    // it in the same bucket as places the models cleared.
+    if (!d.modeled) continue;
     const p = Math.max(d.flood_prob, d.drought_prob);
     if (p < CRITICAL_ALLOCATION_THRESHOLD) continue;
     rows.push({

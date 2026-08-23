@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query
 
+from app.services import rob as rob_svc
 from app.services import scenario
 
 router = APIRouter()
@@ -59,10 +60,16 @@ def risk(date: str | None = Query(default=None, description="YYYY-MM-DD")):
     date is missing."""
     ts, records = scenario.risk_records(date)
     lo, hi = scenario.date_bounds()
+    # Radar is an optional layer keyed by calendar month, not by day. When it
+    # is absent or the date falls outside coverage this is simply empty and
+    # every other field is unaffected.
+    rob = rob_svc.rob_on(ts)
     return {
         "date": str(ts.date()),
         "date_min": lo,
         "date_max": hi,
+        "rob_available": bool(rob),
+        "rob_month": rob_svc.observed_month(ts),
         "districts": [
             {
                 "district_id": r["district_id"],
@@ -71,6 +78,10 @@ def risk(date: str | None = Query(default=None, description="YYYY-MM-DD")):
                 "population": int(r["population"]),
                 "flood_prob": round(r["flood_prob"], 4),
                 "drought_prob": round(r["drought_prob"], 4),
+                # False for the six kecamatan with no modelled river. Their
+                # probabilities are zero because nothing was computed, not
+                # because anything was found to be safe.
+                "modeled": bool(r["modeled"]),
                 # Canonical exposure. Computed here from full-precision
                 # probabilities so every screen shows one number: recomputing
                 # it client-side from the rounded probs above lands ~20 people
@@ -79,6 +90,13 @@ def risk(date: str | None = Query(default=None, description="YYYY-MM-DD")):
                     round(
                         max(r["flood_prob"], r["drought_prob"]) * int(r["population"])
                     )
+                ),
+                # Observed water from radar, and whether it contradicts the
+                # flood model. Null when this district has no usable radar
+                # coverage for the month.
+                "rob": rob.get(r["district_id"]),
+                "rob_blind_spot": rob_svc.blind_spot(
+                    rob.get(r["district_id"]), r["flood_prob"]
                 ),
             }
             for r in records
