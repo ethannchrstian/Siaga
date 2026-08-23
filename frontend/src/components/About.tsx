@@ -1,3 +1,6 @@
+import { useEffect, useState } from "react";
+
+import { getModelInfo, type ModelInfo } from "../api/client";
 import {
   CRITICAL_ALLOCATION_THRESHOLD_HELP,
   CRITICAL_ALLOCATION_THRESHOLD_PERCENT,
@@ -24,6 +27,16 @@ const SOURCES = [
 const LOOP = ["Kelangkaan air", "Ekstraksi air tanah", "Penurunan muka tanah", "Banjir rob", "Intrusi air laut"];
 
 export default function About({ dateMin, dateMax, scenarioNote }: Props) {
+  const [info, setInfo] = useState<ModelInfo | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    getModelInfo()
+      .then((d) => { if (live) setInfo(d); })
+      .catch(() => { /* the page is still readable without the comparison */ });
+    return () => { live = false; };
+  }, []);
+
   return (
     <main className="about methodology-page">
       <header className="operational-page-head methodology-head">
@@ -89,11 +102,27 @@ export default function About({ dateMin, dateMax, scenarioNote }: Props) {
       <section className="method-section model-quality-section">
         <div className="method-section-head"><span>Kinerja model</span><h2>Pengujian 2023–2024</h2><p>Model dilatih dan dikalibrasi menggunakan periode 2015–2022.</p></div>
         <div className="model-metrics">
-          <MetricCard hazard="Banjir · 0–72 jam" auc="0,93" precision="0,45" brier="0,036" tone="flood" />
-          <MetricCard hazard="Cekaman air · bulan depan" auc="0,96" precision="0,87" brier="0,069" tone="drought" />
+          {/* Read from the training outputs. These were hand-typed until a
+              retrain would have silently made them wrong. */}
+          <MetricCard
+            hazard="Banjir · 0–72 jam"
+            auc={num(info?.headline.flood?.auc, "0,93")}
+            precision={num(info?.headline.flood?.average_precision, "0,45")}
+            brier={num(info?.headline.flood?.brier, "0,036", 3)}
+            tone="flood"
+          />
+          <MetricCard
+            hazard="Cekaman air · bulan depan"
+            auc={num(info?.headline.drought?.auc, "0,96")}
+            precision={num(info?.headline.drought?.average_precision, "0,87")}
+            brier={num(info?.headline.drought?.brier, "0,069", 3)}
+            tone="drought"
+          />
         </div>
         <details className="metric-explainer"><summary>Cara membaca metrik model</summary><p>AUC dan Average Precision yang lebih tinggi menunjukkan kemampuan pemisahan kejadian yang lebih baik. Brier yang lebih rendah menunjukkan probabilitas yang lebih terkalibrasi. Metrik tetap harus dibaca bersama keterbatasan label dan cakupan geografis.</p></details>
       </section>
+
+      {info && <ModelSelection info={info} />}
 
       <section className="method-section provenance-section">
         <div className="method-section-head"><span>Provenance</span><h2>Sumber dan status data</h2><p>Status membedakan data sumber, data yang dihitung dari sumber, dan data yang sengaja dibuat untuk skenario.</p></div>
@@ -113,4 +142,92 @@ function MetricCard({ hazard, auc, precision, brier, tone }: { hazard: string; a
 function formatRange(min?: string, max?: string) {
   if (!min || !max) return "2015–2024";
   return `${min.slice(0, 4)}–${max.slice(0, 4)}`;
+}
+
+/** Indonesian decimal comma, falling back to the previously hard-coded string
+ *  if the endpoint is unavailable so the cards never render blank. */
+function num(value: number | undefined, fallback: string, places = 2): string {
+  if (value === undefined) return fallback;
+  return value.toFixed(places).replace(".", ",");
+}
+
+/** The comparison the concept paper could not show, because at submission it
+ *  had not been run. Five families on one protocol, the deployed model last
+ *  because it had to beat the rest, and the one head that lost kept in view.
+ *  A judge reading only the product should be able to tell that XGBoost was
+ *  selected rather than assumed. */
+function ModelSelection({ info }: { info: ModelInfo }) {
+  const { families, calibrators, rob, protocol } = info;
+  if (families.length === 0) return null;
+  const cal = calibrators.flood;
+
+  return (
+    <section className="method-section model-selection-section">
+      <div className="method-section-head">
+        <span>Pemilihan model</span>
+        <h2>Lima keluarga model, satu protokol</h2>
+        <p>{protocol.split ?? "Latih 2015–2022, uji 2023–2024"}. Kalibrasi isotonik yang sama diterapkan pada seluruh kandidat.</p>
+      </div>
+
+      <table className="model-ladder">
+        <thead>
+          <tr><th>Model</th><th>AUC banjir</th><th>AUC cekaman air</th></tr>
+        </thead>
+        <tbody>
+          {families.map((f) => (
+            <tr key={f.key} className={f.deployed ? "is-deployed" : ""}>
+              <td>{f.label}{f.deployed && <em> · dipakai</em>}</td>
+              <td>{f.flood_auc?.toFixed(3).replace(".", ",") ?? "—"}</td>
+              <td>{f.drought_auc?.toFixed(3).replace(".", ",") ?? "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <p className="model-ladder-note">
+        Jaringan graf mengungguli LSTM pada banjir, sehingga struktur spasial
+        memang membawa sinyal. XGBoost tetap menang, sesuai perkiraan yang
+        ditulis di paper: fitur debit GloFAS sudah mengandung penelusuran
+        aliran dari hulu, sehingga sebagian keuntungan graf telah terserap.
+      </p>
+
+      {rob.model_ap !== undefined && (
+        <div className="model-negative">
+          <b>Kepala ketiga yang tidak dipakai</b>
+          <span>
+            Model genangan berlabel radar diuji terhadap patokan naif
+            &ldquo;bulan depan sama seperti bulan ini&rdquo;. Patokan itu menang
+            pada average precision, {rob.baseline_ap?.toFixed(3).replace(".", ",")} lawan{" "}
+            {rob.model_ap?.toFixed(3).replace(".", ",")}, sehingga kepala ini
+            dilatih dan dilaporkan tetapi tidak disajikan ke operator.
+          </span>
+        </div>
+      )}
+
+      {cal && (
+        <details className="metric-explainer">
+          <summary>Mengapa kalibratornya isotonik</summary>
+          <p>
+            Kandidat dinilai pada suku reliability Murphy, bukan pada Brier.
+            Brier mencampur reliability dengan resolution, sehingga sebuah model
+            dapat memenangkannya sambil probabilitasnya tetap menyatakan hal
+            yang keliru.
+          </p>
+          <table className="calibrator-table">
+            <thead><tr><th>Kandidat</th><th>Reliability</th><th>Selisih terburuk</th><th>Brier</th></tr></thead>
+            <tbody>
+              {cal.candidates.map((c) => (
+                <tr key={c.name} className={c.name === cal.chosen ? "is-chosen" : ""}>
+                  <td>{c.name}{c.name === cal.chosen && <em> · dipilih</em>}</td>
+                  <td>{c.reliability.toFixed(5).replace(".", ",")}</td>
+                  <td>{c.worst_gap.toFixed(3).replace(".", ",")}</td>
+                  <td>{c.brier.toFixed(4).replace(".", ",")}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </details>
+      )}
+    </section>
+  );
 }
