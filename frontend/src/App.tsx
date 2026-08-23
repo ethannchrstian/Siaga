@@ -13,17 +13,21 @@ import Inventaris from "./components/Inventaris";
 import About from "./components/About";
 import Toasts, { type Toast } from "./components/Toasts";
 import BootSplash from "./components/BootSplash";
+import SignIn from "./components/SignIn";
 import { ChevronLeftIcon, EyeIcon, ShieldIcon, TargetIcon } from "./icons";
 import { useCountUp } from "./hooks/useCountUp";
 import ReplayControl from "./components/ReplayControl";
 import DispatchOrder from "./components/DispatchOrder";
 import {
   appendDecision,
+  operatorName,
   readLog,
   type DecisionEntry,
   type DecisionKind,
 } from "./decisionLog";
 import {
+  clearSession,
+  currentSession,
   friendlyError,
   getDistricts,
   getRisk,
@@ -68,13 +72,35 @@ type DisruptionTarget = Pick<
   "district_id" | "district" | "resource" | "resource_label" | "units"
 >;
 
+/** Sign-in wraps the console so nothing is fetched before there is a session.
+ *  "checking" is its own state: rendering the form for a moment and then
+ *  replacing it would flash a login screen at an operator who never left. */
 export default function App() {
+  const [session, setSession] = useState<"checking" | "out" | "in">("checking");
+
+  useEffect(() => {
+    currentSession()
+      .then(() => setSession("in"))
+      .catch(() => setSession("out"));
+  }, []);
+
+  if (session === "checking") return <div className="signin-checking" />;
+  if (session === "out") return <SignIn onSignedIn={() => setSession("in")} />;
+  return <Console onSignOut={() => { clearSession(); setSession("out"); }} />;
+}
+
+function Console({ onSignOut }: { onSignOut: () => void }) {
   const [scenario, setScenario] = useState<ScenarioResponse | null>(null);
   const [date, setDate] = useState<string>("2015-02-19");
   const [mode, setMode] = useState<ViewMode>("gabungan");
   const [compare, setCompare] = useState<CompareMode>("siaga");
   const [view, setView] = useState<View>("peta");
   const [risk, setRisk] = useState<Map<string, RiskDistrict>>(new Map());
+  // Radar coverage for the selected date, and the month it was observed in.
+  const [rob, setRob] = useState<{ available: boolean; month: string | null }>({
+    available: false,
+    month: null,
+  });
   const [result, setResult] = useState<AllocateResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -168,10 +194,17 @@ export default function App() {
         const m = new Map<string, RiskDistrict>();
         for (const d of r.districts) m.set(d.district_id, d);
         setRisk(m);
+        setRob({ available: r.rob_available, month: r.rob_month });
         setError(null);
       })
       .catch((e) => setError(friendlyError(e)));
   }, [date]);
+
+  // Leaving the radar window while the radar view is open would show an empty
+  // map with no explanation, so fall back to the combined view instead.
+  useEffect(() => {
+    if (mode === "rob" && !rob.available) setMode("gabungan");
+  }, [mode, rob.available]);
 
   // Coverage delta between consecutive re-solves on the same date: the
   // visible cost/benefit of each Kunci/Alihkan decision.
@@ -504,6 +537,8 @@ export default function App() {
       {/* The rail is full height and sits beside the command bar, so there is
           one navigation surface rather than two competing strips of chrome. */}
       <NavRail
+        operator={operatorName()}
+        onSignOut={onSignOut}
         view={view}
         onView={setView}
         monitoringCount={kpis.aboveMonitoring}
@@ -583,6 +618,13 @@ export default function App() {
                 <Controls
                   mode={mode}
                   onMode={setMode}
+                  robAvailable={rob.available}
+                  counts={{
+                    gabungan: kpis.aboveMonitoring,
+                    banjir: kpis.floodMonitoring,
+                    cekaman: kpis.droughtMonitoring,
+                    rob: kpis.robWatch,
+                  }}
                   compare={compare}
                   onCompare={setCompare}
                   onReplay={startReplay}
@@ -618,6 +660,7 @@ export default function App() {
                     assignments={assignmentsForSelected}
                     date={date}
                     calibration={scenario?.calibration}
+                    robMonth={rob.month}
                     onClose={() => setSelected(null)}
                   />
                 )}
