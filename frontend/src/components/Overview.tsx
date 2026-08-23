@@ -1,7 +1,13 @@
-import type { AllocateResponse, PlanItem, RiskDistrict } from "../api/client";
+import { useEffect, useState } from "react";
+
+import { getDecisions, type AllocateResponse, type DecisionSummary, type PlanItem, type RiskDistrict } from "../api/client";
 import { computeKpis, fmtCompact, fmtInt } from "../metrics";
 import { MONITORING_THRESHOLD } from "../thresholds";
 
+/** Where operator overrides are read back as evidence. See
+ *  backend/app/routers/decisions.py: the point is not that the model learns
+ *  from them, but that the places people keep overruling can be compared with
+ *  the places radar independently flags. */
 interface Props {
   risk: Map<string, RiskDistrict>;
   result: AllocateResponse | null;
@@ -98,6 +104,8 @@ export default function Overview({ risk, result, date, locks, rejects, onSelect,
           </div>
         </div>
       </section>
+
+      <ContestedSection risk={risk} />
 
       <div className="report-two-column report-hazard-timeline-grid">
         <ReportSection index="03" title="Kondisi bahaya" className="report-hazards">
@@ -309,3 +317,58 @@ function formatDate(value: string) {
 function formatShortDate(value: string) {
   return new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(`${value}T00:00:00`));
 }
+
+/** Kecamatan the operator overrules most, set against the kecamatan radar says
+ *  the flood model is blind to. Agreement between the two is the finding: one
+ *  is a person who knows the ground, the other is a satellite, and neither
+ *  consulted the other. */
+function ContestedSection({ risk }: { risk: Map<string, RiskDistrict> }) {
+  const [summary, setSummary] = useState<DecisionSummary | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    getDecisions()
+      .then((d) => { if (live) setSummary(d); })
+      .catch(() => { /* logging is not load-bearing for this page */ });
+    return () => { live = false; };
+  }, []);
+
+  if (!summary || summary.overrides === 0) return null;
+
+  const blindNames = new Set(
+    [...risk.values()].filter((d) => d.rob_blind_spot).map((d) => d.name),
+  );
+  const overlap = summary.contested.filter((c) => blindNames.has(c.district));
+
+  return (
+    <ReportSection index="03" title="Ketidaksetujuan operator" className="report-contested">
+      <p className="report-contested-lede">
+        {fmtInt(summary.overrides)} penimpaan tercatat. Kecamatan yang paling
+        sering dikunci atau dialihkan operator adalah tempat masukan model
+        kemungkinan besar keliru.
+      </p>
+      <ul className="contested-list">
+        {summary.contested.slice(0, 6).map((c) => (
+          <li key={c.district} className={blindNames.has(c.district) ? "is-blind" : ""}>
+            <b>{c.district}</b>
+            <span>{c.count}×</span>
+            {blindNames.has(c.district) && <em>juga titik buta radar</em>}
+          </li>
+        ))}
+      </ul>
+      {overlap.length > 0 && (
+        <p className="report-contested-note">
+          {overlap.length} dari {summary.contested.length} kecamatan terbanyak
+          juga ditandai radar sebagai titik buta model banjir. Dua sumber yang
+          tidak saling berhubungan menunjuk tempat yang sama.
+        </p>
+      )}
+      <small className="report-contested-caveat">
+        Catatan dikumpulkan, tidak dipakai melatih ulang model. Jumlahnya belum
+        memadai, dan model yang belajar diam-diam dari beberapa puluh keputusan
+        lebih buruk daripada model yang tidak belajar sama sekali.
+      </small>
+    </ReportSection>
+  );
+}
+
