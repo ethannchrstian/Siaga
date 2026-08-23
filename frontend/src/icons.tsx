@@ -168,3 +168,11 @@ export const DocumentIcon = ({ size, className }: P) => (
     <line x1="8.5" y1="16.5" x2="13" y2="16.5" />
   </svg>
 );
+
+export const LogoutIcon = ({ size, className }: P) => (
+  <svg {...base(size)} className={className}>
+    <path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3" />
+    <polyline points="15 8 19 12 15 16" />
+    <line x1="19" y1="12" x2="10" y2="12" />
+  </svg>
+);

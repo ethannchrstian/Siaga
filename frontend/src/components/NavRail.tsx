@@ -6,6 +6,7 @@ import {
   FleetIcon,
   GridIcon,
   InfoIcon,
+  LogoutIcon,
   MapIcon,
 } from "../icons";
 
@@ -41,9 +42,15 @@ export default function NavRail({
   disabled = false,
   collapsed = false,
   onToggleCollapsed,
+  operator,
+  onSignOut,
 }: {
   view: View;
   onView: (v: View) => void;
+  /** Display name from the session, stamped on every decision this operator
+   *  makes, so the console can say who decided what. */
+  operator?: string;
+  onSignOut?: () => void;
   monitoringCount: number;
   date: string;
   dateMin: string;
@@ -143,8 +150,25 @@ export default function NavRail({
       ))}
       <div className="navrail-foot">
         <div className="navrail-operator">
-          <span className="account-avatar" aria-hidden="true">OS</span>
-          <span><strong>Operator SIAGA</strong><small>PUSDALOPS</small></span>
+          <span className="account-avatar" aria-hidden="true">{initials(operator)}</span>
+          {/* Its own class rather than :last-child: the sign-out button now
+              sits after it, which silently cost this block its column layout
+              and ran the name into the role. */}
+          <span className="navrail-operator-id">
+            <strong title={operator ?? "Operator SIAGA"}>{operator ?? "Operator SIAGA"}</strong>
+            <small>PUSDALOPS</small>
+          </span>
+          {onSignOut && (
+            <button
+              type="button"
+              className="navrail-signout"
+              onClick={onSignOut}
+              title="Keluar dari sesi"
+              aria-label="Keluar dari sesi"
+            >
+              <LogoutIcon size={15} />
+            </button>
+          )}
         </div>
       </div>
     </nav>
@@ -158,4 +182,12 @@ function formatDate(value: string) {
     month: "short",
     year: "numeric",
   }).format(new Date(`${value}T00:00:00`));
+}
+
+/** Initials from word starts, so "Operator SIAGA" reads OS rather than OP. */
+function initials(name?: string): string {
+  const words = (name ?? "Operator SIAGA").trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "OS";
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[words.length - 1][0]).toUpperCase();
 }

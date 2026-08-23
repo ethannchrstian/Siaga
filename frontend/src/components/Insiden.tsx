@@ -12,7 +12,11 @@ interface Props {
   onSelect: (districtId: string) => void;
 }
 
-type RiskLevel = "" | "compound" | "flood" | "drought";
+type RiskLevel = "" | "compound" | "flood" | "drought" | "blind" | "unmodeled";
+// Radar is a separate axis from hazard dominance, not a fourth hazard, so it
+// gets its own filter field rather than another RiskLevel the dropdown would
+// have to carry.
+type RadarFilter = "" | "blind" | "unmodeled";
 type Coverage = "" | "planned" | "unplanned";
 type SortKey = "name" | "kabupaten" | "flood" | "drought" | "exposure" | "coverage";
 type SortDirection = "asc" | "desc";
@@ -22,6 +26,7 @@ interface Filters {
   regency: string;
   riskLevel: RiskLevel;
   coverage: Coverage;
+  radar: RadarFilter;
 }
 
 interface PriorityRow extends RiskDistrict {
@@ -31,7 +36,7 @@ interface PriorityRow extends RiskDistrict {
   assignments: PlanItem[];
 }
 
-const EMPTY_FILTERS: Filters = { province: "", regency: "", riskLevel: "", coverage: "" };
+const EMPTY_FILTERS: Filters = { province: "", regency: "", riskLevel: "", coverage: "", radar: "" };
 
 export default function Insiden({ risk, plan, date, districtMeta, onSelect }: Props) {
   const [query, setQuery] = useState("");
@@ -60,20 +65,53 @@ export default function Insiden({ risk, plan, date, districtMeta, onSelect }: Pr
       };
     }), [assignmentsByDistrict, districtMeta, risk]);
 
+  // Kept separate from baseRows on purpose. A blind spot has flood_prob below
+  // 5%, so it sits under the 50% monitoring threshold and is exactly what this
+  // table filters out; measured over six dates, 49% of them never appeared
+  // here at all. Merging them in would grow "Semua dipantau" past the count in
+  // the header and nav badge, which both read kpis.aboveMonitoring.
+  const blindRows = useMemo<PriorityRow[]>(() => [...risk.values()]
+    .filter((district) => district.rob_blind_spot)
+    .map((district) => ({
+      ...district,
+      province: districtMeta.get(district.district_id)?.provinsi ?? "—",
+      exposure: district.people_exposed,
+      level: "blind" as const,
+      assignments: assignmentsByDistrict.get(district.district_id) ?? [],
+    })), [assignmentsByDistrict, districtMeta, risk]);
+
+  // Never reach baseRows: their probabilities are zero, so they fail the
+  // monitoring threshold by construction. Without a way in, the six kecamatan
+  // the models do not cover are simply absent from the operator's world.
+  const unmodeledRows = useMemo<PriorityRow[]>(() => [...risk.values()]
+    .filter((district) => !district.modeled)
+    .map((district) => ({
+      ...district,
+      province: districtMeta.get(district.district_id)?.provinsi ?? "—",
+      exposure: district.people_exposed,
+      level: "unmodeled" as const,
+      assignments: assignmentsByDistrict.get(district.district_id) ?? [],
+    })), [assignmentsByDistrict, districtMeta, risk]);
+
   const counts = useMemo(() => ({
     all: baseRows.length,
     compound: baseRows.filter((row) => row.level === "compound").length,
     flood: baseRows.filter((row) => row.level === "flood").length,
     drought: baseRows.filter((row) => row.level === "drought").length,
     unplanned: baseRows.filter((row) => row.assignments.length === 0).length,
-  }), [baseRows]);
+    blind: blindRows.length,
+    unmodeled: unmodeledRows.length,
+  }), [baseRows, blindRows, unmodeledRows]);
 
   const provinces = useMemo(() => [...new Set(baseRows.map((row) => row.province).filter((value) => value !== "—"))].sort(), [baseRows]);
   const regencies = useMemo(() => [...new Set(baseRows.filter((row) => !filters.province || row.province === filters.province).map((row) => row.kabupaten))].sort(), [baseRows, filters.province]);
 
   const rows = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("id");
-    return baseRows.filter((row) => (
+    const source = filters.radar === "blind"
+      ? blindRows
+      : filters.radar === "unmodeled" ? unmodeledRows : baseRows;
+    return source.filter((row) => (
       (!normalized || `${row.name} ${row.kabupaten} ${row.province}`.toLocaleLowerCase("id").includes(normalized)) &&
       (!filters.province || row.province === filters.province) &&
       (!filters.regency || row.kabupaten === filters.regency) &&
@@ -88,20 +126,30 @@ export default function Insiden({ risk, plan, date, districtMeta, onSelect }: Pr
       else comparison = a[sort.key].localeCompare(b[sort.key], "id");
       return sort.direction === "asc" ? comparison : -comparison;
     });
-  }, [baseRows, filters, query, sort]);
+  }, [baseRows, blindRows, unmodeledRows, filters, query, sort]);
 
   const pageCount = Math.max(1, Math.ceil(rows.length / rowsPerPage));
   const visibleRows = rows.slice((page - 1) * rowsPerPage, page * rowsPerPage);
-  const selected = selectedId ? baseRows.find((row) => row.district_id === selectedId) ?? null : null;
+  // Looks in both sets: a blind-spot row is not in baseRows, and searching
+  // only there left the detail panel blank on exactly the rows this segment
+  // exists to surface.
+  const selected = selectedId
+    ? baseRows.find((row) => row.district_id === selectedId)
+      ?? blindRows.find((row) => row.district_id === selectedId)
+      ?? unmodeledRows.find((row) => row.district_id === selectedId)
+      ?? null
+    : null;
   const activeFilters = filterChips(filters);
 
   useEffect(() => setPage(1), [filters, query, rowsPerPage]);
   useEffect(() => setPage((current) => Math.min(current, pageCount)), [pageCount]);
 
-  const selectSegment = (segment: "all" | "compound" | "flood" | "drought" | "unplanned") => {
+  const selectSegment = (segment: "all" | "compound" | "flood" | "drought" | "unplanned" | "blind" | "unmodeled") => {
     if (segment === "all") setFilters(EMPTY_FILTERS);
-    else if (segment === "unplanned") setFilters((current) => ({ ...current, coverage: "unplanned" }));
-    else setFilters((current) => ({ ...current, riskLevel: segment, coverage: "" }));
+    else if (segment === "blind") setFilters((current) => ({ ...current, radar: "blind", riskLevel: "", coverage: "" }));
+    else if (segment === "unmodeled") setFilters((current) => ({ ...current, radar: "unmodeled", riskLevel: "", coverage: "" }));
+    else if (segment === "unplanned") setFilters((current) => ({ ...current, coverage: "unplanned", radar: "" }));
+    else setFilters((current) => ({ ...current, riskLevel: segment, coverage: "", radar: "" }));
   };
   const updateSort = (key: SortKey) => setSort((current) => ({ key, direction: current.key === key && current.direction === "desc" ? "asc" : "desc" }));
   const resetFilters = () => { setQuery(""); setFilters(EMPTY_FILTERS); };
@@ -111,17 +159,27 @@ export default function Insiden({ risk, plan, date, districtMeta, onSelect }: Pr
       <header className="operational-page-head">
         <div>
           <h1>Pemantauan wilayah</h1>
-          <p>{formatDate(date)} · kecamatan yang melewati Ambang Pemantauan 50%</p>
+          <p>{formatDate(date)} · {filters.radar === "blind"
+            ? "kecamatan tempat radar melihat genangan sementara model banjir menilai tenang"
+            : filters.radar === "unmodeled"
+              ? "kecamatan tanpa ruas sungai termodelkan; tidak ada prakiraan untuk wilayah ini"
+              : "kecamatan yang melewati Ambang Pemantauan 50%"}</p>
         </div>
         <div className="terminology-note" title={MONITORING_THRESHOLD_HELP}><strong>Pemantauan · bukan pemicu alokasi</strong><span>50% menandai peringatan visual, bukan insiden terkonfirmasi. Optimizer memakai Ambang Alokasi Kritis 5% secara terpisah.</span></div>
       </header>
 
       <nav className="priority-segments" aria-label="Ringkasan prioritas">
-        <Segment label="Semua dipantau" value={counts.all} active={!filters.riskLevel && !filters.coverage} onClick={() => selectSegment("all")} />
+        <Segment label="Semua dipantau" value={counts.all} active={!filters.riskLevel && !filters.coverage && !filters.radar} onClick={() => selectSegment("all")} />
         <Segment label="Risiko majemuk" value={counts.compound} tone="compound" active={filters.riskLevel === "compound"} onClick={() => selectSegment("compound")} />
         <Segment label="Banjir dominan" value={counts.flood} tone="flood" active={filters.riskLevel === "flood"} onClick={() => selectSegment("flood")} />
         <Segment label="Cekaman dominan" value={counts.drought} tone="drought" active={filters.riskLevel === "drought"} onClick={() => selectSegment("drought")} />
         <Segment label="Di luar kapasitas armada" value={counts.unplanned} tone="gap" active={filters.coverage === "unplanned"} onClick={() => selectSegment("unplanned")} />
+        {counts.blind > 0 && (
+          <Segment label="Titik buta radar" value={counts.blind} tone="blind" active={filters.radar === "blind"} onClick={() => selectSegment("blind")} />
+        )}
+        {counts.unmodeled > 0 && (
+          <Segment label="Di luar cakupan model" value={counts.unmodeled} tone="unmodeled" active={filters.radar === "unmodeled"} onClick={() => selectSegment("unmodeled")} />
+        )}
       </nav>
 
       <section className="priority-toolbar">
@@ -151,8 +209,9 @@ export default function Insiden({ risk, plan, date, districtMeta, onSelect }: Pr
                 {visibleRows.map((row) => (
                   <tr key={row.district_id} className={selectedId === row.district_id ? "selected" : ""} onClick={() => setSelectedId(row.district_id)}>
                     <td><div className="priority-region"><strong>{row.name}</strong><span>{row.kabupaten} · {row.province}</span><em className={`hazard-kind ${row.level}`}>{riskLabel(row.level)}</em></div></td>
-                    <td><RiskBar value={row.flood_prob} tone="flood" /></td>
-                    <td><RiskBar value={row.drought_prob} tone="drought" /></td>
+                    {/* A bar at 0% would read as "assessed, and quiet". */}
+                    <td>{row.modeled ? <RiskBar value={row.flood_prob} tone="flood" /> : <span className="priority-unmodeled">tak dimodelkan</span>}</td>
+                    <td>{row.modeled ? <RiskBar value={row.drought_prob} tone="drought" /> : <span className="priority-unmodeled">—</span>}</td>
                     <td className="num"><strong>{fmtInt(row.exposure)}</strong><small className="table-unit">jiwa</small></td>
                     <td>{row.assignments.length > 0 ? <div className="coverage-cell"><span className="coverage-status planned">Masuk rencana</span>{row.assignments.map((item) => <small key={item.resource}>{item.units} {item.resource_label}</small>)}</div> : <span className="coverage-status unplanned">Di luar kapasitas</span>}</td>
                     <td><button type="button" className="row-detail-button" onClick={(event) => { event.stopPropagation(); setSelectedId(row.district_id); }}>Detail</button></td>
@@ -190,7 +249,11 @@ function RiskBar({ value, tone }: { value: number; tone: "flood" | "drought" }) 
 function PriorityDetail({ row, onClose, onMap }: { row: PriorityRow; onClose: () => void; onMap: () => void }) {
   return <aside className="priority-detail">
     <header><div><span>Detail pemantauan</span><h2>{row.name}</h2><p>{row.kabupaten} · {row.province}</p></div><button type="button" onClick={onClose} aria-label="Tutup detail">×</button></header>
-    <div className="detail-risk-pair"><div><span>Banjir · 0–72 jam</span><b>{Math.round(row.flood_prob * 100)}%</b></div><div><span>Cekaman · bulan depan</span><b>{Math.round(row.drought_prob * 100)}%</b></div></div>
+    {row.modeled ? (
+      <div className="detail-risk-pair"><div><span>Banjir · 0–72 jam</span><b>{Math.round(row.flood_prob * 100)}%</b></div><div><span>Cekaman · bulan depan</span><b>{Math.round(row.drought_prob * 100)}%</b></div></div>
+    ) : (
+      <div className="drawer-unmodeled"><b>Belum dimodelkan</b><span>Tidak ada ruas sungai yang dimodelkan GloFAS untuk kecamatan ini, sehingga tidak ada prakiraan banjir maupun cekaman air.</span></div>
+    )}
     <div className="detail-exposure"><span>Estimasi paparan</span><strong>{fmtInt(row.exposure)} jiwa</strong><small>Peluang bahaya tertinggi × populasi wilayah.</small></div>
     <div className="detail-section-title">Alokasi saat ini</div>
     {row.assignments.length ? row.assignments.map((item) => <div className="detail-assignment" key={item.resource}><strong>{item.units} {item.resource_label}</strong><span>dari {item.from_depot}</span><small>{item.minutes} menit perjalanan · peluang {Math.round(item.hazard_prob * 100)}%</small></div>) : <div className="detail-gap">Wilayah ini belum masuk rencana alokasi saat ini.</div>}
@@ -210,12 +273,16 @@ function filterChips(filters: Filters) {
   const labels: Record<string, Record<string, string>> = {
     riskLevel: { compound: "Risiko majemuk", flood: "Banjir", drought: "Cekaman air" },
     coverage: { planned: "Masuk rencana", unplanned: "Di luar kapasitas armada" },
+    radar: { blind: "Titik buta radar", unmodeled: "Di luar cakupan model" },
   };
   return (Object.entries(filters) as [keyof Filters, string][]).filter(([, value]) => value).map(([key, value]) => ({ key, label: labels[key]?.[value] ?? value }));
 }
 
 function riskLabel(level: PriorityRow["level"]) {
-  return level === "compound" ? "Majemuk" : level === "flood" ? "Banjir" : "Cekaman air";
+  if (level === "compound") return "Majemuk";
+  if (level === "blind") return "Titik buta";
+  if (level === "unmodeled") return "Tak dimodelkan";
+  return level === "flood" ? "Banjir" : "Cekaman air";
 }
 
 function formatDate(value: string) {

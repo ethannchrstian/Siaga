@@ -8,6 +8,10 @@ import {
   type RiskDistrict,
 } from "../api/client";
 import { mapStyleFor, type ViewMode } from "../hazard";
+
+// Same teal the radar layer uses, so a flagged boundary reads as "radar", not
+// as a fourth risk level.
+const ROB_OUTLINE_HEX = "#2f6f6c";
 import { playDispatch, playRedirect } from "./dispatchAnimation";
 import { CRITICAL_ALLOCATION_THRESHOLD, MONITORING_THRESHOLD } from "../thresholds";
 import {
@@ -174,15 +178,23 @@ function styleDistricts(
         mode,
         districtRisk?.flood_prob ?? 0,
         districtRisk?.drought_prob ?? 0,
+        districtRisk?.rob?.anomaly,
       );
+      // On the flood views, mark the kecamatan where radar saw water the flood
+      // model did not expect. The operator needs to know the number in front of
+      // them is the one the model is least able to get right.
+      const flagBlindSpot =
+        (mode === "banjir" || mode === "gabungan") && districtRisk?.rob_blind_spot;
       return {
         ...feature,
         properties: {
           ...feature.properties,
           color: style.fill,
-          outline: style.outline,
+          outline: flagBlindSpot ? ROB_OUTLINE_HEX : style.outline,
           opacity: style.opacity,
-          outlineWidth: style.outlineWidth,
+          outlineWidth: flagBlindSpot
+            ? Math.max(style.outlineWidth, 1.4)
+            : style.outlineWidth,
         },
       };
     }),
