@@ -36,10 +36,10 @@ export default function CompareBanner({ comparison, compare }: Props) {
           </span>
         </>
       ) : (
-        <span className="compare-copy">
-          <b>Mode terpisah:</b> banjir dan cekaman air direncanakan sendiri-sendiri,
-          sehingga regu depot habis dipakai bahaya pertama.{" "}
-          {fmtInt(comparison.baseline.expected_covered)} jiwa terlindungi.
+        <span className="compare-copy compare-copy-separated">
+          <b>Mode terpisah</b>
+          <span>Dua bahaya menyusun rencana sendiri.</span>
+          <span><strong>{fmtInt(comparison.baseline.expected_covered)}</strong> jiwa terlindungi.</span>
         </span>
       )}
     </div>

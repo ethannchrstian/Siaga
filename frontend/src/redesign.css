@@ -2815,9 +2815,23 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   line-height: 1.35;
   color: var(--ink-3);
 }
-/* The off state is a full explanatory sentence, so it gets the whole box. */
-.stat-strip .compare-banner.off { max-width: 430px; }
+/* Keep the baseline summary compact and deliberately limited to three rows. */
+.stat-strip .compare-banner.off { max-width: 300px; }
 .stat-strip .compare-banner.off { background: #fff; border-left-color: #a9471c; }
+.stat-strip .compare-banner.off .compare-copy-separated {
+  display: grid;
+  gap: 1px;
+}
+.stat-strip .compare-banner.off .compare-copy-separated > b,
+.stat-strip .compare-banner.off .compare-copy-separated > span {
+  display: block;
+  white-space: nowrap;
+}
+.stat-strip .compare-banner.off .compare-copy-separated strong {
+  color: #743f43;
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
 
 @media (max-width: 1240px) {
   .stat-strip { flex-wrap: wrap; }

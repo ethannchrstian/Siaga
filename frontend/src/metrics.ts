@@ -21,7 +21,7 @@ export interface Kpis {
 
 export function computeKpis(
   risk: Map<string, RiskDistrict>,
-  result: AllocateResponse | null,
+  result: Pick<AllocateResponse, "plan" | "summary"> | null,
 ): Kpis {
   let exposed = 0;
   let aboveMonitoring = 0;
