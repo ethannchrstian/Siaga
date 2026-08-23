@@ -86,5 +86,54 @@
         "brier": 0.021830812096595764
       }
     }
+  },
+  "rob": {
+    "n_train": 29536,
+    "n_test": 7632,
+    "test_years": "2023-2024",
+    "positive_rate_test": 0.02070230607966457,
+    "auc": 0.9483030624307727,
+    "average_precision": 0.4245115662286606,
+    "brier": 0.017961807548999786,
+    "brier_uncalibrated": 0.01465652883052826,
+    "operating_threshold": 0.12886595726013184,
+    "precision_at_op": 0.5952380952380952,
+    "recall_at_op": 0.31645569620253167,
+    "f1_at_op": 0.4132231404958678,
+    "feature_importance": {
+      "water_base": 0.2361939251422882,
+      "anom_lag1": 0.13816580176353455,
+      "subsid_trend": 0.10042595118284225,
+      "coastal": 0.08684176951646805,
+      "month_of_year": 0.07388511300086975,
+      "spi1": 0.05868756026029587,
+      "anom_lag2": 0.05579393729567528,
+      "wet_days": 0.0529109463095665,
+      "spi3": 0.049444880336523056,
+      "disc_mean": 0.04099435731768608,
+      "rain_max": 0.03581313416361809,
+      "rain_sum": 0.035443078726530075,
+      "disc_max": 0.03539946675300598
+    },
+    "reliability": 0.0023725857742817433,
+    "worst_gap_above_0.5": 0.0,
+    "calibrator": "isotonic",
+    "calibrator_selection": {
+      "platt": {
+        "reliability": 6.871775047826943e-05,
+        "worst_gap": 0.0,
+        "brier": 0.006712969858199358
+      },
+      "isotonic": {
+        "reliability": 5.581705453809928e-05,
+        "worst_gap": 0.0,
+        "brier": 0.0065177930518984795
+      },
+      "identity": {
+        "reliability": 0.004093627298209938,
+        "worst_gap": 0.7415883618852367,
+        "brier": 0.010583207942545414
+      }
+    }
   }
 }
