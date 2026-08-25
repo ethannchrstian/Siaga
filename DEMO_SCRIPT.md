@@ -32,15 +32,15 @@
 
 ## 1:15–1:50 — Beradaptasi dengan kondisi lapangan
 
-**Aksi:** Klik **Jalur putus**, tunggu rute berubah, lalu klik **Kunci**. Tunjuk tombol **Alihkan**.
+**Aksi:** Pada satu rekomendasi, klik **Alihkan → Hitung ulang**. Tunjukkan animasi akses terkendala dan ringkasan hasil pengalihan, lalu klik **Kunci** pada rekomendasi lain.
 
-> Namun kondisi lapangan selalu dapat berubah. Ketika satu jalur dilaporkan putus, SIAGA menghitung ulang rute dan alokasi terbaik berikutnya. Pengiriman yang sudah dikonfirmasi dapat **dikunci**, sedangkan rekomendasi yang tidak sesuai informasi lapangan dapat **dialihkan**. Sistem kemudian mengoptimalkan ulang rencana lainnya dan mencatat intervensi operator. **Artinya, SIAGA bukan autopilot—keputusan akhir tetap berada pada manusia.**
+> Namun kondisi lapangan selalu dapat berubah. Ketika akses ke satu tujuan dilaporkan bermasalah, operator dapat mengeluarkan alokasi tersebut dan SIAGA menghitung ulang rencana terbaik berikutnya. Hasilnya menjelaskan unit yang dipindahkan, unit yang kembali tersedia, dan perubahan estimasi cakupan. Pengiriman yang sudah dikonfirmasi tetap dapat **dikunci**. **Artinya, SIAGA bukan autopilot—keputusan akhir tetap berada pada manusia.**
 
 ## 1:50–2:25 — Tiga kebutuhan operasional
 
-**Aksi:** Buka **Pemantauan Wilayah → Kesiapan Armada → Laporan Operasional**. Tampilkan sekitar 8–10 detik per layar.
+**Aksi:** Buka **Pemantauan Wilayah → Inventaris & Alokasi → Laporan Operasional**. Tampilkan sekitar 8–10 detik per layar.
 
-> Setelah rencana terbentuk, operator dapat menjawab tiga pertanyaan penting. **Pemantauan Wilayah:** mana yang berisiko majemuk, dominan banjir, dominan cekaman, atau belum terlayani—lengkap dengan pencarian, filter, pengurutan, dan detail. **Kesiapan Armada:** berapa pompa, truk, dan regu yang digunakan, berapa cadangannya, serta apa manifest setiap depot. **Laporan Operasional:** bagaimana situasinya, keputusan apa yang dibuat, apa dampaknya, masalah apa yang belum selesai, dan langkah apa yang disarankan berikutnya.
+> Setelah rencana terbentuk, operator dapat menjawab tiga pertanyaan penting. **Pemantauan Wilayah:** mana yang berisiko majemuk, dominan banjir, dominan cekaman, atau belum terlayani—lengkap dengan pencarian, filter, pengurutan, dan detail. **Inventaris & Alokasi:** berapa pompa, truk, dan regu yang digunakan, berapa cadangannya, serta apa manifest setiap depot. **Laporan Operasional:** bagaimana situasinya, keputusan apa yang dibuat, apa dampaknya, wilayah mana yang masuk tindak lanjut, dan langkah apa yang disarankan berikutnya.
 
 ## 2:25–2:45 — Transparansi sistem
 
@@ -56,4 +56,21 @@
 
 ## Urutan Klik
 
-`Preset` → `Banjir` → `Cekaman air` → `Gabungan` → `Wilayah majemuk` → `Depot` → `Terpisah` → `Terpadu` → `Jalur putus` → `Kunci` → `Pemantauan Wilayah` → `Kesiapan Armada` → `Laporan Operasional` → `Metode & Data` → `Terbitkan Perintah`
+`Preset` → `Banjir` → `Cekaman air` → `Gabungan` → `Wilayah majemuk` → `Depot` → `Terpisah` → `Terpadu` → `Alihkan` → `Hitung ulang` → `Kunci` → `Pemantauan Wilayah` → `Inventaris & Alokasi` → `Laporan Operasional` → `Metode & Data` → `Terbitkan Perintah`
+
+## Demo alternatif: eskalasi dukungan (45 detik)
+
+1. Buka **Cakupan · Koridor**. Tunjukkan bahwa mode koridor berstatus
+   **Terevaluasi** dan menggunakan inventaris yang sama dengan hindcast.
+2. Pilih **Regional terjangkau**. Jelaskan bahwa gudang di luar Pantura hanya
+   menjadi kandidat bila masih berada dalam batas waktu perencanaan.
+3. Klik **Ajukan dukungan provinsi**. Pada tahap *Permintaan dikirim*, pastikan
+   rencana belum berubah karena aset belum dikonfirmasi pemiliknya.
+4. Klik **Tandai sudah dikonfirmasi**. Baru setelah itu profil provinsi aktif
+   dan SIAGA menghitung ulang rencana.
+5. Tutup dengan kalimat: *"SIAGA bukan menarik aset provinsi secara otomatis;
+   sistem mencatat permintaan, menunggu konfirmasi, lalu menghitung ulang opsi
+   terbaik yang benar-benar sudah diizinkan."*
+
+Jangan membandingkan angka dampak profil regional/provinsi dengan angka agregat
+hindcast koridor sebelum evaluasi historis untuk profil tersebut dijalankan ulang.

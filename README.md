@@ -49,6 +49,10 @@ dipilih oleh hasil optimasi.
 
 Butuh Python 3.11+ dan Node 18+.
 
+**Windows, cara termudah:** klik dua kali `START_SIAGA.cmd` di folder proyek.
+Peluncur akan menyalakan backend dan antarmuka bila belum berjalan, menunggu
+keduanya siap, lalu membuka `http://localhost:5173` secara otomatis.
+
 **Backend**
 ```bash
 cd backend
@@ -93,7 +97,21 @@ Rincian di `backend/ml/DATA_PROVENANCE.md`. Ringkas:
 | Populasi | WorldPop 2020 1km | nyata |
 | Label banjir | ambang debit GloFAS (gaya peringatan return-period) | nyata |
 | Label kekeringan | SPI <= -1 (McKee 1993; Perka BMKG 9/2019) | nyata |
-| Inventaris depot/armada | ditempatkan di lokasi BPBD nyata, jumlah placeholder | skenario |
+| Inventaris pompa/truk | BNPB InaLogpal, jumlah per wilayah | nyata (terdaftar, bukan kesiapan real-time) |
+| Lokasi depot | centroid administratif kabupaten/kota | proxy perencanaan |
+| Regu/kesiapan | parameter operasional | skenario, wajib dikonfirmasi |
+
+## Profil pasokan
+
+Mode bawaan tetap memakai 14 depot koridor yang digunakan pada evaluasi
+historis. Operator dapat memperluas cakupan ke depot kabupaten/kota lain yang
+masih berada dalam estimasi jangkauan, sedangkan inventaris provinsi baru masuk
+rencana setelah dukungannya dicatat dan dikonfirmasi. Profil regional dan
+provinsi bersifat eksploratif sampai hindcast dijalankan ulang untuk profil itu.
+
+Waktu tempuh saat ini adalah estimasi garis lurus pada 40 km/jam, bukan rute
+jalan. InaLogpal menjadi titik awal inventaris; status operasi, gudang keberangkatan,
+bahan bakar, dan personel tetap memerlukan konfirmasi BPBD pemilik aset.
 
 Catatan kejujuran: catatan kejadian resmi BNPB (DIBI) tidak dapat diakses secara
 programatik (Superset terkunci, ArcGIS error), sehingga label bahaya diambil dari
