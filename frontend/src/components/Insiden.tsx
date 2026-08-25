@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import type { DistrictProperties, PlanItem, RiskDistrict } from "../api/client";
+import { sourcesOf, type DistrictProperties, type PlanItem, type RiskDistrict } from "../api/client";
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, ResetIcon, SearchIcon } from "../icons";
 import { fmtInt } from "../metrics";
 import { MONITORING_THRESHOLD, MONITORING_THRESHOLD_HELP } from "../thresholds";
+import SourceSummary from "./SourceSummary";
 
 interface Props {
   risk: Map<string, RiskDistrict>;
@@ -173,7 +174,7 @@ export default function Insiden({ risk, plan, date, districtMeta, onSelect }: Pr
         <Segment label="Risiko majemuk" value={counts.compound} tone="compound" active={filters.riskLevel === "compound"} onClick={() => selectSegment("compound")} />
         <Segment label="Banjir dominan" value={counts.flood} tone="flood" active={filters.riskLevel === "flood"} onClick={() => selectSegment("flood")} />
         <Segment label="Cekaman dominan" value={counts.drought} tone="drought" active={filters.riskLevel === "drought"} onClick={() => selectSegment("drought")} />
-        <Segment label="Di luar kapasitas armada" value={counts.unplanned} tone="gap" active={filters.coverage === "unplanned"} onClick={() => selectSegment("unplanned")} />
+        <Segment label="Belum masuk prapenempatan" value={counts.unplanned} tone="gap" active={filters.coverage === "unplanned"} onClick={() => selectSegment("unplanned")} />
         {counts.blind > 0 && (
           <Segment label="Titik buta radar" value={counts.blind} tone="blind" active={filters.radar === "blind"} onClick={() => selectSegment("blind")} />
         )}
@@ -187,7 +188,7 @@ export default function Insiden({ risk, plan, date, districtMeta, onSelect }: Pr
         <SelectFilter label="Provinsi" value={filters.province} onChange={(value) => setFilters((current) => ({ ...current, province: value, regency: "" }))} options={provinces} />
         <SelectFilter label="Kab/Kota" value={filters.regency} onChange={(value) => setFilters((current) => ({ ...current, regency: value }))} options={regencies} />
         <SelectFilter label="Bahaya" value={filters.riskLevel} onChange={(value) => setFilters((current) => ({ ...current, riskLevel: value as RiskLevel }))} options={["compound", "flood", "drought"]} labels={{ compound: "Majemuk", flood: "Banjir", drought: "Cekaman air" }} />
-        <SelectFilter label="Cakupan" value={filters.coverage} onChange={(value) => setFilters((current) => ({ ...current, coverage: value as Coverage }))} options={["planned", "unplanned"]} labels={{ planned: "Masuk rencana", unplanned: "Di luar kapasitas armada" }} />
+        <SelectFilter label="Cakupan" value={filters.coverage} onChange={(value) => setFilters((current) => ({ ...current, coverage: value as Coverage }))} options={["planned", "unplanned"]} labels={{ planned: "Masuk rencana", unplanned: "Belum masuk prapenempatan" }} />
         {(query || activeFilters.length > 0) && <button type="button" className="priority-reset" onClick={resetFilters}><ResetIcon size={15} /> Hapus semua</button>}
       </section>
 
@@ -213,7 +214,7 @@ export default function Insiden({ risk, plan, date, districtMeta, onSelect }: Pr
                     <td>{row.modeled ? <RiskBar value={row.flood_prob} tone="flood" /> : <span className="priority-unmodeled">tak dimodelkan</span>}</td>
                     <td>{row.modeled ? <RiskBar value={row.drought_prob} tone="drought" /> : <span className="priority-unmodeled">—</span>}</td>
                     <td className="num"><strong>{fmtInt(row.exposure)}</strong><small className="table-unit">jiwa</small></td>
-                    <td>{row.assignments.length > 0 ? <div className="coverage-cell"><span className="coverage-status planned">Masuk rencana</span>{row.assignments.map((item) => <small key={item.resource}>{item.units} {item.resource_label}</small>)}</div> : <span className="coverage-status unplanned">Di luar kapasitas</span>}</td>
+                    <td>{row.assignments.length > 0 ? <div className="coverage-cell"><span className="coverage-status planned">Masuk rencana</span>{row.assignments.map((item) => <small key={item.resource}>{item.units} {item.resource_label}</small>)}</div> : <span className="coverage-status unplanned">Belum dipraposisikan</span>}</td>
                     <td><button type="button" className="row-detail-button" onClick={(event) => { event.stopPropagation(); setSelectedId(row.district_id); }}>Detail</button></td>
                   </tr>
                 ))}
@@ -256,7 +257,7 @@ function PriorityDetail({ row, onClose, onMap }: { row: PriorityRow; onClose: ()
     )}
     <div className="detail-exposure"><span>Estimasi paparan</span><strong>{fmtInt(row.exposure)} jiwa</strong><small>Peluang bahaya tertinggi × populasi wilayah.</small></div>
     <div className="detail-section-title">Alokasi saat ini</div>
-    {row.assignments.length ? row.assignments.map((item) => <div className="detail-assignment" key={item.resource}><strong>{item.units} {item.resource_label}</strong><span>dari {item.from_depot}</span><small>{item.minutes} menit perjalanan · peluang {Math.round(item.hazard_prob * 100)}%</small></div>) : <div className="detail-gap">Wilayah ini belum masuk rencana alokasi saat ini.</div>}
+    {row.assignments.length ? row.assignments.map((item) => <div className="detail-assignment" key={item.resource}><strong>{item.units} {item.resource_label}</strong><SourceSummary item={item} /><small>{Math.min(...sourcesOf(item).map((source) => source.minutes))}–{Math.max(...sourcesOf(item).map((source) => source.minutes))} menit perjalanan · peluang {Math.round(item.hazard_prob * 100)}%</small></div>) : <div className="detail-gap">Wilayah ini belum masuk rencana alokasi saat ini.</div>}
     <button type="button" className="detail-map-button" onClick={onMap}>Lihat wilayah di peta</button>
   </aside>;
 }
@@ -272,7 +273,7 @@ function SortableHead({ label, sortKey, sort, onSort, numeric = false }: { label
 function filterChips(filters: Filters) {
   const labels: Record<string, Record<string, string>> = {
     riskLevel: { compound: "Risiko majemuk", flood: "Banjir", drought: "Cekaman air" },
-    coverage: { planned: "Masuk rencana", unplanned: "Di luar kapasitas armada" },
+    coverage: { planned: "Masuk rencana", unplanned: "Belum masuk prapenempatan" },
     radar: { blind: "Titik buta radar", unmodeled: "Di luar cakupan model" },
   };
   return (Object.entries(filters) as [keyof Filters, string][]).filter(([, value]) => value).map(([key, value]) => ({ key, label: labels[key]?.[value] ?? value }));

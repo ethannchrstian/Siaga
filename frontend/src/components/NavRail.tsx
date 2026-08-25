@@ -20,7 +20,7 @@ const SECTIONS: { label: string; items: { key: View; label: string; Icon: typeof
     items: [
       { key: "peta", label: "Peta & Alokasi", Icon: MapIcon },
       { key: "insiden", label: "Pemantauan Wilayah", Icon: AlertIcon },
-      { key: "inventaris", label: "Kesiapan Armada", Icon: FleetIcon },
+      { key: "inventaris", label: "Inventaris & Alokasi", Icon: FleetIcon },
       { key: "ringkasan", label: "Laporan Operasional", Icon: GridIcon },
     ],
   },
@@ -55,12 +55,13 @@ export default function NavRail({
   date: string;
   dateMin: string;
   dateMax: string;
-  presets: { label: string; date: string }[];
+  presets: { label: string; date: string; note: string }[];
   onDate: (date: string) => void;
   disabled?: boolean;
   collapsed?: boolean;
   onToggleCollapsed?: () => void;
 }) {
+  const activePreset = presets.find((preset) => preset.date === date);
   return (
     <>
     {/* Rendered outside the <nav>, not inside it: the rail scrolls, so a
@@ -126,6 +127,7 @@ export default function NavRail({
             </select>
             <ChevronDownIcon size={13} />
           </label>
+          {activePreset && <small className="navrail-scenario-note">{activePreset.note}</small>}
         </div>
       </div>
       {SECTIONS.map((section) => (

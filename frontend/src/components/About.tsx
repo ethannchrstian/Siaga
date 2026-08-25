@@ -21,7 +21,9 @@ const SOURCES = [
   { data: "Populasi", source: "WorldPop 2020", status: "observasi", note: "Estimasi populasi grid 1 km" },
   { data: "Label banjir", source: "Ambang debit GloFAS", status: "turunan", note: "Dibentuk dari ambang fisik" },
   { data: "Label cekaman air", source: "SPI · Perka BMKG 9/2019", status: "turunan", note: "Dibentuk dari indeks presipitasi" },
-  { data: "Inventaris depot dan armada", source: "Lokasi BPBD nyata, jumlah placeholder", status: "skenario", note: "Bukan stok lapangan real-time" },
+  { data: "Inventaris pompa dan truk", source: "BNPB InaLogpal", status: "observasi", note: "Jumlah terdaftar; kesiapan wajib dikonfirmasi" },
+  { data: "Lokasi depot", source: "Centroid administratif GADM", status: "turunan", note: "Proxy perencanaan, bukan koordinat gudang" },
+  { data: "Regu dan kesiapan operasional", source: "Parameter operator", status: "skenario", note: "Tidak diterbitkan InaLogpal" },
 ];
 
 const LOOP = ["Kelangkaan air", "Ekstraksi air tanah", "Penurunan muka tanah", "Banjir rob", "Intrusi air laut"];
@@ -74,7 +76,7 @@ export default function About({ dateMin, dateMax, scenarioNote }: Props) {
           <li><span>01</span><div><strong>Prediksi bahaya</strong><p>Peluang banjir 0–72 jam dan peluang cekaman air untuk bulan berikutnya.</p></div></li>
           <li><span>02</span><div><strong>Estimasi paparan</strong><p>Peluang bahaya dikalikan populasi untuk membantu menentukan skala prioritas.</p></div></li>
           <li><span>03</span><div><strong>Optimasi alokasi</strong><p>Mulai peluang 5%, model memilih depot, jenis armada, jumlah unit, dan waktu tempuh dengan kapasitas terbatas.</p></div></li>
-          <li><span>04</span><div><strong>Keputusan operator</strong><p>Operator dapat mengunci atau mengalihkan rekomendasi; rencana kemudian dihitung ulang.</p></div></li>
+          <li><span>04</span><div><strong>Keputusan operator</strong><p>Operator dapat mengajukan dukungan provinsi, mengunci, atau mengalihkan rekomendasi; rencana kemudian dihitung ulang. Kesiapan aktual tetap diverifikasi di luar prototipe.</p></div></li>
         </ol>
       </section>
 
@@ -129,7 +131,7 @@ export default function About({ dateMin, dateMax, scenarioNote }: Props) {
         <div className="provenance-legend"><span><i className="observasi" />Observasi/reanalisis</span><span><i className="turunan" />Data turunan</span><span><i className="skenario" />Data skenario</span></div>
         <div className="table-scroll"><table className="data-table provenance-table"><thead><tr><th>Data</th><th>Sumber</th><th>Penggunaan</th><th>Status</th></tr></thead><tbody>{SOURCES.map((row) => <tr key={row.data}><td className="strong">{row.data}</td><td>{row.source}</td><td>{row.note}</td><td><span className={`data-status ${row.status}`}>{row.status}</span></td></tr>)}</tbody></table></div>
         <div className="provenance-note"><strong>Keterbatasan label kejadian</strong><p>Catatan BNPB DIBI tidak dapat diakses secara programatik. Label bahaya karena itu dibentuk dari reanalisis fisik terbuka—debit GloFAS untuk banjir dan SPI untuk cekaman air.</p></div>
-        {scenarioNote && <details className="scenario-note"><summary>Catatan lengkap skenario armada</summary><p>{scenarioNote}</p></details>}
+        {scenarioNote && <details className="scenario-note"><summary>Catatan lengkap inventaris dan asumsi operasi</summary><p>{scenarioNote}</p></details>}
       </section>
     </main>
   );

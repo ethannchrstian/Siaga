@@ -12,7 +12,7 @@
  * inventory.
  */
 
-import type { AllocateResponse, PlanItem } from "../api/client";
+import { sourcesOf, type AllocateResponse, type PlanItem } from "../api/client";
 import {
   formatDateTime,
   KIND_LABEL,
@@ -56,14 +56,16 @@ interface DepotTotals {
 function depotTotals(plan: PlanItem[]): DepotTotals[] {
   const byDepot = new Map<string, DepotTotals>();
   for (const p of plan) {
-    let row = byDepot.get(p.from_depot);
-    if (!row) {
-      row = { name: p.from_depot, pompa: 0, truk_tangki: 0, districts: new Set(), slowest: 0 };
-      byDepot.set(p.from_depot, row);
+    for (const source of sourcesOf(p)) {
+      let row = byDepot.get(source.depot);
+      if (!row) {
+        row = { name: source.depot, pompa: 0, truk_tangki: 0, districts: new Set(), slowest: 0 };
+        byDepot.set(source.depot, row);
+      }
+      row[p.resource] += source.units;
+      row.districts.add(p.district_id);
+      row.slowest = Math.max(row.slowest, source.minutes);
     }
-    row[p.resource] += p.units;
-    row.districts.add(p.district_id);
-    row.slowest = Math.max(row.slowest, p.minutes);
   }
   return [...byDepot.values()].sort(
     (a, b) => b.pompa + b.truk_tangki - (a.pompa + a.truk_tangki) || a.name.localeCompare(b.name),
@@ -183,11 +185,11 @@ export default function DispatchOrder({
             </tr>
           </thead>
           <tbody>
-            {plan.map((p) => {
+            {plan.flatMap((p) => sourcesOf(p).map((source) => {
               const locked = locks.has(keyOf(p));
               const hazard = HAZARD[p.resource];
               return (
-                <tr key={keyOf(p)} className={locked ? "is-locked" : undefined}>
+                <tr key={`${keyOf(p)}:${source.depot_id}`} className={locked ? "is-locked" : undefined}>
                   <td className="col-tick">{locked ? "✓" : ""}</td>
                   <td>
                     {p.district}
@@ -199,13 +201,13 @@ export default function DispatchOrder({
                   </td>
                   <td className="num">{Math.round(p.hazard_prob * 100)}%</td>
                   <td>{p.resource_label}</td>
-                  <td className="num">{p.units}</td>
-                  <td>{p.from_depot}</td>
-                  <td className="num">{p.minutes} mnt</td>
+                  <td className="num">{source.units}</td>
+                  <td>{source.depot}</td>
+                  <td className="num">{source.minutes} mnt</td>
                   <td className="num">{fmt(p.people_exposed)}</td>
                 </tr>
               );
-            })}
+            }))}
           </tbody>
         </table>
 

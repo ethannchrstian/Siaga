@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import type { AllocateResponse, PlanItem } from "../api/client";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { sourcesOf, type AllocateResponse, type PlanItem } from "../api/client";
 import { useCountUp } from "../hooks/useCountUp";
 import {
   AlertIcon,
@@ -13,6 +13,7 @@ import {
   SearchIcon,
 } from "../icons";
 import { CRITICAL_ALLOCATION_THRESHOLD_HELP } from "../thresholds";
+import SourceSummary from "./SourceSummary";
 
 interface Props {
   result: AllocateResponse | null;
@@ -29,6 +30,8 @@ interface Props {
   readonly?: boolean;
   /** Expected-covered change caused by the latest lock/reject decision. */
   coverageDelta?: number | null;
+  diversionOutcome?: DiversionOutcome | null;
+  onDismissDiversion?: () => void;
   crew?: { used: number; total: number };
   /** Kecamatan selected on the map; its card scrolls into view and flashes. */
   selectedId?: string | null;
@@ -39,6 +42,19 @@ interface Props {
   onPublishOrder?: () => void;
   /** Hands the panel's width back to the map. */
   onCollapse?: () => void;
+  /** Supply scope changes the plan, so its control belongs with the plan rather
+      than floating over the hazard map. */
+  supplyControl?: ReactNode;
+}
+
+export interface DiversionOutcome {
+  targetDistrict: string;
+  resourceLabel: string;
+  removedUnits: number;
+  destinations: { district: string; units: number }[];
+  returnedUnits: number;
+  coverageDelta: number;
+  failed: boolean;
 }
 
 interface DecisionGroup {
@@ -66,14 +82,18 @@ export default function Sidebar({
   labelFor,
   readonly = false,
   coverageDelta,
+  diversionOutcome,
+  onDismissDiversion,
   crew,
   selectedId,
   onHover,
   onPublishOrder,
   onCollapse,
+  supplyControl,
 }: Props) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<DecisionFilter>("all");
+  const [confirmingDiversion, setConfirmingDiversion] = useState<string | null>(null);
   // On a first visit the top card's evidence is open, so a new viewer sees
   // that a "why" exists at all. Returning users keep it collapsed.
   const [expandFirst] = useState(() => {
@@ -186,7 +206,7 @@ export default function Sidebar({
             the way. Someone who has already decided does not need telling. */}
         {!readonly && locks.size === 0 && rejects.size === 0 && groups.length > 0 && (
           <p className="decision-hint">
-            Kunci untuk menyetujui, Alihkan untuk menolak. Sistem menghitung ulang.
+            Kunci untuk menyetujui. Alihkan mengeluarkan alokasi terpilih lalu menghitung ulang.
           </p>
         )}
         {/* The plan has to be able to leave the browser: a depot crew acts on
@@ -207,6 +227,12 @@ export default function Sidebar({
           </button>
         )}
       </div>
+
+      {supplyControl && (
+        <div className="sidebar-supply-slot">
+          {supplyControl}
+        </div>
+      )}
 
       {readonly && (
         <div className="sidebar-readonly-note">
@@ -264,7 +290,7 @@ export default function Sidebar({
 
         {rejects.size > 0 && (
           <div className="rejected-bar">
-            <span className="rejected-label">Dialihkan · klik untuk batalkan</span>
+            <span className="rejected-label">Dikeluarkan dari rencana · klik untuk batalkan</span>
             {[...rejects].map((rejectKey) => (
               <button
                 type="button"
@@ -277,6 +303,27 @@ export default function Sidebar({
                 × {labelFor(rejectKey)}
               </button>
             ))}
+          </div>
+        )}
+
+        {diversionOutcome && (
+          <div className={`diversion-outcome${diversionOutcome.failed ? " failed" : ""}`} role="status">
+            <header>
+              <strong>{diversionOutcome.failed ? "Pengalihan belum diterapkan" : "Rencana diperbarui"}</strong>
+              {onDismissDiversion && <button type="button" onClick={onDismissDiversion} aria-label="Tutup hasil pengalihan">×</button>}
+            </header>
+            <p><b>{diversionOutcome.removedUnits} {diversionOutcome.resourceLabel}</b> ke {diversionOutcome.targetDistrict} {diversionOutcome.failed ? "masih berada dalam rencana." : "dikeluarkan dari rencana."}</p>
+            {!diversionOutcome.failed && diversionOutcome.destinations.length > 0 && (
+              <ul>
+                {diversionOutcome.destinations.map((destination) => (
+                  <li key={destination.district}>{destination.units} unit → {destination.district}</li>
+                ))}
+              </ul>
+            )}
+            {!diversionOutcome.failed && diversionOutcome.returnedUnits > 0 && <small>{diversionOutcome.returnedUnits} unit kembali tersedia.</small>}
+            {!diversionOutcome.failed && (
+              <footer>Estimasi cakupan {diversionOutcome.coverageDelta === 0 ? "tidak berubah" : `${diversionOutcome.coverageDelta > 0 ? "+" : "−"}${idNum(Math.abs(diversionOutcome.coverageDelta))} jiwa`}.</footer>
+            )}
           </div>
         )}
 
@@ -326,11 +373,11 @@ export default function Sidebar({
                     <section className={`decision-resource-row ${flood ? "flood" : "drought"}`} key={itemKey}>
                       <div className="decision-resource-main">
                         <span className="decision-resource-type">{flood ? "Banjir · 0–72 jam" : "Cekaman air · bulan depan"}</span>
-                        <span className="decision-travel-time" title={`Waktu tempuh dari ${item.from_depot}`}>
-                          <ClockIcon size={12} /> {item.minutes} mnt
+                        <span className="decision-travel-time" title={sourcesOf(item).map((source) => `${source.depot}: ${source.minutes} menit`).join(" · ")}>
+                          <ClockIcon size={12} /> {Math.min(...sourcesOf(item).map((source) => source.minutes))}–{Math.max(...sourcesOf(item).map((source) => source.minutes))} mnt
                         </span>
                         <strong>{item.units} {item.resource_label}</strong>
-                        <span className="decision-depot">dari {item.from_depot}</span>
+                        <SourceSummary item={item} className="decision-depot" />
                       </div>
                       <div className="decision-probability">
                         <span>Peluang</span><b>{probability}%</b>
@@ -349,13 +396,22 @@ export default function Sidebar({
                         <button
                           type="button"
                           className="redirect"
-                          onClick={() => onReject(item)}
+                          onClick={() => setConfirmingDiversion((current) => current === itemKey ? null : itemKey)}
                           disabled={readonly}
-                          title={readonlyTitle}
+                          title={readonlyTitle ?? `Keluarkan ${item.units} ${item.resource_label} ke ${item.district} lalu hitung ulang`}
                         >
                           Alihkan
                         </button>
                       </div>
+                      {confirmingDiversion === itemKey && (
+                        <div className="redirect-confirm" role="dialog" aria-label={`Konfirmasi pengalihan ${item.resource_label} ke ${item.district}`}>
+                          <p><strong>Keluarkan {item.units} {item.resource_label} ke {item.district}?</strong><span>SIAGA akan mempertahankan keputusan lain dan menghitung ulang sisa rencana.</span></p>
+                          <div>
+                            <button type="button" onClick={() => setConfirmingDiversion(null)}>Batal</button>
+                            <button type="button" className="confirm" onClick={() => { setConfirmingDiversion(null); onReject(item); }}>Hitung ulang</button>
+                          </div>
+                        </div>
+                      )}
                     </section>
                   );
                 })}
@@ -389,8 +445,8 @@ export default function Sidebar({
                       <span className="evidence-icon travel" aria-hidden="true"><ClockIcon size={13} /></span>
                       <div>
                         <small>Waktu tempuh</small>
-                        <b>{group.items[0].minutes} menit</b>
-                        <em>dari {group.items[0].from_depot}</em>
+                        <b>{Math.min(...sourcesOf(group.items[0]).map((source) => source.minutes))}–{Math.max(...sourcesOf(group.items[0]).map((source) => source.minutes))} menit</b>
+                        <em>{sourcesOf(group.items[0]).length} depot sumber</em>
                       </div>
                     </div>
                     <div className="evidence-cell">

@@ -15,7 +15,9 @@
 
 import { recordDecision } from "./api/client";
 
-const KEY = "siaga_decision_log";
+// Versioned so pre-context logs from older builds cannot be printed beside a
+// new plan and contradict its active locks/rejections.
+const KEY = "siaga_decision_log_v2";
 const OPERATOR_KEY = "siaga_operator";
 /** Keep the file bounded. A busy shift produces tens of entries, not thousands. */
 const MAX_ENTRIES = 500;
@@ -26,7 +28,12 @@ export type DecisionKind =
   | "reject"
   | "clear_reject"
   | "clear_all_locks"
-  | "date_change";
+  | "date_change"
+  | "supply_scope_change"
+  | "provincial_support_requested"
+  | "provincial_support_confirmed"
+  | "provincial_support_cancelled"
+  | "operational_assumption_change";
 
 export interface DecisionEntry {
   at: string; // ISO 8601, always UTC
@@ -44,10 +51,15 @@ export interface DecisionEntry {
 export const KIND_LABEL: Record<DecisionKind, string> = {
   lock: "Dikunci",
   unlock: "Kunci dilepas",
-  reject: "Dialihkan",
+  reject: "Dikeluarkan dari rencana",
   clear_reject: "Pengalihan dibatalkan",
   clear_all_locks: "Semua kunci dilepas",
   date_change: "Ganti tanggal",
+  supply_scope_change: "Cakupan pasokan diubah",
+  provincial_support_requested: "Dukungan provinsi diajukan",
+  provincial_support_confirmed: "Dukungan provinsi dikonfirmasi",
+  provincial_support_cancelled: "Dukungan provinsi dikeluarkan",
+  operational_assumption_change: "Asumsi operasi diubah",
 };
 
 export function operatorName(): string {

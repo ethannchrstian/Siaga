@@ -112,6 +112,30 @@ export interface Depot {
   lat: number;
   lon: number;
   fleet: { truk_tangki: number; pompa: number; regu: number };
+  registered_fleet: { truk_tangki: number; pompa: number; regu: number };
+  tier: "local" | "regional" | "provincial_reserve";
+  authority: "kabupaten_kota" | "provinsi";
+  inventory_status: "registered_unconfirmed";
+  location_accuracy: "kabupaten_centroid" | "provincial_capital_proxy";
+  availability_pct: number;
+  crew_source: "scenario_assumption";
+}
+
+export type SupplyScope = "corridor" | "regional" | "provincial";
+
+export interface SupplyProfile {
+  key: SupplyScope;
+  label: string;
+  evaluation_status: "historically_evaluated" | "exploratory";
+}
+
+export interface OperationalSettings {
+  availability_pct: number;
+  max_travel_min?: number;
+  travel_time_method: "haversine_at_40_kmh";
+  travel_time_label?: string;
+  crew_source: "scenario_assumption";
+  confirmed_provincial_depot_ids?: string[];
 }
 
 /** One bin of the reliability curve: what the model said, what happened. */
@@ -141,6 +165,10 @@ export interface ScenarioResponse {
   resource_labels: Record<string, string>;
   note: string;
   depots: Depot[];
+  /** Province-owned InaLogpal rows available for explicit activation. */
+  provincial_reserves: Depot[];
+  supply_profile: SupplyProfile;
+  operational_settings: OperationalSettings;
   /** Absent if the reliability run has not been executed. */
   calibration?: Partial<Record<"flood" | "drought", HazardCalibration>>;
 }
@@ -153,11 +181,37 @@ export interface PlanItem {
   resource_label: string;
   units: number;
   from_depot: string;
+  source_depot_id: string;
+  source_tier: Depot["tier"];
+  inventory_status: Depot["inventory_status"];
   minutes: number;
+  /** Exact solver contribution by depot; sums to `units`. */
+  sources: PlanSource[];
   hazard_prob: number;
   population: number;
   people_exposed: number;
   reason: string;
+}
+
+export interface PlanSource {
+  depot_id: string;
+  depot: string;
+  units: number;
+  minutes: number;
+  source_tier: Depot["tier"];
+  inventory_status: Depot["inventory_status"];
+}
+
+/** Compatibility fallback for older stored/API responses. */
+export function sourcesOf(item: PlanItem): PlanSource[] {
+  return item.sources?.length ? item.sources : [{
+    depot_id: item.source_depot_id,
+    depot: item.from_depot,
+    units: item.units,
+    minutes: item.minutes,
+    source_tier: item.source_tier,
+    inventory_status: item.inventory_status,
+  }];
 }
 
 export interface DepotDispatch {
@@ -183,11 +237,30 @@ export interface CoverageMetrics {
   expected_demand: number;
 }
 
+/** Why a kecamatan received nothing. The plan explained every line it
+ *  contained and nothing about the hundreds it left out, which is the question
+ *  an operator in an unserved subdistrict actually asks. */
+export interface Unserved {
+  district_id: string;
+  district: string;
+  kabupaten: string;
+  people_exposed: number;
+  /** Minutes from the closest depot, or null when none is within the limit. */
+  nearest_depot_min: number | null;
+  reason: "di_bawah_ambang" | "di_luar_jangkauan" | "armada_habis" | "kalah_prioritas";
+  text: string;
+}
+
 export interface AllocateResponse {
   date: string;
   plan: PlanItem[];
   depot_dispatch: Record<string, DepotDispatch>;
   summary: PlanSummary;
+  /** The largest 40 by exposure; unserved_counts covers the whole corridor. */
+  unserved: Unserved[];
+  unserved_counts: Partial<Record<Unserved["reason"], number>>;
+  supply_profile: SupplyProfile;
+  operational_settings: OperationalSettings;
   // Counterfactual: uncoordinated per-hazard allocation (paper's B2 config).
   baseline: {
     plan: PlanItem[];
@@ -237,11 +310,21 @@ export const getDistrictSeries = (districtId: string, end: string, days = 60) =>
   );
 export const getRisk = (date?: string) =>
   getJSON<RiskResponse>(`/risk${date ? `?date=${date}` : ""}`);
-export const getScenario = () => getJSON<ScenarioResponse>("/scenario");
+export const getScenario = (
+  supplyScope: SupplyScope = "corridor",
+  availabilityPct = 100,
+  confirmedProvincialDepotIds: string[] = [],
+) => getJSON<ScenarioResponse>(
+  `/scenario?supply_scope=${encodeURIComponent(supplyScope)}&availability_pct=${availabilityPct}&confirmed_provincial_depot_ids=${encodeURIComponent(confirmedProvincialDepotIds.join(","))}`,
+);
 export const postAllocate = (body: {
   date?: string;
   locks: Lock[];
   rejects: Reject[];
+  supply_scope?: SupplyScope;
+  availability_pct?: number;
+  max_travel_min?: number;
+  confirmed_provincial_depot_ids?: string[];
 }) => postJSON<AllocateResponse>("/allocate", body);
 
 // ---- Operator overrides -------------------------------------------------
@@ -365,3 +448,16 @@ export interface ModelInfo {
 }
 
 export const getModelInfo = () => getJSON<ModelInfo>("/model-info");
+
+// ---- Radar time-lapse ---------------------------------------------------
+// The console shows one month of radar at a time, which turns a decade of
+// measured inundation into a single frame. This is the whole record.
+
+export interface RobSeries {
+  months: string[];
+  /** district_id -> anomaly per month, aligned to `months`. Null where that
+   *  district had no usable radar coverage in that month. */
+  districts: Record<string, (number | null)[]>;
+}
+
+export const getRobSeries = () => getJSON<RobSeries>("/rob/series");

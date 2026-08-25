@@ -1,9 +1,10 @@
-import type {
-  DistrictProperties,
-  HazardCalibration,
-  PlanItem,
-  RiskDistrict,
-  RobReading,
+import {
+  type DistrictProperties,
+  type HazardCalibration,
+  type PlanItem,
+  type RiskDistrict,
+  type RobReading,
+  type Unserved,
 } from "../api/client";
 import {
   CRITICAL_ALLOCATION_THRESHOLD_HELP,
@@ -12,6 +13,7 @@ import {
 } from "../thresholds";
 import { frequencyPhrase, verificationNote, verifiedAt } from "../calibration";
 import Sparkline from "./Sparkline";
+import SourceSummary from "./SourceSummary";
 
 interface Props {
   props: DistrictProperties | null;
@@ -22,6 +24,8 @@ interface Props {
   // Month the radar figures were observed in, for the caption. Sentinel-1
   // revisits every 12 days, so a reading is monthly, not daily.
   robMonth?: string | null;
+  /** Set when this kecamatan is not in the plan: why it received nothing. */
+  unserved?: Unserved | null;
   onClose: () => void;
 }
 
@@ -152,6 +156,7 @@ export default function DistrictDrawer({
   date,
   calibration,
   robMonth,
+  unserved,
   onClose,
 }: Props) {
   if (!props) return null;
@@ -226,14 +231,22 @@ export default function DistrictDrawer({
 
       <div className="drawer-section">Alokasi dalam rencana</div>
       {assignments.length === 0 ? (
-        <div className="drawer-gap-state">Belum ada alokasi untuk wilayah ini pada rencana aktif.</div>
+        <div className="drawer-gap-state">
+          <b>Tidak masuk rencana aktif</b>
+          {/* "Belum ada alokasi" named the outcome and withheld the cause,
+              which is the one thing somebody in this kecamatan wants. */}
+          <span>{unserved?.text ?? "Belum ada alokasi untuk wilayah ini pada rencana aktif."}</span>
+          {unserved?.nearest_depot_min != null && (
+            <small>Depot terdekat {unserved.nearest_depot_min} menit.</small>
+          )}
+        </div>
       ) : assignments.map((assignment) => (
         <div
           className={`drawer-assign evidence-assignment ${assignment.resource === "pompa" ? "flood" : "drought"}`}
           key={assignment.resource}
         >
           <b>{assignment.units} {assignment.resource_label}</b>
-          <span>dari {assignment.from_depot} · {assignment.minutes} menit</span>
+          <SourceSummary item={assignment} full />
           {assignment.reason && <small>{assignment.reason}</small>}
         </div>
       ))}

@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
-import type { AllocateResponse, Depot, PlanItem } from "../api/client";
+import { sourcesOf, type AllocateResponse, type Depot, type PlanItem, type PlanSource, type SupplyProfile } from "../api/client";
 import { ChevronDownIcon, PumpIcon, SearchIcon, TruckIcon } from "../icons";
 
 interface Props {
   depots: Depot[];
   result: AllocateResponse | null;
   note?: string;
+  profile?: SupplyProfile;
 }
 
 type CapacityFilter = "all" | "noreserve" | "active" | "idle";
@@ -16,17 +17,21 @@ interface DepotRow {
   truckUsed: number;
   teamUsed: number;
   utilization: number;
-  assignments: PlanItem[];
+  assignments: { item: PlanItem; source: PlanSource }[];
 }
 
-export default function Inventaris({ depots, result, note }: Props) {
+export default function Inventaris({ depots, result, note, profile }: Props) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<CapacityFilter>("all");
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const rows = useMemo<DepotRow[]>(() => depots.map((depot) => {
     const dispatch = Object.values(result?.depot_dispatch ?? {}).find((item) => item.name === depot.name);
-    const assignments = (result?.plan ?? []).filter((item) => item.from_depot === depot.name);
+    const assignments = (result?.plan ?? []).flatMap((item) =>
+      sourcesOf(item)
+        .filter((source) => source.depot_id === depot.depot_id)
+        .map((source) => ({ item, source })),
+    );
     const pumpUsed = dispatch?.pompa ?? 0;
     const truckUsed = dispatch?.truk_tangki ?? 0;
     const teamUsed = pumpUsed + truckUsed;
@@ -55,14 +60,14 @@ export default function Inventaris({ depots, result, note }: Props) {
     <main className="page readiness-page">
       <header className="operational-page-head">
         <div>
-          <h1>Kesiapan armada</h1>
-          <p>{depots.length} depot BPBD · koridor Pantura</p>
+          <h1>Inventaris & alokasi armada</h1>
+          <p>{depots.length} depot BPBD · {profile?.label ?? "Inventaris koridor"}</p>
         </div>
-        <span className="scenario-data-badge">Inventaris skenario</span>
+        <span className="scenario-data-badge">InaLogpal terdaftar · penggunaan dalam rencana</span>
       </header>
 
       {noReserveCount > 0 ? (
-        <div className="capacity-alert stable"><span>✓</span><div><strong>Seluruh armada sudah ditempatkan pada rencana aktif</strong><p>{noReserveCount} dari {depots.length} depot kini tanpa regu cadangan. Setiap permintaan baru harus mengambil alih alokasi yang ada.</p></div></div>
+        <div className="capacity-alert stable"><span>i</span><div><strong>{noReserveCount} depot tidak memiliki regu cadangan dalam skenario ini</strong><p>Secara keseluruhan masih ada {Math.max(totals.team - totals.teamUsed, 0)} regu skenario di depot lain. Permintaan baru tetap dapat mengubah asal dan tujuan alokasi.</p></div></div>
       ) : (
         <div className="capacity-alert stable"><span>✓</span><div><strong>Masih ada regu cadangan di setiap depot</strong><p>Permintaan tambahan dapat dilayani tanpa menarik alokasi yang sudah berjalan.</p></div></div>
       )}
@@ -70,7 +75,7 @@ export default function Inventaris({ depots, result, note }: Props) {
       <section className="readiness-totals">
         <CapacityCard label="Pompa banjir" used={totals.pumpUsed} total={totals.pump} tone="flood" Icon={PumpIcon} />
         <CapacityCard label="Truk tangki air" used={totals.truckUsed} total={totals.truck} tone="drought" Icon={TruckIcon} />
-        <CapacityCard label="Regu personel" used={totals.teamUsed} total={totals.team} tone="team" />
+        <CapacityCard label="Regu operasional (asumsi)" used={totals.teamUsed} total={totals.team} tone="team" />
         <div className="readiness-summary-card"><span>Tanpa cadangan</span><strong>{noReserveCount}</strong><p>dari {depots.length} depot sudah habis regunya</p></div>
       </section>
 
@@ -101,7 +106,7 @@ export default function Inventaris({ depots, result, note }: Props) {
 
       <footer className="inventory-disclaimer">
         <strong>Cara membaca kapasitas</strong>
-        <span>Unit terkirim dihitung sebagai komitmen regu pada rencana aktif. Angka inventaris adalah skenario dan belum mewakili stok lapangan real-time.</span>
+        <span>Jumlah pompa dan truk adalah inventaris terdaftar InaLogpal, bukan jaminan siap operasi. Ketersediaan dan regu adalah parameter skenario yang harus dikonfirmasi BPBD pemilik aset.</span>
         {note && <small>{note}</small>}
       </footer>
     </main>
@@ -129,11 +134,11 @@ function FragmentRow({ row, expanded, onToggle }: { row: DepotRow; expanded: boo
   const remainingTruck = Math.max(row.depot.fleet.truk_tangki - row.truckUsed, 0);
   return <>
     <tr className={expanded ? "expanded" : ""}>
-      <td><div className="depot-name-cell"><strong>{row.depot.name}</strong><span>{row.assignments.length} tujuan pengiriman</span></div></td>
+      <td><div className="depot-name-cell"><strong>{row.depot.name}</strong><span><i className={`depot-tier ${row.depot.tier}`}>{row.depot.tier === "local" ? "Lokal" : row.depot.tier === "regional" ? "Regional" : "Cadangan provinsi"}</i>{row.assignments.length} tujuan pengiriman</span></div></td>
       <td><CapacityCell used={row.pumpUsed} total={row.depot.fleet.pompa} unit="pompa" /></td>
       <td><CapacityCell used={row.truckUsed} total={row.depot.fleet.truk_tangki} unit="truk" /></td>
       <td><div className="team-use-cell"><div><span style={{ width: `${Math.min(pct, 100)}%` }} /><i /></div><b>{row.teamUsed}/{row.depot.fleet.regu}</b><small>{pct}%</small></div></td>
-      <td><span className={`depot-status ${status}`}>{status === "full" ? "Penuh" : status === "active" ? "Aktif" : "Siap"}</span></td>
+      <td><span className={`depot-status ${status}`}>{status === "full" ? "Tanpa cadangan" : status === "active" ? "Mengirim" : "Belum digunakan"}</span></td>
       <td><button type="button" className="depot-expand" onClick={onToggle} aria-expanded={expanded}><ChevronDownIcon size={15} /> <span className="sr-only">Rincian {row.depot.name}</span></button></td>
     </tr>
     {expanded && (
@@ -142,8 +147,8 @@ function FragmentRow({ row, expanded, onToggle }: { row: DepotRow; expanded: boo
           <div className="depot-manifest">
             <aside className="depot-available">
               <div className="depot-detail-heading">
-                <span>Kapasitas siap pakai</span>
-                <strong>{remainingTeam} regu tersedia</strong>
+                <span>Sisa kapasitas dalam skenario</span>
+                <strong>{remainingTeam} regu skenario tersedia</strong>
               </div>
               <div className="depot-resource-grid">
                 <div className="depot-resource-stat team">
@@ -168,21 +173,21 @@ function FragmentRow({ row, expanded, onToggle }: { row: DepotRow; expanded: boo
               </div>
               {row.assignments.length ? (
                 <div className="dispatch-card-grid">
-                  {row.assignments.map((item) => {
+                  {row.assignments.map(({ item, source }) => {
                     const isPump = item.resource === "pompa";
                     return (
-                      <article className={`dispatch-card ${isPump ? "flood" : "drought"}`} key={`${item.district_id}:${item.resource}`}>
+                      <article className={`dispatch-card ${isPump ? "flood" : "drought"}`} key={`${item.district_id}:${item.resource}:${source.depot_id}`}>
                         <div className="dispatch-destination">
                           <small>Tujuan</small>
                           <strong>{item.district}</strong>
                         </div>
                         <div className="dispatch-resource">
                           <span>{isPump ? <PumpIcon size={14} /> : <TruckIcon size={14} />}{item.resource_label}</span>
-                          <strong>{item.units}<small> unit</small></strong>
+                          <strong>{source.units}<small> unit</small></strong>
                         </div>
                         <div className="dispatch-eta">
                           <small>Estimasi tiba</small>
-                          <strong>{item.minutes}<span> menit</span></strong>
+                          <strong>{source.minutes}<span> menit</span></strong>
                         </div>
                       </article>
                     );

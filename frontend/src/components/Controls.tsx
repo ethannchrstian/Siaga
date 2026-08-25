@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import type { ViewMode } from "../hazard";
-import { AlertIcon, ResetIcon } from "../icons";
+import { ClockIcon, ResetIcon } from "../icons";
 
 export type CompareMode = "siaga" | "terpisah";
 
@@ -11,11 +11,8 @@ interface Props {
   compare: CompareMode;
   onCompare: (mode: CompareMode) => void;
   onReplay?: () => void;
-  onDisrupt?: () => void;
   disabled?: boolean;
   replayLoading?: boolean;
-  disrupting?: boolean;
-  canDisrupt?: boolean;
   // Radar covers 2015-2024 monthly. Outside that window the mode is hidden
   // rather than shown empty, so the operator is never offered a blank layer.
   robAvailable?: boolean;
@@ -24,6 +21,10 @@ interface Props {
   // date where every hazard mode is empty while radar has 26 looks identical
   // to a date where there is nothing anywhere. Computed once in metrics.ts.
   counts?: Partial<Record<ViewMode, number>>;
+  /** Only offered in the radar view: it plays radar, nothing else. */
+  onTimelapse?: () => void;
+  timelapseLoading?: boolean;
+  timelapseRunning?: boolean;
 }
 
 const MODES: { key: ViewMode; label: string; title?: string; hint?: boolean }[] = [
@@ -53,13 +54,13 @@ export default function Controls({
   compare,
   onCompare,
   onReplay,
-  onDisrupt,
   disabled = false,
   replayLoading = false,
-  disrupting = false,
-  canDisrupt = false,
   robAvailable = false,
   counts,
+  onTimelapse,
+  timelapseLoading = false,
+  timelapseRunning = false,
 }: Props) {
   const [openHint, setOpenHint] = useState(false);
   return (
@@ -150,20 +151,20 @@ export default function Controls({
             <span>{replayLoading ? "Menyiapkan..." : "Putar ulang"}</span>
           </button>
         )}
-        {onDisrupt && (
+        {onTimelapse && (
           <button
             type="button"
-            className={`map-feature-button disrupt${disrupting ? " is-loading" : ""}`}
-            onClick={onDisrupt}
-            disabled={disabled || disrupting || !canDisrupt}
-            title={canDisrupt
-              ? "Simulasikan rute ke alokasi banjir teratas yang terputus"
-              : compare === "terpisah"
-                ? "Kembali ke mode Terpadu untuk menjalankan simulasi jalur putus"
-                : "Tunggu sampai rencana alokasi tersedia"}
+            className={`map-feature-button${timelapseRunning ? " is-on" : ""}`}
+            onClick={onTimelapse}
+            disabled={disabled || timelapseLoading || timelapseRunning}
+            title="Putar sepuluh tahun genangan terpantau radar, 2015 sampai 2024"
           >
-            <AlertIcon size={13} />
-            <span>{disrupting ? "Mengalihkan..." : "Jalur putus"}</span>
+            <ClockIcon size={13} />
+            <span>
+              {timelapseLoading
+                ? "Memuat..."
+                : timelapseRunning ? "Memutar 2015-2024" : "Putar 2015-2024"}
+            </span>
           </button>
         )}
       </div>
