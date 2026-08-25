@@ -33,6 +33,10 @@ class AllocateRequest(BaseModel):
     date: str | None = None
     locks: list[Lock] = []
     rejects: list[Reject] = []
+    supply_scope: str = "corridor"
+    availability_pct: int = Field(default=100, ge=25, le=100)
+    max_travel_min: int = Field(default=180, ge=60, le=180)
+    confirmed_provincial_depot_ids: list[str] = []
 
 
 def _validate(req: AllocateRequest, records: list[dict]) -> None:
@@ -43,6 +47,22 @@ def _validate(req: AllocateRequest, records: list[dict]) -> None:
     plan that quietly ignored their override, which is worse than an error.
     """
     known = {r["district_id"] for r in records}
+    if req.supply_scope not in scenario.SUPPLY_SCOPES:
+        raise HTTPException(
+            422,
+            f"unknown supply_scope: {req.supply_scope}. "
+            f"expected one of {sorted(scenario.SUPPLY_SCOPES)}",
+        )
+    confirmed = set(req.confirmed_provincial_depot_ids)
+    unknown = confirmed - scenario.known_provincial_reserve_ids()
+    if unknown:
+        raise HTTPException(
+            422, f"unknown provincial reserve depot_id: {sorted(unknown)}"
+        )
+    if confirmed and req.supply_scope != "provincial":
+        raise HTTPException(
+            422, "confirmed provincial reserves require supply_scope='provincial'"
+        )
     for kind, items in (("lock", req.locks), ("reject", req.rejects)):
         for it in items:
             if it.district_id not in known:
@@ -76,19 +96,34 @@ def allocate_endpoint(req: AllocateRequest):
 
     _validate(req, records)
 
-    depots = list(scenario.depots())
+    confirmed_ids = tuple(sorted(set(req.confirmed_provincial_depot_ids)))
+    depots = list(scenario.depots(
+        req.supply_scope, req.availability_pct, confirmed_ids
+    ))
     try:
         result = allocate(
             records,
             depots,
             locks=[l.model_dump() for l in req.locks],
             rejects=[r.model_dump() for r in req.rejects],
+            max_travel_min=req.max_travel_min,
         )
     except Exception as exc:  # solver blew up rather than returned a bad status
         raise HTTPException(503, f"solver failed: {exc}")
     t_solve = time.perf_counter()
 
     result["date"] = str(ts.date())
+    supply = scenario.supply_view(
+        req.supply_scope, req.availability_pct, confirmed_ids
+    )
+    result["supply_profile"] = supply["profile"]
+    result["operational_settings"] = {
+        "availability_pct": req.availability_pct,
+        "max_travel_min": req.max_travel_min,
+        "travel_time_method": "haversine_at_40_kmh",
+        "crew_source": "scenario_assumption",
+        "confirmed_provincial_depot_ids": list(confirmed_ids),
+    }
 
     # An infeasible or timed-out solve still returns a plan-shaped object. Flag
     # it so the interface can refuse to present it as a dispatchable plan, and
@@ -113,7 +148,9 @@ def allocate_endpoint(req: AllocateRequest):
     # Counterfactual: the paper's B2 config (independent per-hazard allocation,
     # no crew coordination). Ignores locks/rejects by design — it is the world
     # without SIAGA. Both plans are scored on the same scenario ensemble.
-    baseline = allocate_baseline(records, depots)
+    baseline = allocate_baseline(
+        records, depots, max_travel_min=req.max_travel_min
+    )
     siaga_metrics = coverage_metrics(records, result["plan"])
     baseline_metrics = coverage_metrics(records, baseline["plan"])
     result["baseline"] = baseline

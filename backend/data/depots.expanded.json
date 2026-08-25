@@ -1,0 +1,831 @@
+{
+  "_note": "Equipment counts are registered InaLogpal records fetched on 2026-08-25. Local and regional locations use administrative centroids; provincial locations use the provincial capital as a planning proxy until the owning BPBD confirms the dispatch warehouse. Regional candidates are prefiltered to a 180-minute straight-line planning reach at 40 km/h. Provincial rows are separate reserve records and are never copied into kabupaten totals. Crews are a scenario assumption, not InaLogpal personnel data.",
+  "resources": [
+    "truk_tangki",
+    "pompa",
+    "regu"
+  ],
+  "resource_labels": {
+    "truk_tangki": "Truk tangki air",
+    "pompa": "Pompa banjir",
+    "regu": "Regu personel"
+  },
+  "depots": [
+    {
+      "depot_id": "DEP-3216",
+      "name": "BPBD Bekasi",
+      "lat": -6.23707,
+      "lon": 107.12625,
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 4,
+        "regu": 3
+      },
+      "tier": "local",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid"
+    },
+    {
+      "depot_id": "DEP-3329",
+      "name": "BPBD Brebes",
+      "lat": -7.0369,
+      "lon": 108.94722,
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 2,
+        "regu": 2
+      },
+      "tier": "local",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid"
+    },
+    {
+      "depot_id": "DEP-3209",
+      "name": "BPBD Cirebon",
+      "lat": -6.75538,
+      "lon": 108.55322,
+      "fleet": {
+        "truk_tangki": 0,
+        "pompa": 2,
+        "regu": 2
+      },
+      "tier": "local",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid"
+    },
+    {
+      "depot_id": "DEP-3321",
+      "name": "BPBD Demak",
+      "lat": -6.91889,
+      "lon": 110.64172,
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 0,
+        "regu": 2
+      },
+      "tier": "local",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid"
+    },
+    {
+      "depot_id": "DEP-3212",
+      "name": "BPBD Indramayu",
+      "lat": -6.43308,
+      "lon": 108.21431,
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 3,
+        "regu": 2
+      },
+      "tier": "local",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid"
+    },
+    {
+      "depot_id": "DEP-3215",
+      "name": "BPBD Karawang",
+      "lat": -6.2593,
+      "lon": 107.36562,
+      "fleet": {
+        "truk_tangki": 0,
+        "pompa": 3,
+        "regu": 2
+      },
+      "tier": "local",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid"
+    },
+    {
+      "depot_id": "DEP-3324",
+      "name": "BPBD Kendal",
+      "lat": -7.007,
+      "lon": 110.15082,
+      "fleet": {
+        "truk_tangki": 0,
+        "pompa": 2,
+        "regu": 2
+      },
+      "tier": "local",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid"
+    },
+    {
+      "depot_id": "DEP-3275",
+      "name": "BPBD Kota Bekasi",
+      "lat": -6.27644,
+      "lon": 106.97375,
+      "fleet": {
+        "truk_tangki": 0,
+        "pompa": 1,
+        "regu": 2
+      },
+      "tier": "local",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid"
+    },
+    {
+      "depot_id": "DEP-3375",
+      "name": "BPBD Kota Pekalongan",
+      "lat": -6.89519,
+      "lon": 109.6772,
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 0,
+        "regu": 2
+      },
+      "tier": "local",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid"
+    },
+    {
+      "depot_id": "DEP-3374",
+      "name": "BPBD Kota Semarang",
+      "lat": -7.00373,
+      "lon": 110.40899,
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 2,
+        "regu": 2
+      },
+      "tier": "local",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid"
+    },
+    {
+      "depot_id": "DEP-3376",
+      "name": "BPBD Kota Tegal",
+      "lat": -6.8702,
+      "lon": 109.12004,
+      "fleet": {
+        "truk_tangki": 0,
+        "pompa": 1,
+        "regu": 2
+      },
+      "tier": "local",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid"
+    },
+    {
+      "depot_id": "DEP-3326",
+      "name": "BPBD Pekalongan",
+      "lat": -7.0101,
+      "lon": 109.62513,
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 0,
+        "regu": 2
+      },
+      "tier": "local",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid"
+    },
+    {
+      "depot_id": "DEP-3327",
+      "name": "BPBD Pemalang",
+      "lat": -7.01785,
+      "lon": 109.39584,
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 2,
+        "regu": 2
+      },
+      "tier": "local",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid"
+    },
+    {
+      "depot_id": "DEP-3328",
+      "name": "BPBD Tegal",
+      "lat": -6.99583,
+      "lon": 109.15427,
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 0,
+        "regu": 2
+      },
+      "tier": "local",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid"
+    },
+    {
+      "depot_id": "DEP-3217",
+      "name": "BPBD Bandung Barat",
+      "lat": -6.89713,
+      "lon": 107.41491,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 2,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3304",
+      "name": "BPBD Banjarnegara",
+      "lat": -7.35194,
+      "lon": 109.65729,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 0,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3302",
+      "name": "BPBD Banyumas",
+      "lat": -7.45515,
+      "lon": 109.17545,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 2,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3325",
+      "name": "BPBD Batang",
+      "lat": -7.02119,
+      "lon": 109.86148,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 0,
+        "pompa": 2,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3316",
+      "name": "BPBD Blora",
+      "lat": -7.07598,
+      "lon": 111.38761,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 6,
+        "pompa": 1,
+        "regu": 4
+      }
+    },
+    {
+      "depot_id": "DEP-3201",
+      "name": "BPBD Bogor",
+      "lat": -6.56002,
+      "lon": 106.76762,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 0,
+        "pompa": 2,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3309",
+      "name": "BPBD Boyolali",
+      "lat": -7.41863,
+      "lon": 110.65068,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 0,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3207",
+      "name": "BPBD Ciamis",
+      "lat": -7.43459,
+      "lon": 108.46624,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 0,
+        "pompa": 2,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3301",
+      "name": "BPBD Cilacap",
+      "lat": -7.49116,
+      "lon": 108.89063,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 2,
+        "pompa": 2,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3205",
+      "name": "BPBD Garut",
+      "lat": -7.35982,
+      "lon": 107.78871,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 0,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3315",
+      "name": "BPBD Grobogan",
+      "lat": -7.11692,
+      "lon": 110.92709,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 2,
+        "pompa": 2,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3320",
+      "name": "BPBD Jepara",
+      "lat": -6.54919,
+      "lon": 110.76789,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 0,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3305",
+      "name": "BPBD Kebumen",
+      "lat": -7.65533,
+      "lon": 109.61739,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 2,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3310",
+      "name": "BPBD Klaten",
+      "lat": -7.68645,
+      "lon": 110.61987,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 0,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3271",
+      "name": "BPBD Kota Bogor",
+      "lat": -6.59345,
+      "lon": 106.79952,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 0,
+        "pompa": 1,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3672",
+      "name": "BPBD Kota Cilegon",
+      "lat": -5.99807,
+      "lon": 106.01941,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 0,
+        "pompa": 1,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3277",
+      "name": "BPBD Kota Cimahi",
+      "lat": -6.88646,
+      "lon": 107.54357,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 0,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3272",
+      "name": "BPBD Kota Sukabumi",
+      "lat": -6.93977,
+      "lon": 106.92428,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 0,
+        "pompa": 2,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3372",
+      "name": "BPBD Kota Surakarta",
+      "lat": -7.55811,
+      "lon": 110.82332,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 0,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3674",
+      "name": "BPBD Kota Tangerang Selatan",
+      "lat": -6.30189,
+      "lon": 106.70747,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 0,
+        "pompa": 2,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3602",
+      "name": "BPBD Lebak",
+      "lat": -6.64235,
+      "lon": 106.21278,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 2,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3210",
+      "name": "BPBD Majalengka",
+      "lat": -6.81592,
+      "lon": 108.25777,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 0,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3318",
+      "name": "BPBD Pati",
+      "lat": -6.74354,
+      "lon": 111.04145,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 0,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3303",
+      "name": "BPBD Purbalingga",
+      "lat": -7.32289,
+      "lon": 109.40728,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 2,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3306",
+      "name": "BPBD Purworejo",
+      "lat": -7.69977,
+      "lon": 109.966,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 2,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3317",
+      "name": "BPBD Rembang",
+      "lat": -6.77545,
+      "lon": 111.46144,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 2,
+        "pompa": 13,
+        "regu": 9
+      }
+    },
+    {
+      "depot_id": "DEP-3604",
+      "name": "BPBD Serang",
+      "lat": -6.14315,
+      "lon": 106.14859,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 2,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3314",
+      "name": "BPBD Sragen",
+      "lat": -7.38721,
+      "lon": 110.97752,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 0,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3202",
+      "name": "BPBD Sukabumi",
+      "lat": -7.07633,
+      "lon": 106.70752,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 0,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3211",
+      "name": "BPBD Sumedang",
+      "lat": -6.82515,
+      "lon": 107.98091,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 0,
+        "pompa": 2,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3603",
+      "name": "BPBD Tangerang",
+      "lat": -6.17428,
+      "lon": 106.51871,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 0,
+        "pompa": 7,
+        "regu": 4
+      }
+    },
+    {
+      "depot_id": "DEP-3323",
+      "name": "BPBD Temanggung",
+      "lat": -7.2578,
+      "lon": 110.1357,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 0,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3312",
+      "name": "BPBD Wonogiri",
+      "lat": -7.92022,
+      "lon": 111.00034,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 0,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-3307",
+      "name": "BPBD Wonosobo",
+      "lat": -7.41556,
+      "lon": 109.90715,
+      "tier": "regional",
+      "authority": "kabupaten_kota",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "eligible_planning",
+      "location_accuracy": "kabupaten_centroid",
+      "fleet": {
+        "truk_tangki": 1,
+        "pompa": 0,
+        "regu": 2
+      }
+    },
+    {
+      "depot_id": "DEP-36",
+      "name": "BPBD Provinsi Banten",
+      "lat": -6.12009,
+      "lon": 106.15028,
+      "tier": "provincial_reserve",
+      "authority": "provinsi",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "requires_confirmation",
+      "location_accuracy": "provincial_capital_proxy",
+      "fleet": {
+        "truk_tangki": 2,
+        "pompa": 14,
+        "regu": 10
+      }
+    },
+    {
+      "depot_id": "DEP-32",
+      "name": "BPBD Provinsi Jawa Barat",
+      "lat": -6.91474,
+      "lon": 107.60981,
+      "tier": "provincial_reserve",
+      "authority": "provinsi",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "requires_confirmation",
+      "location_accuracy": "provincial_capital_proxy",
+      "fleet": {
+        "truk_tangki": 2,
+        "pompa": 36,
+        "regu": 23
+      }
+    },
+    {
+      "depot_id": "DEP-33",
+      "name": "BPBD Provinsi Jawa Tengah",
+      "lat": -6.9932,
+      "lon": 110.4203,
+      "tier": "provincial_reserve",
+      "authority": "provinsi",
+      "inventory_status": "registered_unconfirmed",
+      "dispatch_status": "requires_confirmation",
+      "location_accuracy": "provincial_capital_proxy",
+      "fleet": {
+        "truk_tangki": 2,
+        "pompa": 56,
+        "regu": 35
+      }
+    }
+  ]
+}
