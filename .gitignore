@@ -33,3 +33,9 @@ backend/data/users.json
 
 # written by operators at runtime, not source
 backend/data/decisions.jsonl
+
+# impeccable skill working dir
+.impeccable/
+
+# local backup of the pre-InaLogpal scenario depots
+backend/data/depots.scenario.bak.json
