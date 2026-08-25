@@ -36,6 +36,9 @@ LOG = Path(__file__).resolve().parents[2] / "data" / "decisions.jsonl"
 # so a typo from a stale client is rejected rather than silently stored.
 KINDS = {
     "lock", "unlock", "reject", "clear_reject", "clear_all_locks", "date_change",
+    "supply_scope_change", "provincial_support_requested",
+    "provincial_support_confirmed", "provincial_support_cancelled",
+    "operational_assumption_change",
 }
 
 MAX_RETURN = 500

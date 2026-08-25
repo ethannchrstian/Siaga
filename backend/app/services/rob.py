@@ -117,6 +117,38 @@ def rob_on(date: str | pd.Timestamp) -> dict[str, dict]:
     return _rob_for_month(pd.Timestamp(date).replace(day=1).normalize())
 
 
+@lru_cache(maxsize=1)
+def rob_series() -> dict:
+    """Every district's anomaly for every month, as parallel arrays.
+
+    The console shows one month at a time, which turns a decade of measured
+    inundation into a single frame. This is the whole record so the interface
+    can play it: on the Demak and Pekalongan coast the permanent water grows
+    visibly between 2015 and 2024, and that is the case the product is arguing.
+
+    Arrays rather than objects, and rounded to three decimals: the same data as
+    a list of records is roughly four times the bytes for no added meaning.
+    Nulls are preserved -- a month a district was never observed in must not be
+    drawn as if it were dry.
+    """
+    if not available():
+        return {"months": [], "districts": {}}
+
+    df = monthly().sort_values(["district_id", "month"])
+    months = [str(m.date()) for m in sorted(df["month"].unique())]
+    index = {m: i for i, m in enumerate(months)}
+
+    out: dict[str, list] = {}
+    for did, g in df.groupby("district_id", sort=False):
+        row: list[float | None] = [None] * len(months)
+        for r in g.itertuples():
+            a = r.anomaly
+            row[index[str(r.month.date())]] = None if pd.isna(a) else round(float(a), 3)
+        out[did] = row
+
+    return {"months": months, "districts": out}
+
+
 def observed_month(date: str | pd.Timestamp) -> str | None:
     """Which month the radar figures actually come from, for the caption."""
     if not available():

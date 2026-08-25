@@ -31,7 +31,7 @@ def client():
 
 
 def test_correct_credentials_return_a_session(client):
-    r = client.post("/auth/login", json={"username": "admin", "password": "admin123"})
+    r = client.post("/auth/login", json={"username": "admin", "password": "adminletsgowin"})
     assert r.status_code == 200
     body = r.json()
     assert body["token"]
@@ -39,7 +39,8 @@ def test_correct_credentials_return_a_session(client):
 
 
 def test_wrong_password_is_refused(client):
-    r = client.post("/auth/login", json={"username": "admin", "password": "nope"})
+    # The retired demo credential must not remain valid after rotation.
+    r = client.post("/auth/login", json={"username": "admin", "password": "admin123"})
     assert r.status_code == 401
 
 
@@ -64,7 +65,7 @@ def test_password_is_never_stored_in_the_clear():
 
 def test_session_survives_and_bad_tokens_do_not(client):
     token = client.post(
-        "/auth/login", json={"username": "admin", "password": "admin123"}
+        "/auth/login", json={"username": "admin", "password": "adminletsgowin"}
     ).json()["token"]
     ok = client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
     assert ok.status_code == 200
@@ -74,7 +75,7 @@ def test_session_survives_and_bad_tokens_do_not(client):
 
 def test_logout_invalidates_the_token(client):
     token = client.post(
-        "/auth/login", json={"username": "admin", "password": "admin123"}
+        "/auth/login", json={"username": "admin", "password": "adminletsgowin"}
     ).json()["token"]
     client.post("/auth/logout", headers={"Authorization": f"Bearer {token}"})
     assert client.get("/auth/me", headers={"Authorization": f"Bearer {token}"}).status_code == 401
@@ -100,6 +101,21 @@ def test_unknown_kind_is_rejected(client, tmp_path, monkeypatch):
     monkeypatch.setattr(dec_mod, "LOG", tmp_path / "decisions.jsonl")
     r = client.post("/decisions", json={"kind": "sabotage", "date": DATE})
     assert r.status_code == 422
+
+
+@pytest.mark.parametrize("kind", [
+    "supply_scope_change",
+    "provincial_support_requested",
+    "provincial_support_confirmed",
+    "provincial_support_cancelled",
+    "operational_assumption_change",
+])
+def test_supply_decision_kinds_are_recorded(client, tmp_path, monkeypatch, kind):
+    """Supply controls share the same audit contract as Kunci/Alihkan."""
+    monkeypatch.setattr(dec_mod, "LOG", tmp_path / "decisions.jsonl")
+    response = client.post("/decisions", json={"kind": kind, "date": DATE})
+    assert response.status_code == 201
+    assert client.get("/decisions").json()["entries"][-1]["kind"] == kind
 
 
 def test_contested_ranks_by_how_often_a_district_is_overruled(client, tmp_path, monkeypatch):

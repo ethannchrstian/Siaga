@@ -42,10 +42,10 @@ DK_LEN = 32
 
 SESSION_TTL_S = 12 * 3600
 
-# Seeded on first run so a fresh clone can sign in without a setup step. The
-# password is a demo credential and is documented as one in the README.
+# Seeded on first run so a fresh clone can sign in without a setup step. This
+# remains a demo credential; production deployments need managed identities.
 DEFAULT_USER = "admin"
-DEFAULT_PASSWORD = "admin123"
+DEFAULT_PASSWORD = "adminletsgowin"
 DEFAULT_DISPLAY = "Operator SIAGA"
 
 _sessions: dict[str, dict] = {}

@@ -127,3 +127,36 @@ def test_inland_water_body_is_not_a_blind_spot():
     put a lake at the top of a list of endangered kecamatan."""
     lake = {"level": "tinggi", "coastal": False, "water_frac": 0.69}
     assert rob_svc.blind_spot(lake, 0.001) is False
+
+
+@pytest.mark.skipif(not rob_svc.available(), reason="radar data not built")
+def test_series_covers_every_month_for_every_district(client):
+    """The console shows one month at a time, which reduces a decade of
+    measured inundation to a single frame. This endpoint is the whole record so
+    the interface can play it."""
+    d = client.get("/rob/series").json()
+    assert len(d["months"]) == 120
+    assert d["months"][0] == "2015-01-01"
+    assert d["months"][-1] == "2024-12-01"
+    for series in d["districts"].values():
+        assert len(series) == len(d["months"])
+
+
+@pytest.mark.skipif(not rob_svc.available(), reason="radar data not built")
+def test_series_keeps_gaps_as_null(client):
+    """A month a district was never observed in must not be drawn as if it were
+    dry, so it stays null rather than becoming a zero."""
+    d = client.get("/rob/series").json()
+    values = [v for s in d["districts"].values() for v in s]
+    assert any(v is None for v in values), "expected at least one unobserved month"
+    assert all(v is None or -1.0 <= v <= 1.0 for v in values)
+
+
+@pytest.mark.skipif(not rob_svc.available(), reason="radar data not built")
+def test_series_shows_sayung_crossing_its_own_normal(client):
+    """The case the playback exists to make: Sayung sits below the decade
+    median early and above it late, which is land turning into water."""
+    s = client.get("/rob/series").json()["districts"]["IDN.10.8.12_1"]
+    early = [v for v in s[:12] if v is not None]
+    late = [v for v in s[-12:] if v is not None]
+    assert sum(early) / len(early) < 0 < sum(late) / len(late)
