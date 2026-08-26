@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { sourcesOf, type DistrictProperties, type PlanItem, type RiskDistrict } from "../api/client";
-import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, ResetIcon, SearchIcon } from "../icons";
+import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, SearchIcon } from "../icons";
 import { fmtInt } from "../metrics";
 import { MONITORING_THRESHOLD, MONITORING_THRESHOLD_HELP } from "../thresholds";
 import SourceSummary from "./SourceSummary";
@@ -69,8 +69,9 @@ export default function Insiden({ risk, plan, date, districtMeta, onSelect }: Pr
   // Kept separate from baseRows on purpose. A blind spot has flood_prob below
   // 5%, so it sits under the 50% monitoring threshold and is exactly what this
   // table filters out; measured over six dates, 49% of them never appeared
-  // here at all. Merging them in would grow "Semua dipantau" past the count in
-  // the header and nav badge, which both read kpis.aboveMonitoring.
+  // here at all. Merging them into the default unfiltered dataset would grow
+  // it past the count in the header and nav badge, which both read
+  // kpis.aboveMonitoring.
   const blindRows = useMemo<PriorityRow[]>(() => [...risk.values()]
     .filter((district) => district.rob_blind_spot)
     .map((district) => ({
@@ -144,17 +145,22 @@ export default function Insiden({ risk, plan, date, districtMeta, onSelect }: Pr
 
   useEffect(() => setPage(1), [filters, query, rowsPerPage]);
   useEffect(() => setPage((current) => Math.min(current, pageCount)), [pageCount]);
+  useEffect(() => {
+    if ((filters.radar === "blind" && counts.blind === 0) || (filters.radar === "unmodeled" && counts.unmodeled === 0)) {
+      setFilters((current) => ({ ...current, radar: "" }));
+    }
+  }, [counts.blind, counts.unmodeled, filters.radar]);
 
-  const selectSegment = (segment: "all" | "compound" | "flood" | "drought" | "unplanned" | "blind" | "unmodeled") => {
-    if (segment === "all") setFilters(EMPTY_FILTERS);
-    else if (segment === "blind") setFilters((current) => ({ ...current, radar: "blind", riskLevel: "", coverage: "" }));
-    else if (segment === "unmodeled") setFilters((current) => ({ ...current, radar: "unmodeled", riskLevel: "", coverage: "" }));
-    else if (segment === "unplanned") setFilters((current) => ({ ...current, coverage: "unplanned", radar: "" }));
-    else setFilters((current) => ({ ...current, riskLevel: segment, coverage: "", radar: "" }));
+  const selectSegment = (segment: "compound" | "flood" | "drought" | "unplanned" | "blind" | "unmodeled") => {
+    if (segment === "blind" || segment === "unmodeled") {
+      setFilters((current) => ({ ...current, radar: current.radar === segment ? "" : segment, riskLevel: "", coverage: "" }));
+    } else if (segment === "unplanned") {
+      setFilters((current) => ({ ...current, coverage: current.coverage === "unplanned" ? "" : "unplanned", riskLevel: "", radar: "" }));
+    } else {
+      setFilters((current) => ({ ...current, riskLevel: current.riskLevel === segment ? "" : segment, coverage: "", radar: "" }));
+    }
   };
   const updateSort = (key: SortKey) => setSort((current) => ({ key, direction: current.key === key && current.direction === "desc" ? "asc" : "desc" }));
-  const resetFilters = () => { setQuery(""); setFilters(EMPTY_FILTERS); };
-
   return (
     <main className="page priority-page">
       <header className="operational-page-head">
@@ -170,17 +176,12 @@ export default function Insiden({ risk, plan, date, districtMeta, onSelect }: Pr
       </header>
 
       <nav className="priority-segments" aria-label="Ringkasan prioritas">
-        <Segment label="Semua dipantau" value={counts.all} active={!filters.riskLevel && !filters.coverage && !filters.radar} onClick={() => selectSegment("all")} />
         <Segment label="Risiko majemuk" value={counts.compound} tone="compound" active={filters.riskLevel === "compound"} onClick={() => selectSegment("compound")} />
         <Segment label="Banjir dominan" value={counts.flood} tone="flood" active={filters.riskLevel === "flood"} onClick={() => selectSegment("flood")} />
         <Segment label="Cekaman dominan" value={counts.drought} tone="drought" active={filters.riskLevel === "drought"} onClick={() => selectSegment("drought")} />
         <Segment label="Belum masuk prapenempatan" value={counts.unplanned} tone="gap" active={filters.coverage === "unplanned"} onClick={() => selectSegment("unplanned")} />
-        {counts.blind > 0 && (
-          <Segment label="Titik buta radar" value={counts.blind} tone="blind" active={filters.radar === "blind"} onClick={() => selectSegment("blind")} />
-        )}
-        {counts.unmodeled > 0 && (
-          <Segment label="Di luar cakupan model" value={counts.unmodeled} tone="unmodeled" active={filters.radar === "unmodeled"} onClick={() => selectSegment("unmodeled")} />
-        )}
+        <Segment label="Titik buta radar" value={counts.blind} tone="blind" active={filters.radar === "blind"} disabled={counts.blind === 0} onClick={() => selectSegment("blind")} />
+        <Segment label="Di luar cakupan model" value={counts.unmodeled} tone="unmodeled" active={filters.radar === "unmodeled"} disabled={counts.unmodeled === 0} onClick={() => selectSegment("unmodeled")} />
       </nav>
 
       <section className="priority-toolbar">
@@ -189,7 +190,6 @@ export default function Insiden({ risk, plan, date, districtMeta, onSelect }: Pr
         <SelectFilter label="Kab/Kota" value={filters.regency} onChange={(value) => setFilters((current) => ({ ...current, regency: value }))} options={regencies} />
         <SelectFilter label="Bahaya" value={filters.riskLevel} onChange={(value) => setFilters((current) => ({ ...current, riskLevel: value as RiskLevel }))} options={["compound", "flood", "drought"]} labels={{ compound: "Majemuk", flood: "Banjir", drought: "Cekaman air" }} />
         <SelectFilter label="Cakupan" value={filters.coverage} onChange={(value) => setFilters((current) => ({ ...current, coverage: value as Coverage }))} options={["planned", "unplanned"]} labels={{ planned: "Masuk rencana", unplanned: "Belum masuk prapenempatan" }} />
-        {(query || activeFilters.length > 0) && <button type="button" className="priority-reset" onClick={resetFilters}><ResetIcon size={15} /> Hapus semua</button>}
       </section>
 
       {activeFilters.length > 0 && <div className="active-filter-row"><span>Filter aktif</span>{activeFilters.map((chip) => <button key={chip.key} type="button" onClick={() => setFilters((current) => ({ ...current, [chip.key]: "" }))}>{chip.label} ×</button>)}</div>}
@@ -238,8 +238,8 @@ export default function Insiden({ risk, plan, date, districtMeta, onSelect }: Pr
   );
 }
 
-function Segment({ label, value, tone = "", active, onClick }: { label: string; value: number; tone?: string; active: boolean; onClick: () => void }) {
-  return <button type="button" className={`priority-segment ${tone}${active ? " active" : ""}`} onClick={onClick}><span>{label}</span><b>{fmtInt(value)}</b></button>;
+function Segment({ label, value, tone = "", active, disabled = false, onClick }: { label: string; value: number; tone?: string; active: boolean; disabled?: boolean; onClick: () => void }) {
+  return <button type="button" className={`priority-segment ${tone}${active ? " active" : ""}`} disabled={disabled} aria-disabled={disabled} onClick={onClick}><span>{label}</span><b>{fmtInt(value)}</b></button>;
 }
 
 function RiskBar({ value, tone }: { value: number; tone: "flood" | "drought" }) {

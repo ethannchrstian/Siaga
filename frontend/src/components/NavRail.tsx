@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from "react";
+
 import {
   AlertIcon,
   ChevronDownIcon,
@@ -29,6 +31,10 @@ const SECTIONS: { label: string; items: { key: View; label: string; Icon: typeof
     items: [{ key: "tentang", label: "Metode & Data", Icon: InfoIcon }],
   },
 ];
+
+const MONTHS_ID = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+const WEEKDAYS_ID = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+const pad2 = (value: number) => String(value).padStart(2, "0");
 
 export default function NavRail({
   view,
@@ -62,6 +68,55 @@ export default function NavRail({
   onToggleCollapsed?: () => void;
 }) {
   const activePreset = presets.find((preset) => preset.date === date);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState(date.slice(0, 7));
+  const calendarRef = useRef<HTMLDivElement>(null);
+  const [scenarioOpen, setScenarioOpen] = useState(false);
+  const scenarioRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!scenarioOpen) return;
+    const closeOutside = (event: PointerEvent) => {
+      if (!scenarioRef.current?.contains(event.target as Node)) setScenarioOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setScenarioOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOutside);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOutside);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [scenarioOpen]);
+
+  useEffect(() => setCalendarMonth(date.slice(0, 7)), [date]);
+  useEffect(() => {
+    if (!calendarOpen) return;
+    const closeOutside = (event: PointerEvent) => {
+      if (!calendarRef.current?.contains(event.target as Node)) setCalendarOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setCalendarOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOutside);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOutside);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [calendarOpen]);
+
+  const [calendarYear, calendarMonthIndex] = calendarMonth.split("-").map(Number);
+  const firstWeekday = new Date(calendarYear, calendarMonthIndex - 1, 1).getDay();
+  const daysInMonth = new Date(calendarYear, calendarMonthIndex, 0).getDate();
+  const moveCalendar = (offset: number) => {
+    const next = new Date(calendarYear, calendarMonthIndex - 1 + offset, 1);
+    setCalendarMonth(`${next.getFullYear()}-${pad2(next.getMonth() + 1)}`);
+  };
+  const minMonth = dateMin.slice(0, 7);
+  const maxMonth = dateMax.slice(0, 7);
+
   return (
     <>
     {/* Rendered outside the <nav>, not inside it: the rail scrolls, so a
@@ -97,36 +152,84 @@ export default function NavRail({
       {/* Each control carries its label above the box rather than inside it,
           so the white face holds only the value the operator is reading. */}
       <div className="navrail-context">
-        <div className="navrail-field">
+        <div className="navrail-field navrail-calendar-field" ref={calendarRef}>
           <span className="navrail-field-label">Hindcast · tanggal aktif</span>
-          <label className={`navrail-date${disabled ? " is-disabled" : ""}`}>
+          <button
+            type="button"
+            className={`navrail-date${calendarOpen ? " is-open" : ""}${disabled ? " is-disabled" : ""}`}
+            onClick={() => !disabled && setCalendarOpen((open) => !open)}
+            aria-haspopup="dialog"
+            aria-expanded={calendarOpen}
+            disabled={disabled}
+          >
             <strong>{formatDate(date)}</strong>
             <ChevronDownIcon size={13} />
-            <input
-              type="date"
-              value={date}
-              min={dateMin}
-              max={dateMax}
-              onChange={(event) => onDate(event.target.value)}
-              aria-label="Pilih tanggal data"
-              disabled={disabled}
-            />
-          </label>
+          </button>
+          {calendarOpen && (
+            <div className="navrail-calendar" role="dialog" aria-label="Pilih tanggal hindcast">
+              <div className="navrail-calendar-head">
+                <button type="button" onClick={() => moveCalendar(-1)} disabled={calendarMonth <= minMonth} aria-label="Bulan sebelumnya">‹</button>
+                <strong>{MONTHS_ID[calendarMonthIndex - 1]} {calendarYear}</strong>
+                <button type="button" onClick={() => moveCalendar(1)} disabled={calendarMonth >= maxMonth} aria-label="Bulan berikutnya">›</button>
+              </div>
+              <div className="navrail-calendar-grid">
+                {WEEKDAYS_ID.map((day) => <span className="weekday" key={day}>{day}</span>)}
+                {Array.from({ length: firstWeekday }, (_, index) => <span key={`blank-${index}`} />)}
+                {Array.from({ length: daysInMonth }, (_, index) => {
+                  const value = `${calendarMonth}-${pad2(index + 1)}`;
+                  const unavailable = value < dateMin || value > dateMax;
+                  return (
+                    <button
+                      type="button"
+                      key={value}
+                      className={value === date ? "is-selected" : ""}
+                      disabled={unavailable}
+                      aria-label={value}
+                      aria-pressed={value === date}
+                      onClick={() => { onDate(value); setCalendarOpen(false); }}
+                    >{index + 1}</button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
-        <div className="navrail-field">
+        <div className="navrail-field navrail-scenario-field" ref={scenarioRef}>
           <span className="navrail-field-label" id="navrail-scenario-label">Skenario contoh</span>
-          <label className={`navrail-scenario${disabled ? " is-disabled" : ""}`}>
-            <select
-              aria-labelledby="navrail-scenario-label"
-              value={presets.some((preset) => preset.date === date) ? date : ""}
-              onChange={(event) => event.target.value && onDate(event.target.value)}
-              disabled={disabled}
-            >
-              <option value="">Pilih skenario</option>
-              {presets.map((preset) => <option key={preset.date} value={preset.date}>{preset.label}</option>)}
-            </select>
+          <button
+            type="button"
+            className={`navrail-scenario${scenarioOpen ? " is-open" : ""}${disabled ? " is-disabled" : ""}`}
+            onClick={() => !disabled && setScenarioOpen((open) => !open)}
+            aria-labelledby="navrail-scenario-label"
+            aria-haspopup="listbox"
+            aria-expanded={scenarioOpen}
+            disabled={disabled}
+          >
+            <strong>{activePreset?.label ?? "Pilih skenario"}</strong>
             <ChevronDownIcon size={13} />
-          </label>
+          </button>
+          {scenarioOpen && (
+            <div className="navrail-scenario-menu" role="listbox" aria-label="Pilih skenario contoh">
+              {presets.map((preset) => {
+                const selected = preset.date === date;
+                return (
+                  <button
+                    type="button"
+                    key={preset.date}
+                    className={selected ? "is-selected" : ""}
+                    role="option"
+                    aria-selected={selected}
+                    onClick={() => {
+                      onDate(preset.date);
+                      setScenarioOpen(false);
+                    }}
+                  >
+                    <span><strong>{preset.label}</strong><small>{preset.note}</small></span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
           {activePreset && <small className="navrail-scenario-note">{activePreset.note}</small>}
         </div>
       </div>

@@ -3,16 +3,13 @@ import { sourcesOf, type AllocateResponse, type PlanItem } from "../api/client";
 import { useCountUp } from "../hooks/useCountUp";
 import {
   AlertIcon,
-  ChevronDownIcon,
   ChevronRightIcon,
   ClockIcon,
   DocumentIcon,
   FleetIcon,
-  InfoIcon,
   PeopleIcon,
   SearchIcon,
 } from "../icons";
-import { CRITICAL_ALLOCATION_THRESHOLD_HELP } from "../thresholds";
 import SourceSummary from "./SourceSummary";
 
 interface Props {
@@ -170,14 +167,14 @@ export default function Sidebar({
         )}
         {summary && (
           <div className="decision-summary-line">
-            <span><b>{summary.n_districts_served}</b> kecamatan</span>
-            <span><b>{summary.total_dispatched.pompa + summary.total_dispatched.truk_tangki}</b> unit</span>
-            <span><b>{summary.fleet_used_pct}%</b> armada</span>
+            <span><b>{summary.n_districts_served}</b><span>kecamatan</span></span>
+            <span><b>{summary.total_dispatched.pompa + summary.total_dispatched.truk_tangki}</b><span>unit</span></span>
+            <span><b>{summary.fleet_used_pct}%</b><span>armada</span></span>
           </div>
         )}
         {result?.comparison && (
           <div className="coverage-line">
-            <span>≈ <b>{idNum(covered)}</b> jiwa terlindungi</span>
+            <span className="coverage-metric"><b>≈ {idNum(covered)}</b><span>jiwa terlindungi</span></span>
             {coverageDelta != null && coverageDelta !== 0 && (
               <span
                 className={`coverage-delta ${coverageDelta > 0 ? "up" : "down"}`}
@@ -241,18 +238,6 @@ export default function Sidebar({
       )}
 
       <div className="decision-scroll-region">
-        <details className="optimizer-threshold-note" title={CRITICAL_ALLOCATION_THRESHOLD_HELP}>
-        <summary>
-          <span className="optimizer-threshold-icon"><InfoIcon size={13} /></span>
-          <span className="optimizer-threshold-copy">
-            <strong>Info ambang alokasi</strong>
-            <small>Kritis · 5%</small>
-          </span>
-          <ChevronDownIcon size={15} aria-hidden="true" />
-        </summary>
-        <p>Batas kritis yang digunakan optimizer untuk mempertimbangkan kebutuhan alokasi.</p>
-        </details>
-
         <div className="decision-tools">
         <label className="decision-search">
           <SearchIcon size={15} />

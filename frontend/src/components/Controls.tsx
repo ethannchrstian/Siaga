@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { ViewMode } from "../hazard";
 import { ClockIcon, ResetIcon } from "../icons";
@@ -63,6 +63,24 @@ export default function Controls({
   timelapseRunning = false,
 }: Props) {
   const [openHint, setOpenHint] = useState(false);
+  const robHintRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (!openHint) return;
+    const closeOutside = (event: PointerEvent) => {
+      if (!robHintRef.current?.contains(event.target as Node)) setOpenHint(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpenHint(false);
+    };
+    document.addEventListener("pointerdown", closeOutside);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOutside);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [openHint]);
+
   return (
     <div className={`controls map-mode-control${disabled ? " controls-disabled" : ""}`}>
       <div className="seg map-risk-seg">
@@ -96,19 +114,28 @@ export default function Controls({
           // invalid, and it was why the marker looked clickable and was not.
           if (!item.hint) return node;
           return (
-            <span className="seg-slot" key={item.key}>
+            <span
+              className="seg-slot"
+              key={item.key}
+              ref={robHintRef}
+            >
               {node}
               <button
                 type="button"
                 className={`seg-hint${openHint ? " is-open" : ""}`}
-                onClick={() => setOpenHint((v) => !v)}
+                onClick={() => setOpenHint(true)}
+                onMouseEnter={() => setOpenHint(true)}
+                onMouseLeave={() => setOpenHint(false)}
+                onFocus={() => setOpenHint(true)}
+                onBlur={() => setOpenHint(false)}
                 aria-expanded={openHint}
+                aria-controls="rob-layer-help"
                 aria-label="Apa itu lapisan rob"
               >
                 ?
               </button>
               {openHint && (
-                <span className="seg-hint-pop" role="tooltip">
+                <span className="seg-hint-pop" id="rob-layer-help" role="dialog" aria-label="Informasi lapisan Rob">
                   <b>Rob · lapisan radar</b>
                   <span>{item.title}</span>
                   <small>Sentinel-1 VV, median bulanan, ambang &minus;16 dB.</small>
