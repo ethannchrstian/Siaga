@@ -6,12 +6,18 @@
  * what time, against which plan. Without this the system can explain what it
  * proposed but not what was actually done with the proposal.
  *
- * Deliberately local. There is no backend store yet, so this survives reloads
- * and browser restarts but does not follow the operator to another machine.
- * Section "Keterbatasan" of the paper says the same thing.
+ * Written twice: to localStorage, which is what this session reads back, and
+ * to the server, which is what makes the record outlive one browser. The local
+ * copy stays authoritative for the interface so a dead API can never cost the
+ * operator a decision -- the POST is fire-and-forget and its failure is
+ * invisible here by design.
  */
 
-const KEY = "siaga_decision_log";
+import { recordDecision } from "./api/client";
+
+// Versioned so pre-context logs from older builds cannot be printed beside a
+// new plan and contradict its active locks/rejections.
+const KEY = "siaga_decision_log_v2";
 const OPERATOR_KEY = "siaga_operator";
 /** Keep the file bounded. A busy shift produces tens of entries, not thousands. */
 const MAX_ENTRIES = 500;
@@ -22,7 +28,12 @@ export type DecisionKind =
   | "reject"
   | "clear_reject"
   | "clear_all_locks"
-  | "date_change";
+  | "date_change"
+  | "supply_scope_change"
+  | "provincial_support_requested"
+  | "provincial_support_confirmed"
+  | "provincial_support_cancelled"
+  | "operational_assumption_change";
 
 export interface DecisionEntry {
   at: string; // ISO 8601, always UTC
@@ -40,10 +51,15 @@ export interface DecisionEntry {
 export const KIND_LABEL: Record<DecisionKind, string> = {
   lock: "Dikunci",
   unlock: "Kunci dilepas",
-  reject: "Dialihkan",
+  reject: "Dikeluarkan dari rencana",
   clear_reject: "Pengalihan dibatalkan",
   clear_all_locks: "Semua kunci dilepas",
   date_change: "Ganti tanggal",
+  supply_scope_change: "Cakupan pasokan diubah",
+  provincial_support_requested: "Dukungan provinsi diajukan",
+  provincial_support_confirmed: "Dukungan provinsi dikonfirmasi",
+  provincial_support_cancelled: "Dukungan provinsi dikeluarkan",
+  operational_assumption_change: "Asumsi operasi diubah",
 };
 
 export function operatorName(): string {
@@ -77,16 +93,37 @@ export function readLog(): DecisionEntry[] {
 export function appendDecision(
   entry: Omit<DecisionEntry, "at" | "operator">,
 ): DecisionEntry[] {
-  const next = [
-    ...readLog(),
-    { ...entry, at: new Date().toISOString(), operator: operatorName() },
-  ].slice(-MAX_ENTRIES);
+  const full: DecisionEntry = {
+    ...entry,
+    at: new Date().toISOString(),
+    operator: operatorName(),
+  };
+  const next = [...readLog(), full].slice(-MAX_ENTRIES);
   try {
     localStorage.setItem(KEY, JSON.stringify(next));
   } catch {
     // storage disabled; the entry is still returned for this session
   }
+  void postDecision(full);
   return next;
+}
+
+/** Mirrors the entry to the server. Never awaited, never surfaced: an operator
+ *  pressing Kunci during an incident must not be told about a logging fault. */
+async function postDecision(entry: DecisionEntry): Promise<void> {
+  try {
+    await recordDecision({
+      kind: entry.kind,
+      date: entry.planDate,
+      district_id: entry.districtId,
+      district: entry.district,
+      resource: entry.resourceLabel,
+      units: entry.units,
+      operator: entry.operator,
+    });
+  } catch {
+    // Offline, or the API is down. The local copy above already holds it.
+  }
 }
 
 export function clearLog(): void {

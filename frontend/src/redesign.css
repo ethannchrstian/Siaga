@@ -1180,6 +1180,17 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 .decision-scroll-region::-webkit-scrollbar-track { background: transparent; }
 .decision-sidebar .rejected-bar { display: flex; flex-wrap: wrap; gap: 5px; padding: 8px 10px; }
 .rejected-label { width: 100%; color: #9c5559; font-size: 11px; font-weight: 650; text-transform: uppercase; }
+.diversion-outcome { margin: 8px 10px 0; padding: 10px; color: #365744; background: #edf5f0; border: 1px solid #c9ddd0; border-radius: 5px; }
+.diversion-outcome.failed { color: #714343; background: #f7eded; border-color: #dfc8c8; }
+.diversion-outcome header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.diversion-outcome header strong { color: #294a36; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+.diversion-outcome.failed header strong { color: #713d3d; }
+.diversion-outcome header button { display: grid; width: 21px; height: 21px; place-items: center; color: inherit; background: transparent; border: 0; cursor: pointer; font-size: 17px; line-height: 1; }
+.diversion-outcome p { margin-top: 5px; font-size: 11px; line-height: 1.4; }
+.diversion-outcome ul { display: flex; flex-wrap: wrap; gap: 4px 8px; margin: 6px 0 0; padding: 0; list-style: none; }
+.diversion-outcome li { font-family: var(--font-mono); font-size: 10px; }
+.diversion-outcome > small { display: block; margin-top: 5px; font-size: 10px; }
+.diversion-outcome footer { margin-top: 7px; padding-top: 6px; border-top: 1px solid #c9ddd0; font-size: 10px; font-weight: 700; }
 .decision-scroll-region .decision-group-list {
   display: flex;
   flex: none;
@@ -1221,6 +1232,13 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 .decision-resource-actions button { height: 26px; padding: 0 7px; color: #18345e; background: #fff; border: 1px solid #b9c7d8; border-radius: 4px; font-size: 11px; font-weight: 650; cursor: pointer; }
 .decision-resource-actions button.locked { color: #fff; background: #2f855a; border-color: #2f855a; }
 .decision-resource-actions button.redirect { color: #a13a30; border-color: #e6c0bc; }
+.redirect-confirm { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 10px; color: #5d3c3c; background: #f8eeee; border: 1px solid #e2caca; border-radius: 4px; }
+.redirect-confirm p { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: 11px; line-height: 1.35; }
+.redirect-confirm p strong { color: #723d3d; font-size: 11px; }
+.redirect-confirm p span { color: #725b5b; }
+.redirect-confirm > div { display: flex; flex: none; gap: 5px; }
+.redirect-confirm button { height: 27px; padding: 0 8px; color: #4d5967; background: #fff; border: 1px solid #cbd2d8; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 700; }
+.redirect-confirm button.confirm { color: #fff; background: #8f4141; border-color: #8f4141; }
 .decision-reason { margin: 0 10px 9px; padding-top: 7px; border-top: 1px solid #e8ecf1; }
 .decision-reason summary { color: #4d6682; font-size: var(--fs-small); font-weight: 650; cursor: pointer; }
 .decision-reason p { margin-top: 5px; color: var(--ink-4); font-size: var(--fs-micro); line-height: 1.45; }
@@ -1431,7 +1449,7 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   --signal-red: #d34848;
   --signal-flood: #4b7898;
   --signal-drought: #955159;
-  --signal-compound: #626a73;
+  --signal-compound: #6b4c7a;
 }
 
 .app, .page, .overview, .about { color: var(--signal-ink); }
@@ -1674,6 +1692,11 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
     grid-template-columns: repeat(3, minmax(86px, 1fr));
     height: 52px;
   }
+  /* Same reason as the desktop rule: the mode count is not fixed at three. */
+  .map-mode-control .map-risk-seg {
+    grid-template-columns: none;
+    grid-auto-columns: minmax(74px, 1fr);
+  }
   .map-mode-control .seg-btn {
     min-width: 86px;
     height: 52px;
@@ -1754,6 +1777,33 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   text-overflow: clip;
   white-space: normal;
 }
+.source-summary.is-inline { color: inherit; }
+.source-summary.is-collapsible { color: inherit; }
+.source-summary.is-collapsible > summary {
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  gap: 6px;
+  cursor: pointer;
+  list-style: none;
+}
+.source-summary.is-collapsible > summary::-webkit-details-marker { display: none; }
+.source-summary.is-collapsible > summary span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.source-summary.is-collapsible > summary b { flex: 0 0 auto; color: #405b75; font-size: 10px; font-weight: 750; }
+.source-summary.is-collapsible > summary svg { flex: 0 0 auto; transition: transform 160ms ease-out; }
+.source-summary.is-collapsible[open] > summary svg { transform: rotate(180deg); }
+.source-summary.is-collapsible > summary:focus-visible { outline: 2px solid #52769a; outline-offset: 3px; border-radius: 2px; }
+.source-manifest { display: grid; gap: 4px; margin: 7px 0 0; padding: 0; list-style: none; }
+.source-manifest li { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; min-width: 0; padding-top: 4px; border-top: 1px solid #e2e7eb; }
+.source-manifest li span { min-width: 0; color: var(--ink-3); font-size: 10px; line-height: 1.35; }
+.source-manifest li span b { color: var(--signal-ink); font-family: var(--font-mono); }
+.source-manifest li small { flex: 0 0 auto; color: var(--ink-4); font-family: var(--font-mono); font-size: 9px; }
+.source-summary.is-full .source-manifest { margin-top: 6px; }
+.source-summary.is-full .source-manifest li { padding: 6px 0 0; }
+.source-summary.is-full .source-manifest li span { font-size: 11px; }
+.report-allocation-table .source-summary { display: block; max-width: 250px; }
+.report-allocation-table .source-summary.is-collapsible > summary { width: 100%; }
 .decision-probability {
   grid-area: probability;
   align-self: start;
@@ -2031,8 +2081,14 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 }
 .map-mode-control .seg-compare .seg-btn > span { font-size: 12px; }
 .map-mode-control .seg-compare .seg-btn > small { font-size: 11px; }
+/* Columns follow the number of modes instead of being hard-coded. With
+   repeat(3, ...) the fourth mode wrapped onto a second row that the parent's
+   overflow:hidden clipped, so the radar layer was present in the DOM and
+   invisible on screen. */
 .map-mode-control .map-risk-seg {
-  grid-template-columns: repeat(3, minmax(90px, 1fr));
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(90px, 1fr);
+  grid-template-columns: none;
   height: 38px;
 }
 .map-mode-control .map-risk-seg .seg-btn {
@@ -2182,13 +2238,6 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   gap: 9px;
   margin-bottom: 13px;
 }
-.report-section-heading > span {
-  color: var(--ink-4);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: .08em;
-}
 .report-section-heading h2 {
   color: var(--signal-ink);
   font-family: var(--font-sans);
@@ -2232,16 +2281,17 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 .report-subhead { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 15px; padding-bottom: 7px; border-bottom: 1px solid #e2e6ea; }
 .report-subhead strong { color: #485564; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
 .report-subhead span { color: var(--ink-4); font-size: 11px; }
-.hazard-watchlist > button { display: grid; grid-template-columns: minmax(130px, 1fr) 50px 50px auto; align-items: center; gap: 7px; width: 100%; min-height: 43px; padding: 6px 2px; color: inherit; background: transparent; border: 0; border-bottom: 1px solid #e8ebee; text-align: left; cursor: pointer; }
+.hazard-watchlist > button { display: grid; grid-template-columns: minmax(130px, 1fr) 58px 58px 132px; align-items: center; gap: 7px; width: 100%; min-height: 43px; padding: 6px 2px; color: inherit; background: transparent; border: 0; border-bottom: 1px solid #e8ebee; text-align: left; cursor: pointer; }
 .hazard-watchlist > button:last-child { border-bottom: 0; }
 .hazard-watchlist > button:hover { background: #f7f8f9; }
 .hazard-watch-place { display: flex; flex-direction: column; min-width: 0; gap: 2px; }
 .hazard-watch-place strong { overflow: hidden; color: var(--signal-ink); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .hazard-watch-place small { color: var(--ink-4); font-size: 11px; }
-.hazard-prob { font-family: var(--font-mono); font-size: 12px; font-weight: 700; }
+.hazard-prob { width: 100%; font-family: var(--font-mono); font-size: 12px; font-variant-numeric: tabular-nums; font-weight: 700; text-align: center; white-space: nowrap; }
 .hazard-prob.flood { color: #3f657f; }
 .hazard-prob.drought { color: #743f43; }
 .report-status { display: inline-flex; align-items: center; justify-content: center; width: fit-content; padding: 3px 6px; border-radius: 3px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.hazard-watchlist .report-status { justify-self: start; }
 .report-status.planned { color: #1f5136; background: #e6f0ea; }
 .report-status.locked { color: #fff; background: var(--signal-navy); }
 .report-status.open { color: var(--ink-3); background: #eef1f4; }
@@ -2282,6 +2332,25 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 .impact-disclaimer { margin-top: 9px; color: var(--ink-4); font-size: 11px; }
 
 .report-handover-grid { grid-template-columns: 1fr 1fr; }
+.follow-up-summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 9px; color: var(--ink-4); font-size: 12px; }
+.follow-up-summary strong { color: var(--signal-ink); }
+.follow-up-summary > span { flex: none; padding: 3px 6px; color: #53606d; background: #edf0f2; border-radius: 3px; font-size: 11px; font-weight: 650; }
+.follow-up-list { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.follow-up-list > button { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; min-width: 0; padding: 10px; color: inherit; background: #f7f8f9; border: 1px solid #e1e5e8; border-radius: 4px; text-align: left; cursor: pointer; transition: background-color 120ms ease, border-color 120ms ease; }
+.follow-up-list > button:hover { background: #f0f3f5; border-color: #cbd3da; }
+.follow-up-list > button:focus-visible { outline: 2px solid #567da0; outline-offset: 2px; }
+.follow-up-kind { grid-column: 2; grid-row: 1; align-self: start; padding: 3px 5px; border-radius: 3px; font-size: 10px; font-weight: 750; white-space: nowrap; }
+.follow-up-kind.blind { color: #8b3038; background: #f5e4e6; }
+.follow-up-kind.radar { color: #2f6f6c; background: #e1eeec; }
+.follow-up-kind.forecast { color: #3f6179; background: #e5edf1; }
+.follow-up-place { grid-column: 1; grid-row: 1; display: flex; flex-direction: column; min-width: 0; gap: 2px; }
+.follow-up-place strong { overflow: hidden; color: var(--signal-ink); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.follow-up-place small { color: var(--ink-4); font-size: 11px; }
+.follow-up-evidence { grid-column: 1 / -1; color: #445363; font-family: var(--font-mono); font-size: 11px; font-weight: 650; }
+.follow-up-reason { grid-column: 1 / -1; color: var(--ink-4); font-size: 11px; line-height: 1.4; }
+.follow-up-footer { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 2px; padding-top: 6px; border-top: 1px solid #e2e6e9; }
+.follow-up-footer small { color: var(--ink-4); font-size: 10px; }
+.follow-up-footer b { color: var(--signal-navy); font-size: 10px; }
 .handover-list { display: flex; flex-direction: column; gap: 7px; }
 .handover-item { display: grid; grid-template-columns: 25px 1fr; align-items: start; gap: 9px; padding: 9px 10px; background: #f6f7f8; border: 1px solid #e3e6e9; border-left: 3px solid #8a949f; border-radius: 4px; }
 .handover-item.critical { background: #f7eded; border-left-color: var(--signal-red); }
@@ -2347,6 +2416,7 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   .hazard-watchlist .report-status { grid-column: 1 / -1; }
   .report-resource-summary { grid-template-columns: 1fr; }
   .report-resource-summary .report-subhead, .resource-decision-note { grid-column: auto; }
+  .follow-up-list { grid-template-columns: 1fr; }
   .operation-report-footer { flex-direction: column; gap: 4px; }
 }
 
@@ -2535,7 +2605,8 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 .navrail.is-collapsed .navrail-section,
 /* :not(.nav-badge) matters — the badge is a span child of the button too. */
 .navrail.is-collapsed .navrail-btn > span:not(.nav-badge),
-.navrail.is-collapsed .navrail-operator > span:last-child { display: none; }
+.navrail.is-collapsed .navrail-operator-id,
+.navrail.is-collapsed .navrail-signout { display: none; }
 /* The count has no room, but "there is something here" still has to survive,
    so the badge becomes a dot on the icon's corner. Explicit colour: the
    expanded badge's translucent white is invisible at 7px. */
@@ -2646,12 +2717,20 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   cursor: pointer;
 }
 .navrail-scenario select option { color: var(--ink-1); background: #fff; }
+.navrail-scenario-note {
+  display: block;
+  margin: 6px 2px 0;
+  color: #aebacd;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.35;
+}
 .navrail-date:focus-within, .navrail-scenario:focus-within { outline: 2px solid #8db5e5; outline-offset: 2px; }
 .navrail-date.is-disabled, .navrail-scenario.is-disabled { opacity: .55; }
 .navrail-operator { display: flex; align-items: center; gap: 9px; }
 .navrail-operator .account-avatar { flex: 0 0 auto; color: var(--signal-navy); background: #fff; }
-.navrail-operator > span:last-child { display: flex; flex-direction: column; min-width: 0; }
-.navrail-operator strong { color: #e8eef5; font-size: var(--fs-micro); }
+.navrail-operator-id { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
+.navrail-operator strong { overflow: hidden; color: #e8eef5; font-size: var(--fs-micro); text-overflow: ellipsis; white-space: nowrap; }
 .navrail-operator small { margin-top: 1px; color: #8b9ab0; font-size: 10px; }
 
 /* Source footnote: the honesty line, always visible under the map. */
@@ -2708,7 +2787,15 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   min-width: 0;
   padding: 8px 16px;
 }
-.strip-stat + .strip-stat { border-left: 1px solid var(--border); }
+/* Very light washes rather than rules. The three read as one sequence, and
+   the tint reuses each segment's own icon colour so nothing new is invented.
+   Kept near-invisible on purpose: any stronger and the band stops looking like
+   an instrument and starts looking like a template. */
+.strip-stat:nth-child(1) { background: rgba(63, 93, 114, .045); }
+.strip-stat:nth-child(2) { background: rgba(31, 62, 134, .05); }
+.strip-stat:nth-child(3) { background: rgba(23, 95, 99, .05); }
+.strip-stat:first-child { border-radius: 6px 0 0 6px; }
+.strip-stat:last-child { border-radius: 0 6px 6px 0; }
 .strip-icon {
   display: grid;
   place-items: center;
@@ -3712,8 +3799,6 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   letter-spacing: .16em;
   text-indent: .16em;
 }
-.boot-sub { margin-top: 5px; color: #8b9ab0; font-size: var(--fs-small); }
-
 /* Indeterminate: the work behind it has no reportable progress. */
 .boot-bar {
   overflow: hidden;
@@ -3748,4 +3833,2666 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   .boot-bar i { animation: none; width: 100%; }
   .boot.is-leaving .boot-inner { transform: none; }
   .peta .sidebar, .navrail, .plan-reopen { transition: none; }
+}
+
+/* ---- Radar (rob) panel ------------------------------------------------- */
+/* Teal, not the flood blue. Everything else in the drawer is a model output;
+   this block is a measurement, and the colour has to say so at a glance. */
+
+.drawer-rob {
+  margin: 14px 0 4px;
+  padding: 11px 11px 9px;
+  background: #f4f8f8;
+  border: 1px solid #d3e2e1;
+  border-left: 3px solid #2f6f6c;
+}
+.drawer-rob .drawer-section { margin: 0 0 5px; padding: 0; border: 0; }
+.drawer-rob-head {
+  margin-bottom: 8px;
+  color: #23514f;
+  font-size: 13px;
+  font-weight: 700;
+}
+.drawer-rob.rob-tinggi .drawer-rob-head { color: #1c4442; }
+.drawer-rob.rob-tak_terpantau { border-left-color: #a6adb3; background: #f6f7f8; }
+.drawer-rob.rob-tak_terpantau .drawer-rob-head { color: var(--ink-4); }
+
+.drawer-rob-rows { display: flex; flex-wrap: wrap; gap: 4px 18px; }
+.drawer-rob-rows > div { display: flex; flex-direction: column; gap: 1px; }
+.drawer-rob-rows span {
+  color: #647184;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+.drawer-rob-rows b {
+  color: #0b1f33;
+  font-family: var(--font-mono);
+  font-size: 14px;
+}
+
+.drawer-rob-note {
+  margin-top: 9px;
+  padding: 8px 9px;
+  font-size: 11px;
+  line-height: 1.45;
+}
+/* Subsidence: a slow, structural fact about the place. */
+.drawer-rob-note.chronic { color: #23514f; background: #e7f0ef; }
+/* The model contradicting itself is the one thing here that is red, because
+   it is the only line that should change what the operator does next. */
+.drawer-rob-note.blind {
+  color: #8e3524;
+  background: #fdf0ec;
+  border-left: 2px solid #b8452e;
+}
+
+.drawer-rob-src {
+  display: block;
+  margin-top: 8px;
+  color: var(--ink-4);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+/* ---- Counts on the map mode switcher ---------------------------------- */
+/* The map encoded how many kecamatan were flagged only in colour, so the
+   answer required counting polygons. Zero stays visible but recedes: knowing
+   a mode is empty is itself information, and on some dates every hazard mode
+   is empty while radar is not. */
+
+.map-mode-control .map-risk-seg .seg-btn { gap: 6px; }
+.seg-count {
+  min-width: 17px;
+  padding: 1px 4px;
+  color: #647184;
+  background: #eef2f5;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.seg-count.has { color: #0b1f33; background: #dde5ee; }
+.seg-btn.active .seg-count {
+  color: #f4f7fb;
+  background: rgba(255, 255, 255, .18);
+}
+
+/* Radar rows on the monitoring page. Teal, matching the map layer, because
+   these kecamatan are listed on an observation and not on a forecast. */
+.hazard-kind.blind { color: #2f6f6c; }
+.priority-segments .segment.blind b { color: #2f6f6c; }
+
+/* ---- Kecamatan the models do not cover ---------------------------------- */
+/* Six of 324, all on the Cirebon and Indramayu coast. Their probabilities are
+   zero because nothing was computed, and a zero on a rob-exposed coast is the
+   most misleading number this interface could print. */
+
+.drawer-risk-status.unmodeled { color: #6b5a3a; background: #f6f1e6; }
+.drawer-unmodeled {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 11px 12px;
+  background: #faf7f0;
+  border: 1px solid #e6dcc6;
+  border-left: 3px solid #a98d4f;
+}
+.drawer-unmodeled b { color: #6b5a3a; font-size: 13px; }
+.drawer-unmodeled span { color: #4a5768; font-size: 12px; line-height: 1.5; }
+.drawer-unmodeled small { color: var(--ink-4); font-size: 11px; line-height: 1.45; }
+
+/* Same statement in the monitoring table, where a row has no room for prose. */
+.priority-unmodeled {
+  color: #6b5a3a;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.priority-segments .segment.unmodeled b { color: #6b5a3a; }
+.hazard-kind.unmodeled { color: #6b5a3a; }
+
+/* ---- Operator disagreement ---------------------------------------------- */
+/* Reads as evidence, not as an alert: these are places worth looking at, not
+   incidents. Teal marks agreement with the radar layer. */
+
+.report-contested-lede { color: var(--ink-3); font-size: 12px; line-height: 1.55; }
+.contested-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 11px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.contested-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 6px 10px;
+  background: #f6f8fa;
+  border: 1px solid #e4e9ef;
+  border-radius: 4px;
+}
+.contested-list li.is-blind { background: #f2f7f7; border-color: #cfe0df; }
+.contested-list b { color: #0b1f33; font-size: 12px; }
+.contested-list span { color: #647184; font-family: var(--font-mono); font-size: 12px; }
+.contested-list em {
+  color: #2f6f6c;
+  font-size: 11px;
+  font-style: normal;
+}
+.report-contested-note {
+  margin-top: 11px;
+  padding: 9px 11px;
+  color: #23514f;
+  background: #eef4f4;
+  border-left: 3px solid #2f6f6c;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.report-contested-caveat {
+  display: block;
+  margin-top: 10px;
+  color: var(--ink-4);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.navrail-signout { display: none; }
+/* The count has no room, but "there is something here" still has to survive,
+   so the badge becomes a dot on the icon's corner. Explicit colour: the
+   expanded badge's translucent white is invisible at 7px. */
+.navrail.is-collapsed .nav-badge,
+.navrail.is-collapsed .navrail-btn.active .nav-badge {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  min-width: 0;
+  width: 7px;
+  height: 7px;
+  margin: 0;
+  padding: 0;
+  background: #5b8fd6;
+  font-size: 0;
+  border-radius: 50%;
+}
+/* Collapsed, every glyph sits on the rail's centre line: the logo, each nav
+   icon, the collapse control and the operator avatar. */
+.navrail.is-collapsed .navrail-brand { padding: 16px 8px 14px; }
+.navrail.is-collapsed .navrail-logo { justify-content: center; }
+/* Hide the wordmark's wrapper, not just its text: an empty flex item still
+   contributes the 8px gap and pushes the mark 4px off the centre line. */
+.navrail.is-collapsed .navrail-logo > div { display: none; }
+.navrail.is-collapsed .navrail-btn { width: calc(100% - 16px); margin: 2px 8px; padding: 0; justify-content: center; }
+.navrail.is-collapsed .navrail-group + .navrail-group { margin-top: 12px; }
+.navrail.is-collapsed .navrail-foot { margin: auto 8px 16px; padding: 10px; }
+.navrail.is-collapsed .navrail-operator { justify-content: center; }
+
+/* Handle straddling the rail's right border, vertically centred, mirroring
+   the plan panel's tab on the far side. --rail-w drives both the rail's own
+   width and the handle's position, so the two stay locked together while the
+   collapse animates. */
+.app { position: relative; --rail-w: 214px; }
+.app:has(.navrail.is-collapsed) { --rail-w: 66px; }
+.navrail { width: var(--rail-w); }
+.navrail-foot { margin-top: auto; }
+
+.rail-handle {
+  position: absolute;
+  top: 50%;
+  left: var(--rail-w);
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 46px;
+  padding: 0;
+  color: #8b9ab0;
+  background: var(--signal-navy);
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-left: 0;
+  border-radius: 0 8px 8px 0;
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: left 200ms cubic-bezier(.22, 1, .36, 1), color 140ms ease, background 140ms ease;
+}
+.rail-handle:hover { color: #fff; background: #16233f; }
+.rail-handle:focus-visible { outline: 2px solid #8db5e5; outline-offset: 2px; }
+.navrail-context {
+  margin: 0 10px 8px;
+  padding: 12px 8px;
+  border-bottom: 1px solid rgba(255,255,255,.09);
+}
+/* Solid white on the navy rail: at 7% alpha these read as background rather
+   than as the two controls that drive every number on the page. */
+.navrail-date,
+.navrail-scenario {
+  position: relative;
+  box-sizing: border-box;
+  display: grid;
+  align-items: center;
+  width: 100%;
+  color: var(--ink-1);
+  background: #fff;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 7px;
+  box-shadow: 0 1px 3px rgba(6, 12, 26, .28);
+}
+/* The chevrons inherited color:#fff and would disappear on the white face. */
+.navrail-date > svg,
+.navrail-scenario > svg { color: var(--ink-4); }
+/* Label sits above the control, so the white face holds only the value. */
+.navrail-field + .navrail-field { margin-top: 11px; }
+.navrail-field-label {
+  display: block;
+  margin: 0 2px 5px;
+  color: #8b9ab0;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+.navrail-date { grid-template-columns: 1fr auto; height: 38px; padding: 0 10px; }
+.navrail-date > strong { color: var(--ink-1); font-family: var(--font-mono); font-size: var(--fs-small); font-weight: 500; }
+.navrail-date input { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; }
+.navrail-scenario { grid-template-columns: 1fr auto; padding: 0 10px; }
+.navrail-scenario select {
+  min-width: 0;
+  height: 38px;
+  color: var(--ink-2);
+  background: transparent;
+  border: 0;
+  outline: 0;
+  appearance: none;
+  font: inherit;
+  font-size: var(--fs-micro);
+  cursor: pointer;
+}
+.navrail-scenario select option { color: var(--ink-1); background: #fff; }
+.navrail-date:focus-within, .navrail-scenario:focus-within { outline: 2px solid #8db5e5; outline-offset: 2px; }
+.navrail-date.is-disabled, .navrail-scenario.is-disabled { opacity: .55; }
+.navrail-operator { display: flex; align-items: center; gap: 9px; }
+.navrail-operator .account-avatar { flex: 0 0 auto; color: var(--signal-navy); background: #fff; }
+.navrail-operator-id { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
+.navrail-operator strong { overflow: hidden; color: #e8eef5; font-size: var(--fs-micro); text-overflow: ellipsis; white-space: nowrap; }
+.navrail-operator small { margin-top: 1px; color: #8b9ab0; font-size: 10px; }
+
+/* Source footnote: the honesty line, always visible under the map. */
+.source-note {
+  flex: none;
+  margin-top: 9px;
+  padding: 9px 14px;
+  color: var(--ink-3);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font-size: var(--fs-micro);
+  line-height: 1.5;
+}
+.source-note b { color: var(--ink-2); font-weight: 600; }
+
+/* ---------------------------------------------------------------------------
+   Situation strip.
+
+   One band, not a title plus a row of tiles. Three of these four figures are
+   already printed in the sidebar head and the nav badge, so the band earns its
+   place through the causal reading (this many qualify, the fleet reaches this
+   many, that protects this many) rather than through tile-sized repetition.
+   Chevrons sit between the figures to keep that reading; the crew count rides
+   with the middle number because it is the answer to "why only 13 of 296".
+   --------------------------------------------------------------------------- */
+.stat-strip {
+  flex: none;
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  animation: command-enter .28s ease-out both;
+}
+.situation-strip {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  min-height: 56px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  box-shadow: 0 2px 10px rgba(17, 38, 67, .05);
+}
+/* Rules between the segments, not chevrons: the sequence is already left to
+   right, and three floating arrowheads read as decoration. */
+.strip-stat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  /* Grow from content width, so the segments fill the strip without forcing
+     the long middle label to wrap into equal thirds. */
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 8px 16px;
+}
+/* Very light washes rather than rules. The three read as one sequence, and
+   the tint reuses each segment's own icon colour so nothing new is invented.
+   Kept near-invisible on purpose: any stronger and the band stops looking like
+   an instrument and starts looking like a template. */
+.strip-stat:nth-child(1) { background: rgba(63, 93, 114, .045); }
+.strip-stat:nth-child(2) { background: rgba(31, 62, 134, .05); }
+.strip-stat:nth-child(3) { background: rgba(23, 95, 99, .05); }
+.strip-stat:first-child { border-radius: 6px 0 0 6px; }
+.strip-stat:last-child { border-radius: 0 6px 6px 0; }
+.strip-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+}
+.strip-icon.gain { color: #1f5136; background: #e6f0ea; }
+.strip-icon.watch { color: #3f5d72; background: #e9eef2; }
+.strip-icon.pick { color: var(--signal-navy); background: #e7ecf3; }
+/* Teal, not amber: this is people protected, not a warning. Distinct from the
+   gain green next to it while staying in the same "good outcome" family. */
+.strip-icon.guard { color: #175f63; background: #e3eff0; }
+
+.strip-body { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+.strip-figure-row { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+.strip-body b {
+  color: #0b1f33;
+  font-family: var(--font-mono);
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -.01em;
+}
+.strip-body small { color: var(--ink-3); font-size: var(--fs-micro); line-height: 1.35; }
+.strip-body small em {
+  font-style: normal;
+  color: var(--ink-4);
+  border-bottom: 1px dotted #b9c2cd;
+  cursor: help;
+}
+.strip-crew {
+  padding: 2px 6px;
+  color: var(--ink-3);
+  background: #f1f4f8;
+  border-radius: 3px;
+  font-size: var(--fs-micro);
+  font-style: normal;
+  white-space: nowrap;
+}
+/* Fleet exhausted is the load-bearing caveat, not decoration. */
+.strip-crew.is-exhausted { color: #8a3d15; background: #fdf0e6; font-weight: 600; }
+
+/* Headline: the coordination gain leads the strip. */
+/* Matches a .strip-stat segment so the two boxes read as one instrument. */
+.stat-strip .compare-banner {
+  position: relative;
+  inset: auto;
+  z-index: auto;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+  width: auto;
+  max-width: 340px;
+  min-height: 56px;
+  margin: 0;
+  padding: 8px 16px;
+  transform: none;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-left: 3px solid #1f5136;
+  border-radius: 7px;
+  box-shadow: 0 2px 10px rgba(17, 38, 67, .05);
+}
+.stat-strip .compare-banner .compare-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.stat-strip .compare-banner .compare-figure {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -.01em;
+}
+.stat-strip .compare-banner .compare-copy {
+  font-size: var(--fs-micro);
+  line-height: 1.35;
+  color: var(--ink-3);
+}
+/* The off state is a full explanatory sentence, so it gets the whole box. */
+.stat-strip .compare-banner.off { max-width: 430px; }
+.stat-strip .compare-banner.off { background: #fff; border-left-color: #a9471c; }
+
+@media (max-width: 1240px) {
+  .stat-strip { flex-wrap: wrap; }
+  .situation-strip { flex: 1 1 100%; }
+}
+@media (max-width: 1180px) {
+  /* Set the variable, not the width: the edge handle reads from it too. */
+  .app { --rail-w: 196px; }
+  .strip-stat { padding-left: 11px; padding-right: 11px; gap: 8px; }
+}
+@media (max-width: 900px) {
+  .app, .app:has(.navrail.is-collapsed) { --rail-w: 62px; }
+  /* Already icon-only at this width, so the handle would toggle nothing. */
+  .rail-handle { display: none; }
+  .navrail-logo div, .navrail-brand-sub, .navrail-section { display: none; }
+  .navrail-logo { justify-content: center; }
+  .navrail-brand { padding: 14px 6px; }
+  .navrail-context, .navrail-foot { display: none; }
+  .situation-strip { flex-wrap: wrap; }
+  .strip-stat + .strip-stat { border-left: 0; border-top: 1px solid var(--border); }
+  .strip-icon { display: none; }
+}
+
+/* Card and map coupling: hovering a card outlines its kecamatan, selecting a
+   kecamatan on the map lifts its card. */
+.decision-card { transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease; }
+.decision-card:hover { border-color: #b6c2d1; }
+.decision-card.is-selected { border-color: var(--signal-navy); box-shadow: 0 0 0 1px var(--signal-navy); }
+.decision-card.is-selected .decision-card-head { background: #f2f5f8; }
+
+/* One-shot arrival/selection ring. */
+.map-pulse {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: rgba(18, 24, 45, .18);
+  box-shadow: 0 0 0 2px rgba(18, 24, 45, .5);
+  animation: map-pulse-out 1s cubic-bezier(.22, 1, .36, 1) forwards;
+}
+.map-pulse-flood { background: rgba(75, 120, 152, .22); box-shadow: 0 0 0 2px rgba(75, 120, 152, .65); }
+.map-pulse-drought { background: rgba(149, 81, 89, .22); box-shadow: 0 0 0 2px rgba(149, 81, 89, .65); }
+@keyframes map-pulse-out {
+  from { transform: scale(.35); opacity: .95; }
+  to { transform: scale(3.1); opacity: 0; }
+}
+
+/* ---------------------------------------------------------------------------
+   Dispatch feedback: a unit visibly travelling its route on Kunci, a cut route
+   on Alihkan. Without these, both actions only changed a button label.
+   --------------------------------------------------------------------------- */
+.dispatch-unit {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  pointer-events: none;
+  background: #fff;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  box-shadow: 0 3px 10px rgba(11, 31, 51, .3);
+  transition: transform 220ms cubic-bezier(.22, 1, .36, 1);
+}
+.dispatch-unit-flood { color: #4b7898; }
+.dispatch-unit-drought { color: #955159; }
+.dispatch-unit.arrived { transform: scale(1.3); }
+
+.dispatch-cut {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  pointer-events: none;
+  color: #fff;
+  background: #b3261e;
+  border-radius: 50%;
+  font-size: var(--fs-body);
+  font-weight: 700;
+  box-shadow: 0 3px 10px rgba(179, 38, 30, .4);
+  animation: dispatch-cut-out 900ms ease-out forwards;
+}
+@keyframes dispatch-cut-out {
+  0% { transform: scale(.5); opacity: 0; }
+  22% { transform: scale(1.12); opacity: 1; }
+  70% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+/* Compound districts, meaning a pump and a truck on the same day, are the case
+   the whole system exists for. The grey fill alone reads as "no data". */
+/* Column layout instead of an absolutely positioned child. Setting
+   position on the marker element overrides MapLibre own .maplibregl-marker
+   rule and detaches the marker from its coordinate. */
+.alloc-marker-compound { flex-direction: column; align-items: center; gap: 3px; }
+.alloc-badges { display: flex; gap: 3px; }
+.alloc-flag {
+  padding: 1px 5px;
+  color: #fff;
+  background: #6b4c7a;
+  border-radius: 3px;
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  letter-spacing: .06em;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(11, 31, 51, .32);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-pulse, .dispatch-cut { animation-duration: .01ms; }
+  .dispatch-unit { transition: none; }
+  /* The ring still has to be readable without the heartbeat, so it holds at
+     rest instead of disappearing along with the animation. */
+  .peta .alloc-badge.needs-decision::after { animation: none; opacity: .75; }
+}
+
+/* ---------------------------------------------------------------------------
+   Drawer docking.
+
+   The detail card used to float over the canvas, so a selected kecamatan could
+   sit underneath it. Panning it clear does not work: the map is deliberately
+   bounded to the corridor (setMaxBounds/setMinZoom), so an offset gets clamped
+   the moment you are zoomed out. The reliable fix is to stop overlapping at
+   all: when a drawer opens the canvas gives up that strip of width, and the
+   ResizeObserver in MapView turns the size change into a map.resize().
+   --------------------------------------------------------------------------- */
+.map-canvas {
+  width: 100%;
+  height: 100%;
+  transition: width 220ms cubic-bezier(.22, 1, .36, 1), margin-left 220ms cubic-bezier(.22, 1, .36, 1);
+}
+
+@media (min-width: 900px) {
+  /* The detail card is left-anchored (.peta .drawer sets left: 52px), so the
+     canvas gives up its left edge and the card sits in the freed gutter. */
+  .map-wrap.with-drawer .map-canvas { width: calc(100% - 424px); margin-left: 424px; }
+  /* Overlays anchored to the wrapper have to follow the canvas. */
+  .map-wrap.with-drawer .map-left-stack { left: 434px; }
+  .map-wrap.with-drawer .controls { left: calc(50% + 212px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-canvas { transition: none; }
+}
+
+/* A locked allocation is a committed decision. The travelling unit lands and
+   becomes this badge, so the icon does not simply disappear on arrival. */
+.alloc-badge.is-locked {
+  position: relative;
+  background: var(--marker-color);
+  box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--marker-color), 0 3px 9px rgba(11, 31, 51, .3);
+}
+
+/* ---------------------------------------------------------------------------
+   Decision state on the map.
+
+   Only the locked badge used to look any different, so the map could not
+   answer "what still needs me". Pending is now hollow with a dashed edge:
+   filled means settled, outlined means open. The distinction is carried by
+   fill and stroke rather than by a fourth colour, because on this map colour
+   already means hazard (blue banjir, red cekaman air, purple dua bahaya) and
+   a workflow hue would compete with it.
+   --------------------------------------------------------------------------- */
+.peta .alloc-badge.is-pending {
+  color: var(--marker-color);
+  background: #fff;
+  /* The base badge borders in white to cut itself out of the map. A hollow
+     badge is already white inside, so the dash has to be drawn in the hazard
+     colour and the white separation moved outward into the shadow, or the
+     dashes vanish against the fill. */
+  border-style: dashed;
+  border-color: var(--marker-color);
+  box-shadow: 0 0 0 2px #fff, 0 2px 7px rgba(31, 43, 51, .26);
+}
+.peta .alloc-badge.is-pending b { color: var(--marker-color); }
+
+/* Pending and compound at once: the shared-crew trade-off is live here and
+   nobody has ruled on it. Typically one to three badges, which is the only
+   reason a repeating animation is affordable at all. One slow ring, then a
+   long pause, so it reads as a heartbeat rather than a flashing alarm. */
+.peta .alloc-badge.needs-decision { position: relative; }
+.peta .alloc-badge.needs-decision::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border: 2px solid var(--marker-color);
+  border-radius: 9px;
+  opacity: 0;
+  pointer-events: none;
+  animation: alloc-attention 2.8s cubic-bezier(.22, 1, .36, 1) infinite;
+}
+@keyframes alloc-attention {
+  0% { opacity: 0; transform: scale(1); }
+  12% { opacity: .9; transform: scale(1); }
+  50% { opacity: 0; transform: scale(1.5); }
+  100% { opacity: 0; transform: scale(1.5); }
+}
+.alloc-lock {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  color: #fff;
+  background: #1f7a33;
+  border: 1.5px solid #fff;
+  border-radius: 50%;
+  font-size: var(--fs-micro);
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Locks survive a reload, so the way back to the optimizer's own plan has to
+   be visible rather than a per-card hunt. */
+.clear-locks {
+  align-self: flex-start;
+  margin-top: 7px;
+  padding: 3px 8px;
+  color: #1f7a33;
+  background: #eef7f1;
+  border: 1px solid #cfe6d8;
+  border-radius: 4px;
+  font: inherit;
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  cursor: pointer;
+}
+.clear-locks:hover { background: #e2f1e8; border-color: #b6d9c6; }
+
+/* ============================================================
+   Dispatch order: getting the plan out of the browser
+   ============================================================ */
+
+.btn-order {
+  flex: none;
+  height: var(--control-h);
+  padding: 0 14px;
+  border: 1px solid var(--signal-navy, #1c3557);
+  border-radius: 7px;
+  background: var(--signal-navy, #1c3557);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: var(--fs-small);
+  font-weight: 600;
+  letter-spacing: .01em;
+  cursor: pointer;
+}
+.btn-order:hover:not(:disabled) { background: #16293f; border-color: #16293f; }
+.btn-order:disabled { opacity: .45; cursor: not-allowed; }
+.btn-order:focus-visible { outline: 2px solid #2f6feb; outline-offset: 2px; }
+
+/* Full width on its own row: as a chip beside the title it got overlooked,
+   and this is the action the whole panel builds toward. */
+.btn-order.sidebar-order {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 36px;
+  margin-top: 11px;
+  padding: 0 12px;
+  font-size: var(--fs-small);
+}
+.btn-order.sidebar-order svg { flex: none; }
+
+/* ---------------------------------------------------------------------------
+   Collapsing the plan panel.
+
+   Animating any layout property here (width, margin) resizes the map on every
+   frame, and re-rendering 324 polygons 60 times a second is what made the
+   first attempt stutter at ~36fps. Instead the panel leaves the flow in a
+   single step by going absolute, so the map relayouts exactly once, and the
+   panel itself slides on a transform, which never touches layout at all.
+   --------------------------------------------------------------------------- */
+.peta > .content { position: relative; overflow: hidden; }
+.peta .sidebar {
+  flex: none;
+  transition:
+    transform 300ms cubic-bezier(.22, 1, .36, 1),
+    opacity 200ms ease;
+}
+.content.plan-collapsed > .sidebar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  transform: translateX(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+.plan-reopen { transition: opacity 200ms ease 120ms, transform 200ms ease; }
+@starting-style {
+  .plan-reopen { opacity: 0; transform: translate(14px, -50%); }
+}
+.plan-collapse-btn {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  color: var(--ink-3);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  cursor: pointer;
+}
+.plan-collapse-btn:hover { color: var(--ink-1); background: #f1f4f8; border-color: var(--border-strong); }
+.plan-collapse-btn:focus-visible { outline: 2px solid #2f6feb; outline-offset: 2px; }
+
+.plan-reopen {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  z-index: 6;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 11px 0 9px;
+  color: var(--ink-1);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-right: 0;
+  border-radius: 7px 0 0 7px;
+  font-family: var(--font-sans);
+  font-size: var(--fs-small);
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: -3px 0 12px rgba(16, 38, 70, .12);
+}
+.plan-reopen:hover { background: #f6f8fb; }
+.plan-reopen:focus-visible { outline: 2px solid #2f6feb; outline-offset: -2px; }
+.plan-reopen i {
+  min-width: 20px;
+  padding: 1px 5px;
+  color: #fff;
+  background: #0d1730;
+  border-radius: 10px;
+  font-size: var(--fs-micro);
+  font-style: normal;
+  font-weight: 700;
+}
+
+/* Shows on arrival, gone after the first decision. */
+.decision-hint {
+  margin-top: 9px;
+  padding: 6px 9px;
+  color: var(--ink-3);
+  background: #f5f8fb;
+  border-left: 2px solid #c6d2e0;
+  border-radius: 0 4px 4px 0;
+  font-size: var(--fs-micro);
+  line-height: 1.45;
+}
+
+.order-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(12, 20, 32, .55);
+  display: flex;
+  justify-content: center;
+  overflow: auto;
+  padding: 28px 16px;
+}
+
+.order-sheet {
+  background: #fff;
+  color: var(--ink-1);
+  width: min(1000px, 100%);
+  height: max-content;
+  border-radius: 10px;
+  padding: 30px 34px 34px;
+  box-shadow: 0 18px 48px rgba(10, 18, 30, .3);
+  font-size: var(--fs-body);
+}
+
+.order-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.order-actions .btn-primary,
+.order-actions .btn-quiet {
+  height: var(--control-h);
+  padding: 0 14px;
+  border-radius: 7px;
+  font-family: var(--font-sans);
+  font-size: var(--fs-small);
+  font-weight: 600;
+  cursor: pointer;
+}
+.order-actions .btn-primary {
+  background: var(--signal-navy, #1c3557);
+  border: 1px solid var(--signal-navy, #1c3557);
+  color: #fff;
+}
+.order-actions .btn-quiet {
+  background: #fff;
+  border: 1px solid #c3ccd8;
+  color: var(--ink-2);
+}
+
+.order-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  flex-wrap: wrap;
+  border-bottom: 2px solid var(--ink-1);
+  padding-bottom: 14px;
+}
+.order-head h1 {
+  font-size: var(--fs-page);
+  font-weight: 650;
+  letter-spacing: -.01em;
+  line-height: 1.15;
+}
+.order-sub { color: var(--ink-3); font-size: var(--fs-small); margin-top: 4px; }
+.order-eyebrow {
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  color: var(--ink-4);
+  margin-bottom: 6px;
+}
+
+/* The order is read section by section, so each one is announced. */
+.order-h2 {
+  margin-top: 26px;
+  font-size: var(--fs-lead);
+  font-weight: 650;
+  letter-spacing: -.005em;
+  color: var(--ink-1);
+}
+
+.order-meta {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: 10px 24px;
+}
+.order-meta dt {
+  font-size: var(--fs-micro);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--ink-4);
+}
+.order-meta dd {
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  color: var(--ink-1);
+  margin-top: 2px;
+}
+
+.order-summary {
+  display: flex;
+  gap: 34px;
+  flex-wrap: wrap;
+  padding: 16px 0 18px;
+  border-bottom: 1px solid #dde3ea;
+}
+.order-figure {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--fs-metric);
+  font-weight: 600;
+  line-height: 1.1;
+}
+.order-figure-label {
+  display: block;
+  font-size: var(--fs-micro);
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+
+.order-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.order-table caption {
+  caption-side: top;
+  text-align: left;
+  font-size: var(--fs-small);
+  line-height: 1.5;
+  color: var(--ink-3);
+  padding-bottom: 9px;
+}
+.order-table th,
+.order-table td {
+  text-align: left;
+  vertical-align: top;
+  padding: 7px 10px;
+  border-bottom: 1px solid #e4e9ef;
+  font-size: var(--fs-small);
+}
+.order-table thead th {
+  vertical-align: bottom;
+  font-size: var(--fs-micro);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--ink-4);
+  border-bottom: 1px solid var(--ink-4);
+  font-weight: 600;
+}
+/* Second line inside a cell: the kabupaten under its kecamatan, the time
+   window under its hazard. Keeps the column count down. */
+.order-table td small {
+  display: block;
+  margin-top: 1px;
+  font-size: var(--fs-micro);
+  color: var(--ink-4);
+}
+.order-hazard { font-weight: 600; }
+.order-hazard.flood { color: var(--signal-flood); }
+.order-hazard.drought { color: var(--signal-drought); }
+.order-table .num { text-align: right; font-family: var(--font-mono); white-space: nowrap; }
+.order-table .col-tick { width: 26px; text-align: center; color: #1f7a4d; font-weight: 700; }
+.order-table tr.is-locked { background: #f2f8f4; }
+.order-table tfoot td {
+  border-top: 1px solid var(--ink-4);
+  border-bottom: 0;
+  font-weight: 600;
+  color: var(--ink-1);
+}
+
+.order-log { margin-top: 0; }
+
+/* Two hands sign this: the system that produced the plan, and the operator who
+   is accountable for it going out. */
+.order-signatures {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 260px));
+  gap: 34px;
+  margin-top: 34px;
+}
+.order-signatures > div { display: flex; flex-direction: column; }
+.order-sign-role {
+  font-size: var(--fs-micro);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--ink-4);
+}
+.order-sign-line {
+  height: 46px;
+  border-bottom: 1px solid var(--ink-4);
+}
+.order-sign-name {
+  margin-top: 6px;
+  font-size: var(--fs-small);
+  font-weight: 600;
+  color: var(--ink-1);
+}
+.order-sign-note { font-size: var(--fs-micro); color: var(--ink-4); margin-top: 2px; }
+
+.order-foot {
+  margin-top: 26px;
+  padding-top: 14px;
+  border-top: 1px solid #dde3ea;
+  color: var(--ink-2);
+  font-size: var(--fs-small);
+  line-height: 1.5;
+}
+.order-foot p + p { margin-top: 8px; }
+.order-foot .order-h2 { margin-top: 0; margin-bottom: 8px; }
+
+/* Printing: the sheet is the document, everything else is chrome.
+   The overlay is nested inside the app wrapper rather than portalled to the
+   root, so hiding the root's other children would hide the sheet along with
+   them. Blanking everything by visibility and re-showing the sheet's subtree
+   leaves the ancestor chain intact, which is what makes this work. */
+@media print {
+  body * { visibility: hidden; }
+  .order-backdrop,
+  .order-backdrop * { visibility: visible; }
+  .order-backdrop {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    background: none;
+    padding: 0;
+    overflow: visible;
+    display: block;
+  }
+  .order-sheet {
+    width: 100%;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+    font-size: 10pt;
+  }
+  .order-actions { display: none !important; }
+  .order-table { page-break-inside: auto; }
+  .order-table tr { page-break-inside: avoid; }
+  .order-table thead { display: table-header-group; }
+  /* A section heading stranded at the foot of a page is the classic print bug. */
+  .order-h2 { page-break-after: avoid; font-size: 11pt; margin-top: 18pt; }
+  /* Nine columns do not fit A4 at screen padding. Tightening the cells keeps
+     the table inside the margin instead of clipping the right-hand figures. */
+  .order-table th,
+  .order-table td { padding: 4pt 5pt; font-size: 8.5pt; }
+  .order-table thead th { font-size: 7pt; letter-spacing: .03em; }
+  .order-table td small { font-size: 7pt; }
+  .order-table caption { font-size: 8.5pt; }
+  .order-log { page-break-before: auto; }
+  .order-foot { page-break-inside: avoid; }
+  .order-signatures { page-break-inside: avoid; }
+  /* Row shading is meaningful, so keep it when the printer would drop it. */
+  .order-table tr.is-locked {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+/* Frequency framing and measured verification under each probability bar.
+   A percentage on its own reads as a claim about today; these two lines say
+   what it means and how well it has held up. */
+.bar-frequency {
+  font-size: var(--fs-micro);
+  color: var(--ink-3);
+  margin-top: 3px;
+}
+.bar-verified {
+  display: inline-block;
+  margin-top: 3px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #fdf3e6;
+  border: 1px solid #e8cfa8;
+  color: #8a5a1c;
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  cursor: help;
+}
+
+/* ---------------------------------------------------------------------------
+   Docked detail panel.
+
+   The canvas already gives up a 424px gutter whenever a drawer opens (see
+   "Drawer docking" above), but the card only occupied 320px of it and started
+   116px down, so the rest of the reserved strip read as dead grey. A panel that
+   fills the gutter costs nothing extra on the map and buys the room the depot
+   and kecamatan detail actually need.
+   --------------------------------------------------------------------------- */
+@media (min-width: 900px) {
+  .peta .map-wrap.with-drawer .drawer {
+    box-sizing: border-box;
+    top: 0;
+    right: auto;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    width: 424px;
+    max-height: none;
+    padding: 0;
+    overflow: hidden;
+    background: #fff;
+    border: 0;
+    border-right: 1px solid var(--border-strong);
+    border-radius: 0;
+    box-shadow: 1px 0 10px rgba(20, 44, 78, .06);
+  }
+  /* The title stays put while the evidence under it scrolls. */
+  .peta .map-wrap.with-drawer .drawer > .drawer-head {
+    flex: none;
+    align-items: center;
+    margin: 0;
+    padding: 15px 20px 13px;
+    border-bottom: 1px solid var(--border);
+  }
+  .peta .map-wrap.with-drawer .drawer > .drawer-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 15px 20px 22px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #b6bec8 transparent;
+  }
+  /* Room to breathe: the cramped overrides existed only to fit a 320px card. */
+  .peta .map-wrap.with-drawer .drawer .drawer-title { font-size: 18px; }
+  .peta .map-wrap.with-drawer .drawer .drawer-sub { font-size: 12px; }
+  .peta .map-wrap.with-drawer .drawer .drawer-risk-status {
+    margin-bottom: 14px;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  .peta .map-wrap.with-drawer .drawer .bar-row { margin-bottom: 13px; }
+  .peta .map-wrap.with-drawer .drawer .bar-label { margin-bottom: 5px; font-size: 12.5px; }
+  .peta .map-wrap.with-drawer .drawer .bar-track { height: 9px; }
+  .peta .map-wrap.with-drawer .drawer .evidence-stat { margin: 13px 0; padding: 11px 13px; }
+  .peta .map-wrap.with-drawer .drawer .evidence-stat b { font-size: 16px; }
+  .peta .map-wrap.with-drawer .drawer .spark { margin: 12px 0 6px; padding: 11px 12px; }
+  .peta .map-wrap.with-drawer .drawer .spark-svg { height: 56px; }
+  .peta .map-wrap.with-drawer .drawer .evidence-assignment { padding: 9px 11px 9px 13px; }
+  .peta .map-wrap.with-drawer .drawer .evidence-assignment span,
+  .peta .map-wrap.with-drawer .drawer .evidence-assignment small { font-size: 12px; }
+}
+
+/* Section rule doubles as a header row so a section can carry a right-aligned
+   count or unit note without a second line of chrome. */
+.peta .drawer .drawer-section {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 18px;
+  margin-bottom: 8px;
+  padding-top: 11px;
+}
+.peta .drawer .drawer-section:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+.peta .drawer .drawer-section em {
+  font-style: normal;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-4);
+  font-size: var(--fs-micro);
+}
+
+/* Depot armada rows: what is left, and how much of the depot this plan spends. */
+.peta .drawer .depot-fleet {
+  margin-bottom: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.peta .drawer .depot-fleet-row {
+  display: block;
+  padding: 10px 13px 11px;
+  border-bottom: 1px solid var(--border);
+}
+.peta .drawer .depot-fleet-row:last-child { border-bottom: 0; }
+.depot-fleet-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12.5px;
+}
+.depot-fleet-line b {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-4);
+  white-space: nowrap;
+}
+.depot-fleet-line b em {
+  font-style: normal;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink-1);
+}
+.depot-fleet-bar {
+  display: block;
+  height: 5px;
+  margin: 7px 0 5px;
+  border-radius: 3px;
+  background: #e7ebf0;
+  overflow: hidden;
+}
+.depot-fleet-bar em {
+  display: block;
+  height: 100%;
+  background: var(--signal-compound);
+}
+.peta .drawer .depot-fleet-row small {
+  display: block;
+  color: var(--ink-4);
+  font-size: var(--fs-micro);
+}
+
+/* Count on the Menunggu chip: the size of the queue, visible without having to
+   click into it. Neutral by design, since the number is a workload not an
+   alarm. */
+.decision-filters button { display: inline-flex; align-items: center; gap: 5px; }
+.filter-count {
+  min-width: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: #eceff3;
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 15px;
+  text-align: center;
+}
+.decision-filters button.active .filter-count {
+  background: rgba(255, 255, 255, .22);
+  color: #fff;
+}
+
+/* Legend key for the two decision states, drawn the same way the badges are so
+   the mapping is obvious rather than described. Neutral ink here: the swatch
+   is teaching the shape, and hazard colour is a separate row above. */
+.swatch.decision-sq {
+  position: relative;
+  width: 17px;
+  height: 17px;
+  display: inline-grid;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+}
+.swatch.decision-sq.pending {
+  color: var(--ink-2);
+  background: #fff;
+  border-style: dashed;
+  border-color: var(--ink-3);
+  box-shadow: 0 0 0 1px var(--ink-3);
+}
+.swatch.decision-sq.locked {
+  color: #fff;
+  background: var(--ink-2);
+  box-shadow: 0 0 0 1px #fff, 0 0 0 2.5px var(--ink-2);
+}
+/* The key holds its ring still. A legend has to be readable at any instant,
+   and a swatch that spends half its cycle invisible would be identical to the
+   plain pending row above it whenever the reader happened to look. */
+.swatch.decision-sq.ring::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border: 1.5px solid var(--ink-3);
+  border-radius: 7px;
+}
+
+/* ---------------------------------------------------------------------------
+   Boot splash.
+
+   Cold start pulls the scenario, 324 boundaries, a day of risk and the first
+   MILP solve, so the chrome sits empty for a second or two. The logo PNG has
+   an alpha channel, which lets a flat fill be masked to its shape and raised
+   like a water level: the thing the system actually watches, and no gradient.
+   --------------------------------------------------------------------------- */
+.boot {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  background: #0d1730;
+  /* Backdrop holds while the lockup grows, so the mark stays legible against
+     navy instead of dissolving into the map before it has travelled. */
+  transition: opacity 420ms ease 200ms, visibility 620ms;
+}
+.boot.is-leaving { opacity: 0; visibility: hidden; }
+
+/* On the way out the lockup comes toward the viewer. Logo, wordmark and bar
+   sit on one plane, so they scale as a single object; an accelerating ease
+   because something approaching speeds up, where a symmetric one would read
+   as a zoom effect rather than as motion. */
+.boot-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition:
+    transform 620ms cubic-bezier(.35, 0, .65, .25),
+    /* Held back deliberately: fading in step with the scale meant the lockup
+       was already transparent by the time it had grown enough to notice, so
+       the whole thing read as a plain fade. */
+    opacity 400ms ease-in 220ms;
+}
+.boot.is-leaving .boot-inner { transform: scale(1.8); opacity: 0; }
+/* The bar is a loading indicator; it has no reason to travel with them. */
+.boot.is-leaving .boot-bar { opacity: 0; transition: opacity 180ms ease; }
+
+.boot-logo { position: relative; width: 82px; height: 85px; }
+.boot-logo span {
+  position: absolute;
+  inset: 0;
+  -webkit-mask: url(/siaga-logo.png) center / contain no-repeat;
+  mask: url(/siaga-logo.png) center / contain no-repeat;
+}
+/* The empty vessel, then the level rising inside it. */
+.boot-logo-ghost { background: #26344f; }
+.boot-logo-fill {
+  background: #eaf1fa;
+  clip-path: inset(100% 0 0 0);
+  animation: boot-fill 2s cubic-bezier(.33, .68, .38, 1) forwards;
+}
+@keyframes boot-fill {
+  from { clip-path: inset(100% 0 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+
+.boot-word {
+  margin-top: 18px;
+  color: #fff;
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-indent: .16em;
+}
+/* Indeterminate: the work behind it has no reportable progress. */
+.boot-bar {
+  overflow: hidden;
+  width: 176px;
+  height: 2px;
+  margin-top: 22px;
+  background: rgba(255, 255, 255, .1);
+  border-radius: 2px;
+}
+.boot-bar i {
+  display: block;
+  width: 40%;
+  height: 100%;
+  background: #4f7fc4;
+  border-radius: inherit;
+  animation: boot-sweep 1.25s ease-in-out infinite;
+}
+@keyframes boot-sweep {
+  from { transform: translateX(-105%); }
+  to { transform: translateX(355%); }
+}
+
+.boot-status {
+  margin-top: 12px;
+  color: #6f7f96;
+  font-size: var(--fs-micro);
+  letter-spacing: .03em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boot-logo-fill { animation: none; clip-path: inset(0 0 0 0); }
+  .boot-bar i { animation: none; width: 100%; }
+  .boot.is-leaving .boot-inner { transform: none; }
+  .peta .sidebar, .navrail, .plan-reopen { transition: none; }
+}
+
+/* ---- Radar (rob) panel ------------------------------------------------- */
+/* Teal, not the flood blue. Everything else in the drawer is a model output;
+   this block is a measurement, and the colour has to say so at a glance. */
+
+.drawer-rob {
+  margin: 14px 0 4px;
+  padding: 11px 11px 9px;
+  background: #f4f8f8;
+  border: 1px solid #d3e2e1;
+  border-left: 3px solid #2f6f6c;
+}
+.drawer-rob .drawer-section { margin: 0 0 5px; padding: 0; border: 0; }
+.drawer-rob-head {
+  margin-bottom: 8px;
+  color: #23514f;
+  font-size: 13px;
+  font-weight: 700;
+}
+.drawer-rob.rob-tinggi .drawer-rob-head { color: #1c4442; }
+.drawer-rob.rob-tak_terpantau { border-left-color: #a6adb3; background: #f6f7f8; }
+.drawer-rob.rob-tak_terpantau .drawer-rob-head { color: var(--ink-4); }
+
+.drawer-rob-rows { display: flex; flex-wrap: wrap; gap: 4px 18px; }
+.drawer-rob-rows > div { display: flex; flex-direction: column; gap: 1px; }
+.drawer-rob-rows span {
+  color: #647184;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+.drawer-rob-rows b {
+  color: #0b1f33;
+  font-family: var(--font-mono);
+  font-size: 14px;
+}
+
+.drawer-rob-note {
+  margin-top: 9px;
+  padding: 8px 9px;
+  font-size: 11px;
+  line-height: 1.45;
+}
+/* Subsidence: a slow, structural fact about the place. */
+.drawer-rob-note.chronic { color: #23514f; background: #e7f0ef; }
+/* The model contradicting itself is the one thing here that is red, because
+   it is the only line that should change what the operator does next. */
+.drawer-rob-note.blind {
+  color: #8e3524;
+  background: #fdf0ec;
+  border-left: 2px solid #b8452e;
+}
+
+.drawer-rob-src {
+  display: block;
+  margin-top: 8px;
+  color: var(--ink-4);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+/* ---- Counts on the map mode switcher ---------------------------------- */
+/* The map encoded how many kecamatan were flagged only in colour, so the
+   answer required counting polygons. Zero stays visible but recedes: knowing
+   a mode is empty is itself information, and on some dates every hazard mode
+   is empty while radar is not. */
+
+.map-mode-control .map-risk-seg .seg-btn { gap: 6px; }
+.seg-count {
+  min-width: 17px;
+  padding: 1px 4px;
+  color: #647184;
+  background: #eef2f5;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.seg-count.has { color: #0b1f33; background: #dde5ee; }
+.seg-btn.active .seg-count {
+  color: #f4f7fb;
+  background: rgba(255, 255, 255, .18);
+}
+
+/* Radar rows on the monitoring page. Teal, matching the map layer, because
+   these kecamatan are listed on an observation and not on a forecast. */
+.hazard-kind.blind { color: #2f6f6c; }
+.priority-segments .segment.blind b { color: #2f6f6c; }
+
+/* ---- Kecamatan the models do not cover ---------------------------------- */
+/* Six of 324, all on the Cirebon and Indramayu coast. Their probabilities are
+   zero because nothing was computed, and a zero on a rob-exposed coast is the
+   most misleading number this interface could print. */
+
+.drawer-risk-status.unmodeled { color: #6b5a3a; background: #f6f1e6; }
+.drawer-unmodeled {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 11px 12px;
+  background: #faf7f0;
+  border: 1px solid #e6dcc6;
+  border-left: 3px solid #a98d4f;
+}
+.drawer-unmodeled b { color: #6b5a3a; font-size: 13px; }
+.drawer-unmodeled span { color: #4a5768; font-size: 12px; line-height: 1.5; }
+.drawer-unmodeled small { color: var(--ink-4); font-size: 11px; line-height: 1.45; }
+
+/* Same statement in the monitoring table, where a row has no room for prose. */
+.priority-unmodeled {
+  color: #6b5a3a;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.priority-segments .segment.unmodeled b { color: #6b5a3a; }
+.hazard-kind.unmodeled { color: #6b5a3a; }
+
+/* ---- Operator disagreement ---------------------------------------------- */
+/* Reads as evidence, not as an alert: these are places worth looking at, not
+   incidents. Teal marks agreement with the radar layer. */
+
+.report-contested-lede { color: var(--ink-3); font-size: 12px; line-height: 1.55; }
+.contested-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 11px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.contested-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 6px 10px;
+  background: #f6f8fa;
+  border: 1px solid #e4e9ef;
+  border-radius: 4px;
+}
+.contested-list li.is-blind { background: #f2f7f7; border-color: #cfe0df; }
+.contested-list b { color: #0b1f33; font-size: 12px; }
+.contested-list span { color: #647184; font-family: var(--font-mono); font-size: 12px; }
+.contested-list em {
+  color: #2f6f6c;
+  font-size: 11px;
+  font-style: normal;
+}
+.report-contested-note {
+  margin-top: 11px;
+  padding: 9px 11px;
+  color: #23514f;
+  background: #eef4f4;
+  border-left: 3px solid #2f6f6c;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.report-contested-caveat {
+  display: block;
+  margin-top: 10px;
+  color: var(--ink-4);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+/* ---- Sign-in ------------------------------------------------------------ */
+
+/* Icon only. The word "Keluar" beside a name that already wants the width
+   pushed the role onto its own line and left the button hard against the
+   rail's edge. */
+.navrail-signout {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin-left: 2px;
+  color: #8b9ab0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.navrail-signout:hover { color: #fff; background: rgba(255, 255, 255, .07); border-color: #35455e; }
+
+/* Counts sit beside the label, not under it: the column direction inherited
+   from the compare segment cost the row height it did not have. */
+.map-mode-control .map-risk-seg .seg-btn {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 9px;
+}
+.map-mode-control .map-risk-seg { grid-auto-columns: minmax(104px, 1fr); }
+
+/* Each badge carries its own hazard's colour, so the number and the polygons
+   it counts are the same shade. */
+.seg-count-gabungan.has { color: #4a3357; background: #ece5f0; }
+.seg-count-banjir.has   { color: #2f4b5c; background: #e2ebf0; }
+.seg-count-cekaman.has  { color: #6b3f45; background: #f3e6e7; }
+.seg-count-rob.has      { color: #1c4442; background: #dfeceb; }
+.seg-btn.active .seg-count-gabungan.has,
+.seg-btn.active .seg-count-banjir.has,
+.seg-btn.active .seg-count-cekaman.has,
+.seg-btn.active .seg-count-rob.has {
+  color: #f4f7fb;
+  background: rgba(255, 255, 255, .2);
+}
+
+/* The Rob tab and its hint share a grid cell: the marker rides the button's
+   top-right corner instead of taking width away from the label. */
+.seg-slot { position: relative; display: grid; }
+
+.seg-hint {
+  position: absolute;
+  /* Clear of the segment's rounded corner, or the circle straddles the border
+     and reads as detached from the tab it belongs to. */
+  top: 5px;
+  right: 6px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  color: #7b8aa0;
+  background: #fff;
+  border: 1px solid #c3ccd8;
+  border-radius: 50%;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+.seg-hint:hover, .seg-hint.is-open { color: #14294a; border-color: #14294a; }
+.seg-btn.active + .seg-hint { background: #14294a; border-color: #52658a; color: #cfdcec; }
+.seg-btn.active + .seg-hint:hover,
+.seg-btn.active + .seg-hint.is-open { color: #fff; border-color: #fff; }
+
+.seg-hint-pop {
+  position: absolute;
+  top: calc(100% + 7px);
+  right: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 268px;
+  padding: 11px 12px;
+  text-align: left;
+  background: #fff;
+  border: 1px solid #d5dce6;
+  border-radius: 6px;
+  box-shadow: 0 10px 28px rgba(13, 23, 48, .16);
+}
+.seg-hint-pop b { color: #0b1f33; font-size: 12px; }
+.seg-hint-pop > span { color: #46566e; font-size: 11.5px; line-height: 1.5; }
+.seg-hint-pop small { color: var(--ink-4); font-size: 10.5px; }
+
+/* ---- Model selection ---------------------------------------------------- */
+/* A table, not cards: the point is the comparison between rows, and five
+   tiles side by side would hide the one column that matters. */
+
+.model-ladder { width: 100%; margin-top: 14px; border-collapse: collapse; }
+.model-ladder th {
+  padding: 7px 10px;
+  color: var(--ink-4);
+  border-bottom: 1px solid #e3e8ed;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: right;
+  text-transform: uppercase;
+}
+.model-ladder th:first-child { text-align: left; }
+.model-ladder td {
+  padding: 8px 10px;
+  color: #33465d;
+  border-bottom: 1px solid #eef2f5;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  text-align: right;
+}
+.model-ladder td:first-child { font-family: inherit; text-align: left; }
+.model-ladder tr.is-deployed td {
+  color: #0b1f33;
+  background: #f4f7fb;
+  font-weight: 600;
+}
+.model-ladder em { color: #1769aa; font-size: 11px; font-style: normal; }
+
+.model-ladder-note {
+  margin-top: 11px;
+  color: var(--ink-4);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* A negative result reported as a result. */
+.model-negative {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 13px;
+  padding: 11px 12px;
+  background: #f8fafc;
+  border-left: 3px solid #8a94a6;
+}
+.model-negative b { color: #33465d; font-size: 12px; }
+.model-negative span { color: var(--ink-4); font-size: 12px; line-height: 1.55; }
+
+.calibrator-table { width: 100%; margin-top: 10px; border-collapse: collapse; }
+.calibrator-table th, .calibrator-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #eef2f5;
+  font-size: 11.5px;
+  text-align: right;
+}
+.calibrator-table th { color: var(--ink-4); text-transform: uppercase; }
+.calibrator-table th:first-child, .calibrator-table td:first-child { text-align: left; }
+.calibrator-table td { color: #33465d; font-family: var(--font-mono); }
+.calibrator-table td:first-child { font-family: inherit; }
+.calibrator-table tr.is-chosen td { color: #0b1f33; font-weight: 600; }
+.calibrator-table em { color: #1769aa; font-size: 10.5px; font-style: normal; }
+
+/* ---- Sign-in ------------------------------------------------------------ */
+/* A checkpoint, not a landing page. Nobody who opens this every morning needs
+   to be told what the console does, so there is no tagline and no explanatory
+   sentence: a mark, two fields, a button, and a clock. The background is the
+   node graph in components/Constellation.tsx. */
+
+.signin-checking { min-height: 100vh; background: #0a1526; }
+
+.signin {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 32px;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 85% at 50% 0%, #14294a 0%, transparent 62%),
+    #0a1526;
+}
+
+.constellation { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* Sits between the graph and the card, so lines passing behind the card do not
+   fight the text on it. */
+.signin-wash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    46% 46% at 50% 50%,
+    rgba(10, 21, 38, .82) 0%,
+    rgba(10, 21, 38, .34) 55%,
+    rgba(10, 21, 38, 0) 100%
+  );
+}
+
+.signin-clock {
+  position: absolute;
+  top: 26px;
+  right: 30px;
+  color: #7d90aa;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: .08em;
+}
+
+/* -- the card -- */
+.signin-card {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 384px;
+  padding: 38px 38px 34px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow:
+    0 1px 2px rgba(4, 12, 28, .3),
+    0 26px 68px -14px rgba(3, 9, 22, .6);
+}
+
+.signin-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 30px;
+}
+.signin-logo {
+  box-sizing: content-box;
+  width: 22px;
+  height: 22px;
+  padding: 8px;
+  object-fit: contain;
+  background: #14294a;
+  border-radius: 8px;
+}
+.signin-brand b {
+  color: #0b1f33;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: .13em;
+}
+
+.signin-card h1 {
+  margin: 0 0 24px;
+  color: #0b1f33;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -.012em;
+}
+
+.signin-field { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
+.signin-field span {
+  color: #55637a;
+  font-size: 12px;
+  font-weight: 500;
+}
+.signin-field input {
+  height: 42px;
+  padding: 0 13px;
+  color: #0b1f33;
+  background: #fff;
+  border: 1px solid #dde2ea;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color .14s ease, box-shadow .14s ease;
+}
+.signin-field input:hover { border-color: #c3cbd8; }
+.signin-field input:focus {
+  border-color: #2f6f9e;
+  box-shadow: 0 0 0 3px rgba(47, 111, 158, .14);
+  outline: none;
+}
+
+.signin-error {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  color: #8e3524;
+  background: #fdf1ed;
+  border-radius: 7px;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.signin-submit {
+  height: 44px;
+  margin-top: 6px;
+  color: #fff;
+  background: #14294a;
+  border: 0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .14s ease;
+}
+.signin-submit:hover:not(:disabled) { background: #1d3a68; }
+.signin-submit:disabled { background: #8590a3; cursor: default; }
+
+@media (max-width: 480px) {
+  .signin { padding: 18px; }
+  .signin-card { padding: 30px 24px 26px; }
+  .signin-clock { top: 16px; right: 18px; }
+}
+
+/* Depot reach, and the reason a kecamatan got nothing --------------------- */
+
+.map-feature-button.is-on {
+  color: #14497a;
+  background: #e5eef6;
+  border-color: #9fbdd6;
+}
+
+/* The gap state used to name the outcome and withhold the cause, which is the
+   one thing somebody in an unserved kecamatan wants to know. */
+.drawer-gap-state {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.drawer-gap-state b { color: #8e4828; font-size: 12.5px; }
+.drawer-gap-state span { font-size: 12px; line-height: 1.5; }
+.drawer-gap-state small {
+  color: #a06a4c;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.supply-control {
+  position: relative;
+  z-index: 8;
+}
+.supply-trigger-dot {
+  width: 7px;
+  height: 7px;
+  background: #61758d;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(97,117,141,.14);
+}
+.supply-trigger.is-on .supply-trigger-dot { background: #2d5f91; }
+.sidebar-supply-slot {
+  position: static;
+  z-index: 12;
+  padding: 9px 10px;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-supply-slot .supply-trigger {
+  width: 100%;
+  justify-content: flex-start;
+  min-height: 34px;
+  padding: 0 10px;
+  box-shadow: none;
+}
+.sidebar-supply-slot .supply-trigger::after {
+  width: 7px;
+  height: 7px;
+  margin-left: auto;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  content: "";
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform .16s ease;
+}
+.sidebar-supply-slot .supply-trigger.is-on::after { transform: rotate(225deg) translate(-1px, -1px); }
+.decision-sidebar { position: relative; }
+.sidebar-supply-slot .supply-control { position: static; }
+.sidebar-supply-slot .supply-popover {
+  z-index: 30;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-height: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.supply-popover {
+  position: absolute;
+  top: 44px;
+  right: 0;
+  width: min(430px, calc(100vw - 40px));
+  max-height: calc(100vh - 72px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  color: var(--ink-2);
+  background: rgba(255,255,255,.985);
+  border: 1px solid var(--signal-border);
+  border-radius: 8px;
+  box-shadow: 0 18px 42px rgba(18,31,49,.22);
+}
+.supply-popover > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 15px;
+  background: #f6f8fa;
+  border-bottom: 1px solid var(--border);
+}
+.supply-popover > header div { display: flex; flex-direction: column; gap: 2px; }
+.supply-popover > header small,
+.reserve-workflow small { color: var(--ink-4); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+.supply-popover > header strong { color: var(--ink-1); font-size: 13px; }
+.supply-header-actions { flex-direction: row !important; align-items: center; gap: 7px !important; }
+.supply-evaluation {
+  padding: 4px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+.supply-evaluation.validated { color: #315f45; background: #e6f2ea; }
+.supply-evaluation.exploratory { color: #76551f; background: #fff1cf; }
+.supply-close {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  color: var(--ink-3);
+  background: #fff;
+  border: 1px solid var(--signal-border);
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+.supply-close:hover { color: var(--ink-1); background: #eef2f6; }
+.supply-current { padding: 12px 15px; background: #edf4fa; border-bottom: 1px solid #d5e2ed; }
+.supply-current > div { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.supply-current small { color: #55708a; font-size: 9px; font-weight: 750; letter-spacing: .07em; text-transform: uppercase; }
+.supply-current strong { color: #173c60; font-size: 12px; }
+.supply-current p { margin-top: 5px; color: #345675; font-size: 11px; line-height: 1.45; }
+.supply-current em { display: block; margin-top: 5px; color: #607991; font-size: 9px; font-style: normal; }
+.supply-impact { padding: 10px 15px; background: #f0f7f3; border-bottom: 1px solid #cfe2d7; }
+.supply-impact > small { display: block; color: #4c725c; font-size: 9px; font-weight: 750; letter-spacing: .07em; text-transform: uppercase; }
+.supply-impact > strong { display: block; margin-top: 3px; color: #254f36; font-size: 11px; }
+.supply-impact > div { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px; }
+.supply-impact span { display: flex; flex-direction: column; color: #577061; font-size: 8px; }
+.supply-impact span b { color: #254f36; font-size: 12px; }
+.supply-section { padding: 13px 15px 10px; }
+.supply-section > label,
+.supply-section-label { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; color: var(--ink-2); font-size: 11px; font-weight: 750; }
+.supply-section > label b,
+.supply-section-label b,
+.reserve-workflow small b { display: inline-grid; flex: 0 0 19px; width: 19px; height: 19px; place-items: center; color: #fff; background: var(--signal-navy); border-radius: 50%; font-size: 10px; }
+.supply-section-label { margin: 0; padding: 2px 15px 7px; }
+.supply-scope-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.supply-scope-buttons button,
+.reserve-workflow button {
+  min-height: 34px;
+  padding: 6px 9px;
+  color: var(--ink-3);
+  background: #fff;
+  border: 1px solid var(--signal-border);
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 680;
+}
+.supply-scope-buttons button { display: flex; min-height: 58px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 3px; text-align: left; }
+.supply-scope-buttons button strong { font-size: 11px; }
+.supply-scope-buttons button small { color: var(--ink-4); font-size: 9px; font-weight: 500; line-height: 1.35; }
+.supply-scope-buttons button.active small { color: rgba(255,255,255,.72); }
+.supply-scope-buttons button.active { color: #fff; background: var(--signal-navy); border-color: var(--signal-navy); }
+.supply-scope-buttons button:disabled { cursor: not-allowed; opacity: .5; }
+.supply-section p,
+.reserve-workflow p { margin-top: 7px; color: var(--ink-4); font-size: 10px; line-height: 1.45; }
+.supply-grid { display: grid; grid-template-columns: 1fr; gap: 8px; padding: 0 15px 13px; }
+.supply-grid label { display: flex; flex-direction: column; gap: 5px; color: var(--ink-3); font-size: 10px; }
+.supply-grid select { height: 34px; padding: 0 9px; color: var(--ink-1); background: #fff; border: 1px solid var(--signal-border); border-radius: 5px; font: inherit; font-size: 11px; }
+.supply-rule { display: flex; align-items: center; justify-content: center; gap: 5px; margin: -2px 15px 13px; padding: 8px; color: var(--ink-4); background: #fafbfc; border: 1px dashed #ccd5df; border-radius: 5px; font-size: 8px; }
+.supply-rule i { color: #91a0af; font-style: normal; }
+.supply-rule strong { color: #315f45; font-size: 8px; }
+.reserve-list { margin: 0 15px 13px; }
+.reserve-list-head { display: flex; align-items: center; gap: 7px; }
+.reserve-list-head > b { display: inline-grid; flex: 0 0 19px; width: 19px; height: 19px; place-items: center; color: #fff; background: var(--signal-navy); border-radius: 50%; font-size: 10px; }
+.reserve-list-head > div { display: flex; flex-direction: column; }
+.reserve-list-head strong { color: var(--ink-2); font-size: 11px; }
+.reserve-list-head small { color: var(--ink-4); font-size: 9px; }
+.reserve-list-note { margin: 7px 0 9px; color: var(--ink-4); font-size: 9px; line-height: 1.4; }
+.reserve-workflow { margin: 0 0 7px; padding: 10px; background: #f7f8fa; border: 1px solid var(--border); border-left: 3px solid #8997a8; border-radius: 6px; }
+.reserve-workflow > div:first-child { display: flex; flex-direction: column; gap: 2px; }
+.reserve-workflow.pending { border-left-color: #b17a29; }
+.reserve-workflow.confirmed { background: #f0f7f3; border-left-color: #397654; }
+.reserve-workflow small { display: flex; align-items: center; gap: 6px; }
+.reserve-workflow .reserve-primary { width: 100%; margin-top: 10px; color: #fff; background: var(--signal-navy); border-color: var(--signal-navy); }
+.reserve-actions { display: grid; grid-template-columns: 1fr auto; gap: 6px; margin-top: 10px; }
+.reserve-actions .reserve-primary { margin-top: 0; }
+.reserve-workflow.confirmed > button { margin-top: 10px; }
+.supply-popover > footer { padding: 10px 15px; color: var(--ink-4); background: #fbfcfd; border-top: 1px solid var(--border); font-size: 10px; line-height: 1.5; }
+.supply-popover > footer b { color: var(--ink-3); }
+.depot-tier { display: inline-flex; margin-right: 6px; padding: 2px 5px; border-radius: 3px; font-size: 9px; font-style: normal; font-weight: 750; text-transform: uppercase; }
+.depot-tier.local { color: #315f45; background: #e7f2eb; }
+.depot-tier.regional { color: #2f587f; background: #e8f0f7; }
+.depot-tier.provincial_reserve { color: #76551f; background: #fff1cf; }
+.depot-provenance { display: flex; flex-direction: column; gap: 4px; margin-top: -2px; padding: 9px 10px; color: var(--ink-4); background: #f7f8fa; border: 1px solid var(--border); border-radius: 5px; font-size: 10px; }
+.depot-reach-control { margin-top: 9px; }
+.depot-reach-control button { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; min-height: 35px; padding: 7px 10px; color: var(--signal-navy); background: #fff; border: 1px solid #aebdca; border-radius: 5px; cursor: pointer; font-size: 11px; font-weight: 700; }
+.depot-reach-control button:hover { background: #f2f5f7; }
+.depot-reach-control button.is-on { color: #fff; background: var(--signal-navy); border-color: var(--signal-navy); }
+.depot-reach-control p { margin-top: 6px; color: var(--ink-4); font-size: 10px; line-height: 1.4; }
+
+@media (max-width: 980px) {
+  .sidebar-supply-slot .supply-popover { top: 0; bottom: 0; }
+}
+
+/* ---- Authenticated network handoff ------------------------------------- */
+/* The sign-in graph is the district adjacency network used by the modelling
+   pipeline. Successful authentication sends one signal through it, then the
+   water-level boot mark takes over. This is the screen's single focal motion. */
+.signin {
+  isolation: isolate;
+}
+.signin-wash { transition: background 700ms cubic-bezier(.16, 1, .3, 1); }
+.signin.is-verified .signin-wash {
+  background: radial-gradient(42% 42% at 50% 50%, rgba(8, 24, 43, .9) 0%, rgba(8, 24, 43, .22) 64%, rgba(8, 24, 43, 0) 100%);
+}
+.signin-fields { display: flex; flex-direction: column; }
+.signin-card {
+  min-height: 408px;
+  overflow: hidden;
+  transition:
+    transform 650ms cubic-bezier(.16, 1, .3, 1),
+    box-shadow 650ms cubic-bezier(.16, 1, .3, 1),
+    background-color 400ms ease;
+}
+.signin-card::before {
+  position: absolute;
+  top: 0;
+  left: -42%;
+  width: 42%;
+  height: 2px;
+  background: #5bb8dc;
+  box-shadow: 0 0 18px rgba(91, 184, 220, .65);
+  content: "";
+  opacity: 0;
+}
+.signin-card.is-verified {
+  transform: scale(1.018);
+  box-shadow: 0 2px 5px rgba(4, 12, 28, .3), 0 34px 90px -16px rgba(3, 9, 22, .76);
+}
+.signin-card.is-verified::before {
+  animation: signin-signal 900ms cubic-bezier(.16, 1, .3, 1) forwards;
+}
+@keyframes signin-signal {
+  0% { transform: translateX(0); opacity: 0; }
+  14% { opacity: 1; }
+  100% { transform: translateX(338%); opacity: 0; }
+}
+.signin-fields.is-hidden { display: none; }
+.signin-verified {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  align-items: center;
+  gap: 13px;
+  margin-top: 18px;
+  animation: signin-verified-arrive 700ms cubic-bezier(.16, 1, .3, 1) both;
+}
+@keyframes signin-verified-arrive {
+  0% { clip-path: inset(0 100% 0 0); filter: blur(5px); opacity: 0; }
+  100% { clip-path: inset(0 0 0 0); filter: blur(0); opacity: 1; }
+}
+.signin-verified-mark {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  color: #fff;
+  background: #225b74;
+  border-radius: 50%;
+  box-shadow: 0 8px 22px rgba(34, 91, 116, .25);
+}
+.signin-verified-mark svg { width: 23px; height: 23px; overflow: visible; fill: none; }
+.signin-verified-mark path {
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 18;
+  stroke-dashoffset: 18;
+  animation: signin-check 420ms ease-out 220ms forwards;
+}
+@keyframes signin-check { to { stroke-dashoffset: 0; } }
+.signin-verified > div { display: flex; flex-direction: column; gap: 4px; }
+.signin-verified strong { color: #17334b; font-size: 13px; }
+.signin-verified small { color: #64738a; font-size: 11.5px; line-height: 1.45; }
+.signin-verified > i {
+  grid-column: 1 / -1;
+  position: relative;
+  display: block;
+  overflow: hidden;
+  height: 2px;
+  margin-top: 12px;
+  background: #e0e8ee;
+}
+.signin-verified > i::after {
+  position: absolute;
+  inset: 0;
+  background: #4389aa;
+  content: "";
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: signin-progress 1.15s cubic-bezier(.16, 1, .3, 1) forwards;
+}
+@keyframes signin-progress { to { transform: scaleX(1); } }
+
+/* The existing water-fill boot now has time to complete and send one final
+   radar-like acknowledgement before revealing the operating console. */
+.boot-logo { width: 108px; height: 112px; }
+.boot-logo-fill { animation-duration: 2.65s; }
+.boot-logo::before,
+.boot-logo::after {
+  position: absolute;
+  inset: -21px;
+  border: 1px solid rgba(117, 171, 218, .24);
+  border-radius: 50%;
+  content: "";
+  opacity: 0;
+  animation: boot-network-pulse 2.4s cubic-bezier(.16, 1, .3, 1) infinite;
+}
+.boot-logo::after { animation-delay: 800ms; }
+@keyframes boot-network-pulse {
+  0% { transform: scale(.64); opacity: 0; }
+  18% { opacity: .65; }
+  78%, 100% { transform: scale(1.42); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signin-card,
+  .signin-wash { transition-duration: 120ms; }
+  .signin-card.is-verified { transform: none; }
+  .signin-card.is-verified::before,
+  .signin-verified,
+  .signin-verified-mark path,
+  .signin-verified > i::after,
+  .boot-logo::before,
+  .boot-logo::after { animation: none; }
+  .signin-verified { clip-path: none; filter: none; opacity: 1; }
+  .signin-verified-mark path { stroke-dashoffset: 0; }
+  .signin-verified > i::after { transform: scaleX(1); }
+}
+
+@media (max-width: 480px) {
+  .signin-card { min-height: 390px; }
+}
+
+/* ---------------------------------------------------------------------------
+   Laporan Operasional — a decision workspace, not a long-form report.
+   The first viewport answers: what is ready, what remains, and who authorises.
+   --------------------------------------------------------------------------- */
+.operation-report {
+  --command-navy: #0c1b35;
+  --command-navy-2: #14294a;
+  --command-blue: #4ca7d3;
+  --command-cyan: #7bd4dd;
+  --command-line: #d9e1ea;
+  --command-soft: #f2f5f8;
+  --command-ink: #122038;
+  max-width: 1540px;
+  margin: 0 auto;
+  padding: 26px clamp(20px, 2.5vw, 40px) 44px;
+  background:
+    radial-gradient(circle at 86% 1%, rgba(75, 167, 211, .09), transparent 24rem),
+    #edf2f6;
+}
+
+.command-report-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 18px;
+}
+.command-report-title { min-width: 0; }
+.command-live-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 9px;
+  color: #556579;
+  font-size: 12px;
+  font-weight: 720;
+}
+.command-live-state i {
+  width: 8px;
+  height: 8px;
+  background: #98a4b3;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(152, 164, 179, .14);
+}
+.command-live-state.is-ready { color: #187049; }
+.command-live-state.is-ready i {
+  background: #2a9a68;
+  box-shadow: 0 0 0 4px rgba(42, 154, 104, .14);
+}
+.command-report-title h1 {
+  color: var(--command-ink);
+  font-size: clamp(25px, 2.25vw, 34px);
+  font-weight: 760;
+  letter-spacing: -.035em;
+  line-height: 1.08;
+}
+.command-report-title p {
+  margin-top: 7px;
+  color: #607084;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.operation-report .report-header-actions { flex: none; }
+.operation-report .hindcast-badge {
+  padding: 7px 10px;
+  color: #4b6078;
+  background: rgba(255, 255, 255, .72);
+  border: 1px solid #d4dde7;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 670;
+}
+.operation-report .btn-order {
+  min-height: 44px;
+  padding: 0 17px;
+  color: #fff;
+  background: var(--command-navy);
+  border: 1px solid var(--command-navy);
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(12, 27, 53, .17);
+  font-size: 13px;
+  font-weight: 720;
+  cursor: pointer;
+  transition: transform 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+}
+.operation-report .btn-order:hover:not(:disabled) {
+  background: #18345d;
+  box-shadow: 0 11px 24px rgba(12, 27, 53, .22);
+  transform: translateY(-1px);
+}
+.operation-report .btn-order:disabled { cursor: not-allowed; opacity: .5; box-shadow: none; }
+
+.command-brief {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(210px, .55fr);
+  gap: 26px 36px;
+  overflow: hidden;
+  padding: clamp(24px, 2.4vw, 36px);
+  color: #fff;
+  background:
+    linear-gradient(112deg, rgba(76, 167, 211, .14), transparent 46%),
+    var(--command-navy);
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 15px;
+  box-shadow: 0 20px 46px rgba(17, 34, 59, .16);
+}
+.command-brief::after {
+  position: absolute;
+  top: -160px;
+  right: -110px;
+  width: 390px;
+  height: 390px;
+  border: 1px solid rgba(123, 212, 221, .16);
+  border-radius: 50%;
+  box-shadow: 0 0 0 46px rgba(123, 212, 221, .035), 0 0 0 94px rgba(123, 212, 221, .025);
+  content: "";
+  pointer-events: none;
+}
+.command-brief-copy,
+.command-brief-owner,
+.command-metric-rail { position: relative; z-index: 1; }
+.command-brief-label {
+  margin-bottom: 11px;
+  color: var(--command-cyan);
+  font-size: 11px;
+  font-weight: 760;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+.command-brief-copy h2 {
+  max-width: 870px;
+  color: #fff;
+  font-size: clamp(21px, 2vw, 29px);
+  font-weight: 680;
+  letter-spacing: -.027em;
+  line-height: 1.22;
+}
+.command-brief-copy p {
+  max-width: 800px;
+  margin-top: 12px;
+  color: #b9c7d9;
+  font-size: 14px;
+  line-height: 1.58;
+}
+.command-brief-owner {
+  align-self: end;
+  padding: 15px 0 2px 19px;
+  border-left: 1px solid rgba(123, 212, 221, .31);
+}
+.command-brief-owner span,
+.command-brief-owner small { display: block; color: #aebfd2; font-size: 12px; }
+.command-brief-owner strong { display: block; margin: 6px 0; color: #fff; font-size: 16px; font-weight: 700; }
+.command-brief-owner small { line-height: 1.45; }
+.command-metric-rail {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 2px;
+  padding-top: 21px;
+  border-top: 1px solid rgba(190, 208, 228, .16);
+}
+.command-metric {
+  min-width: 0;
+  padding: 0 20px;
+  border-left: 1px solid rgba(190, 208, 228, .16);
+}
+.command-metric:first-child { padding-left: 0; border-left: 0; }
+.command-metric span,
+.command-metric small { display: block; }
+.command-metric span { color: #aebfd2; font-size: 12px; font-weight: 620; }
+.command-metric strong {
+  display: block;
+  margin: 6px 0 4px;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: clamp(21px, 2.2vw, 29px);
+  font-weight: 650;
+  line-height: 1;
+}
+.command-metric small { overflow: hidden; color: #91a4ba; font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap; }
+.command-metric.ready strong { color: #a4e2c3; }
+.command-metric.warning strong { color: #f5cb8d; }
+.command-metric.critical strong { color: #f3a9ae; }
+
+.command-jumpbar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 14px 0;
+  padding: 5px;
+  background: rgba(255, 255, 255, .82);
+  border: 1px solid var(--command-line);
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(26, 47, 74, .04);
+}
+.command-jumpbar a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  gap: 7px;
+  padding: 0 12px;
+  color: #526278;
+  border-radius: 7px;
+  font-size: 12.5px;
+  font-weight: 650;
+  text-decoration: none;
+}
+.command-jumpbar a:first-child { color: #fff; background: var(--command-navy-2); }
+.command-jumpbar a:hover { background: #e8eef4; }
+.command-jumpbar a:first-child:hover { background: #1c3964; }
+.command-jumpbar span {
+  min-width: 23px;
+  padding: 2px 6px;
+  color: #8b3540;
+  background: #f7e6e8;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-align: center;
+}
+
+.command-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  align-items: start;
+  gap: 14px;
+}
+.command-surface,
+.command-rail-section,
+.command-audit {
+  min-width: 0;
+  background: rgba(255, 255, 255, .94);
+  border: 1px solid var(--command-line);
+  border-radius: 11px;
+  box-shadow: 0 7px 22px rgba(25, 48, 77, .055);
+}
+.command-surface { padding: 20px; }
+.command-surface-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 17px;
+}
+.command-surface-head h2,
+.command-rail-section h2 {
+  color: var(--command-ink);
+  font-size: 16px;
+  font-weight: 730;
+  letter-spacing: -.015em;
+}
+.command-surface-head p { max-width: 680px; margin-top: 5px; color: #657487; font-size: 12.5px; line-height: 1.5; }
+.command-surface-head > span {
+  flex: none;
+  padding: 5px 8px;
+  color: #466079;
+  background: #edf3f7;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 680;
+}
+
+.operation-report .report-allocation-table { min-width: 830px; }
+.operation-report .report-allocation-table th {
+  padding: 10px 11px;
+  color: #637287;
+  background: #f1f5f8;
+  border-bottom-color: #d7e0e9;
+  font-size: 11px;
+}
+.operation-report .report-allocation-table td {
+  padding: 13px 11px;
+  color: #45566a;
+  border-bottom-color: #e4e9ef;
+  font-size: 12.5px;
+}
+.operation-report .report-allocation-table tbody tr { transition: background-color 120ms ease; }
+.operation-report .report-allocation-table tbody tr:hover { background: #f7fafc; }
+.operation-report .report-allocation-table td > strong { color: var(--command-ink); font-size: 13px; }
+.operation-report .report-allocation-table td > small { color: #6d7b8d; font-size: 11.5px; }
+.operation-report .resource-chip { border-radius: 5px; }
+.operation-report .priority-map-link {
+  min-height: 34px;
+  padding: 0 9px;
+  color: #244f7b;
+  background: #edf4f8;
+  border: 1px solid #d3e1e9;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 680;
+  white-space: nowrap;
+}
+.operation-report .priority-map-link:hover { color: #fff; background: #244f7b; border-color: #244f7b; }
+
+.command-control-rail { display: flex; flex-direction: column; gap: 14px; }
+.command-rail-section { overflow: hidden; padding: 18px; }
+.command-capacity { border-top: 1px solid var(--command-line); }
+.command-rail-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 19px;
+}
+.command-rail-head span { display: block; margin-bottom: 4px; color: #6b7a8d; font-size: 11.5px; }
+.command-rail-head > strong { color: var(--command-ink); font-family: var(--font-mono); font-size: 26px; font-weight: 650; }
+.command-rail-head > strong small { color: #68788d; font-family: var(--font-sans); font-size: 11px; font-weight: 600; }
+.command-capacity .briefing-resource { margin-top: 17px; }
+.command-validation-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 20px;
+  border: 1px solid #dde5ec;
+  border-radius: 8px;
+}
+.command-validation-grid > div { min-width: 0; padding: 10px; border-left: 1px solid #dde5ec; }
+.command-validation-grid > div:first-child { border-left: 0; }
+.command-validation-grid span { display: block; color: #6b7a8d; font-size: 10.5px; }
+.command-validation-grid strong { display: block; margin-top: 5px; color: var(--command-ink); font-family: var(--font-mono); font-size: 17px; }
+.command-gate {
+  margin-top: 15px;
+  padding: 13px 14px;
+  color: #c6d2e0;
+  background: var(--command-navy-2);
+  border-radius: 8px;
+}
+.command-gate span { color: #8fa5bb; font-size: 10.5px; font-weight: 720; letter-spacing: .07em; text-transform: uppercase; }
+.command-gate strong { display: block; margin-top: 5px; color: #fff; font-size: 13px; }
+.command-gate p { margin-top: 7px; font-size: 11.5px; line-height: 1.48; }
+.command-next-actions header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.command-next-actions header span { color: #69798d; font-size: 11px; }
+.command-next-actions .handover-item {
+  grid-template-columns: 28px 1fr;
+  min-height: 60px;
+  padding: 10px 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #e4e9ee;
+  border-radius: 0;
+}
+.command-next-actions .handover-item:last-child { border-bottom: 0; }
+.command-next-actions .handover-order { display: grid; width: 25px; height: 25px; place-items: center; color: #355773; background: #e9f1f6; border-radius: 50%; font-size: 10px; }
+.command-next-actions .handover-item strong { font-size: 12.5px; }
+.command-next-actions .handover-item p { margin-top: 4px; color: #66768a; font-size: 11.5px; }
+.handover-carousel { overflow: hidden; }
+.command-next-actions .handover-carousel .handover-item { min-height: 76px; border-bottom: 0; }
+.handover-carousel-controls { display: grid; grid-template-columns: 30px 1fr 30px; align-items: center; gap: 9px; margin-top: 11px; }
+.handover-carousel-controls button { display: grid; width: 30px; height: 30px; padding: 0; place-items: center; color: #315777; background: #edf3f7; border: 1px solid #d5e0e8; border-radius: 6px; cursor: pointer; }
+.handover-carousel-controls button:hover:not(:disabled) { color: #fff; background: #315777; border-color: #315777; }
+.handover-carousel-controls button:disabled { opacity: .38; cursor: default; }
+.handover-carousel-controls > div { display: flex; align-items: center; justify-content: center; gap: 5px; }
+.handover-carousel-controls > div span { width: 5px; height: 5px; background: #c7d1da; border-radius: 50%; }
+.handover-carousel-controls > div span.active { width: 15px; background: #315777; border-radius: 5px; }
+
+@media (min-width: 1221px) {
+  .command-workspace { height: 640px; align-items: stretch; }
+  .command-plan { display: flex; height: 100%; min-height: 0; overflow: hidden; flex-direction: column; }
+  .command-plan .report-allocation-table-wrap { flex: 1; min-height: 0; overflow: auto; scrollbar-gutter: stable; }
+  .command-plan .report-allocation-table thead { position: sticky; z-index: 2; top: 0; }
+  .command-control-rail { height: 100%; min-height: 0; overflow: hidden; }
+  .command-capacity { flex: 0 1 auto; min-height: 0; }
+  .command-next-actions { display: flex; flex: 1 1 0; min-height: 0; flex-direction: column; }
+  .command-next-actions .handover-carousel { display: flex; flex: 1; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; }
+  .command-next-actions .handover-carousel .handover-item { align-content: center; flex: 1; }
+}
+
+.command-follow-up { position: relative; margin-top: 14px; }
+.command-follow-up .follow-up-summary {
+  margin-bottom: 13px;
+  padding: 10px 12px;
+  background: #f1f5f8;
+  border-radius: 7px;
+  font-size: 12.5px;
+}
+.command-follow-up .follow-up-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+.command-follow-up .follow-up-list > button {
+  min-height: 154px;
+  padding: 13px;
+  background: #fff;
+  border-color: #dde5ec;
+  border-radius: 8px;
+}
+.command-follow-up .follow-up-list > button:hover { background: #f7fafc; border-color: #aebfce; transform: translateY(-1px); }
+.command-follow-up .follow-up-place strong { font-size: 13px; }
+.command-follow-up .follow-up-reason { font-size: 11.5px; }
+
+.command-audit { margin-top: 14px; }
+.command-audit > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 70px;
+  padding: 14px 19px;
+  list-style: none;
+  cursor: pointer;
+}
+.command-audit > summary::-webkit-details-marker { display: none; }
+.command-audit > summary span { display: flex; flex-direction: column; gap: 4px; }
+.command-audit > summary strong { color: var(--command-ink); font-size: 14px; }
+.command-audit > summary small { color: #68788b; font-size: 12px; }
+.command-audit > summary b { flex: none; color: #315777; font-size: 12px; }
+.command-audit[open] > summary { border-bottom: 1px solid var(--command-line); }
+.command-audit[open] > summary b { font-size: 0; }
+.command-audit[open] > summary b::after { content: "Tutup detail"; font-size: 12px; }
+.command-audit-body { padding: 18px; }
+.command-audit-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 14px; }
+.command-audit .report-section { margin-bottom: 14px; box-shadow: none; }
+
+.operation-report-footer {
+  margin-top: 14px;
+  padding: 13px 15px;
+  color: #5d6c7f;
+  background: #e3e9ee;
+  border: 0;
+  border-radius: 8px;
+  font-size: 12px;
+}
+.operation-report-footer span { color: #263b54; }
+.operation-report :is(button, a, summary):focus-visible { outline: 3px solid rgba(66, 146, 191, .42); outline-offset: 2px; }
+
+@media (max-width: 1220px) {
+  .command-workspace { grid-template-columns: 1fr; }
+  .command-control-rail { display: grid; grid-template-columns: 1fr 1fr; }
+  .command-follow-up .follow-up-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 820px) {
+  .operation-report { padding: 20px 14px 34px; }
+  .command-report-head { align-items: flex-start; flex-direction: column; }
+  .operation-report .report-header-actions { width: 100%; }
+  .operation-report .btn-order { margin-left: auto; }
+  .command-brief { grid-template-columns: 1fr; gap: 20px; }
+  .command-brief-owner { align-self: auto; }
+  .command-metric-rail { grid-template-columns: 1fr 1fr; gap: 18px 0; }
+  .command-metric:nth-child(3) { padding-left: 0; border-left: 0; }
+  .command-workspace,
+  .command-control-rail,
+  .command-audit-grid { grid-template-columns: 1fr; }
+  .command-follow-up .follow-up-list { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 560px) {
+  .command-report-title h1 { font-size: 25px; }
+  .operation-report .report-header-actions { align-items: stretch; flex-direction: column; }
+  .operation-report .btn-order { width: 100%; margin-left: 0; }
+  .command-brief { padding: 22px 18px; border-radius: 11px; }
+  .command-brief-copy h2 { font-size: 20px; }
+  .command-metric { padding: 0 13px; }
+  .command-metric strong { font-size: 21px; }
+  .command-jumpbar { align-items: stretch; flex-direction: column; }
+  .command-jumpbar a { justify-content: space-between; }
+  .command-surface,
+  .command-rail-section { padding: 16px; }
+  .command-surface-head { flex-direction: column; }
+  .command-surface-head > span { align-self: flex-start; }
+  .command-plan .report-allocation-table { min-width: 0; }
+  .command-plan .report-allocation-table thead { display: none; }
+  .command-plan .report-allocation-table,
+  .command-plan .report-allocation-table tbody,
+  .command-plan .report-allocation-table tr,
+  .command-plan .report-allocation-table td { display: block; width: 100%; }
+  .command-plan .report-allocation-table tr { padding: 13px 0; border-bottom: 1px solid #dde5ec; }
+  .command-plan .report-allocation-table tr:last-child { border-bottom: 0; }
+  .command-plan .report-allocation-table td { padding: 5px 0; border: 0; }
+  .command-plan .report-allocation-table td:nth-child(1) strong { font-size: 14px; }
+  .command-plan .report-allocation-table td:nth-child(4)::before { content: "Estimasi paparan · "; color: #6e7e91; font-size: 11px; }
+  .command-plan .report-allocation-table td:last-child { padding-top: 9px; }
+  .command-plan .priority-map-link { width: 100%; min-height: 42px; }
+  .command-audit > summary { align-items: flex-start; min-height: 78px; padding: 15px; }
+  .command-audit > summary small { max-width: 210px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .operation-report .btn-order,
+  .operation-report .report-allocation-table tbody tr,
+  .command-follow-up .follow-up-list > button { transition: none; }
+  .operation-report .btn-order:hover:not(:disabled),
+  .command-follow-up .follow-up-list > button:hover { transform: none; }
 }

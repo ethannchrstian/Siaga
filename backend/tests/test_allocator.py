@@ -84,6 +84,25 @@ def test_crew_coupling_respected():
     assert total_units <= total_crews
 
 
+def test_plan_source_manifest_matches_solver_dispatch():
+    """Every displayed depot line must reconcile to the solver variables."""
+    districts, depots = load_scenario()
+    res = allocate(districts, depots)
+    reconstructed = {
+        dep.depot_id: {"pompa": 0, "truk_tangki": 0} for dep in depots
+    }
+    for item in res["plan"]:
+        assert sum(source["units"] for source in item["sources"]) == item["units"]
+        for source in item["sources"]:
+            reconstructed[source["depot_id"]][item["resource"]] += source["units"]
+
+    for depot_id, dispatch in res["depot_dispatch"].items():
+        assert reconstructed[depot_id] == {
+            "pompa": dispatch["pompa"],
+            "truk_tangki": dispatch["truk_tangki"],
+        }
+
+
 def test_reject_removes_allocation():
     districts, depots = load_scenario()
     base = allocate(districts, depots)

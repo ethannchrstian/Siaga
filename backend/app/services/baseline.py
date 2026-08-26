@@ -64,6 +64,19 @@ def _finalize(agg: dict, active: list[dict], depots: list[Depot],
         pop = int(d["population"])
         lead = max(entry["sources"], key=lambda s: (s["units"], -s["minutes"]))
         dep = depmap[lead["depot_id"]]
+        sources = []
+        for source in sorted(
+            entry["sources"], key=lambda s: (-s["units"], s["minutes"])
+        ):
+            source_dep = depmap[source["depot_id"]]
+            sources.append({
+                "depot_id": source_dep.depot_id,
+                "depot": source_dep.name,
+                "units": source["units"],
+                "minutes": source["minutes"],
+                "source_tier": source_dep.tier,
+                "inventory_status": source_dep.inventory_status,
+            })
         exposed = int(round(prob_val * pop))
         plan.append(
             {
@@ -74,7 +87,11 @@ def _finalize(agg: dict, active: list[dict], depots: list[Depot],
                 "resource_label": RES_LABEL[r],
                 "units": entry["units"],
                 "from_depot": dep.name,
+                "source_depot_id": dep.depot_id,
+                "source_tier": dep.tier,
+                "inventory_status": dep.inventory_status,
                 "minutes": lead["minutes"],
+                "sources": sources,
                 "hazard_prob": round(prob_val, 3),
                 "population": pop,
                 "people_exposed": exposed,
@@ -106,7 +123,8 @@ def _finalize(agg: dict, active: list[dict], depots: list[Depot],
 
 
 def _serve_greedy(d: dict, r: str, depots: list[Depot], stock: dict,
-                  depot_dispatch: dict, agg: dict) -> None:
+                  depot_dispatch: dict, agg: dict,
+                  max_travel_min: float = MAX_TRAVEL_MIN) -> None:
     """Take units for one (district, resource) from the nearest depots that
     still have both the resource and a free crew. Mutates stock/agg in place."""
     wanted = math.ceil(d[PROB_KEY[r]] * d["population"] / PER_UNIT[r])
@@ -120,7 +138,7 @@ def _serve_greedy(d: dict, r: str, depots: list[Depot], stock: dict,
     for minutes, dep in feasible:
         if wanted <= 0:
             break
-        if minutes > MAX_TRAVEL_MIN:
+        if minutes > max_travel_min:
             break  # sorted ascending: everything after is too far too
         s = stock[dep.depot_id]
         take = min(wanted, s[r], s["crews"])
@@ -153,7 +171,11 @@ def _fresh_stock(depots: list[Depot]) -> tuple[dict, dict]:
     return stock, depot_dispatch
 
 
-def allocate_b1(districts: list[dict], depots: list[Depot]) -> dict:
+def allocate_b1(
+    districts: list[dict],
+    depots: list[Depot],
+    max_travel_min: float = MAX_TRAVEL_MIN,
+) -> dict:
     """B1: forecast + greedy top-K over one pooled ranking of both hazards.
 
     A competent operations team with a forecast in hand and no optimizer. Every
@@ -177,7 +199,9 @@ def allocate_b1(districts: list[dict], depots: list[Depot]) -> dict:
     candidates.sort(key=lambda c: (-c[0], c[1]["district_id"], c[2]))
 
     for _score, d, r in candidates:
-        _serve_greedy(d, r, depots, stock, depot_dispatch, agg)
+        _serve_greedy(
+            d, r, depots, stock, depot_dispatch, agg, max_travel_min
+        )
 
     return _finalize(
         agg, active, depots, depot_dispatch, "Greedy top-K",
@@ -187,7 +211,11 @@ def allocate_b1(districts: list[dict], depots: list[Depot]) -> dict:
     )
 
 
-def allocate_baseline(districts: list[dict], depots: list[Depot]) -> dict:
+def allocate_baseline(
+    districts: list[dict],
+    depots: list[Depot],
+    max_travel_min: float = MAX_TRAVEL_MIN,
+) -> dict:
     """B2: greedy per-hazard allocation with no crew coordination between
     hazards.
 
@@ -205,7 +233,9 @@ def allocate_baseline(districts: list[dict], depots: list[Depot]) -> dict:
             key=lambda d: -(d[pk] * d["population"]),
         )
         for d in ranked:
-            _serve_greedy(d, r, depots, stock, depot_dispatch, agg)
+            _serve_greedy(
+                d, r, depots, stock, depot_dispatch, agg, max_travel_min
+            )
 
     return _finalize(
         agg, active, depots, depot_dispatch, "Greedy",

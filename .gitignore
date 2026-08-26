@@ -23,3 +23,19 @@ Thumbs.db
 # deployment build artifacts
 backend/app/static/
 backend/.venv-prod/
+
+# runtime logs from a locally started server
+*.log
+
+# seeded on first run by app/routers/auth.py, and a credential file has no
+# business in a repository even as a hash
+backend/data/users.json
+
+# written by operators at runtime, not source
+backend/data/decisions.jsonl
+
+# impeccable skill working dir
+.impeccable/
+
+# local backup of the pre-InaLogpal scenario depots
+backend/data/depots.scenario.bak.json

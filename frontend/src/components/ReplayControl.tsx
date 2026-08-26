@@ -3,18 +3,27 @@ interface Props {
   idx: number;
   onStop: () => void;
   restoring?: boolean;
+  /** Label shown beside the date. */
+  label?: string;
+  /** Monthly steps drop the weekday: "Sen, 01 Jan 2015" is noise when every
+   *  frame is the first of a month. */
+  granularity?: "day" | "month";
 }
 
 // Progress overlay while the hindcast replay sweeps toward the decision date.
 // Occupies the CompareBanner slot: risk builds day by day, then the banner
 // returns with the allocation the moment SIAGA "decides".
-export default function ReplayControl({ dates, idx, onStop, restoring = false }: Props) {
+export default function ReplayControl({
+  dates, idx, onStop, restoring = false, label, granularity = "day",
+}: Props) {
   const pct = dates.length > 1 ? (100 * idx) / (dates.length - 1) : 0;
   return (
     <div className="replay-banner">
       <div className="replay-row">
-        <span className="replay-label">{restoring ? "Menyiapkan keputusan" : "Putar ulang risiko"}</span>
-        <b className="replay-date">{formatDate(dates[idx])}</b>
+        <span className="replay-label">
+          {restoring ? "Menyiapkan keputusan" : label ?? "Putar ulang risiko"}
+        </span>
+        <b className="replay-date">{formatDate(dates[idx], granularity)}</b>
         <button
           type="button"
           className="replay-stop"
@@ -33,11 +42,9 @@ export default function ReplayControl({ dates, idx, onStop, restoring = false }:
   );
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("id-ID", {
-    weekday: "short",
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(`${value}T00:00:00`));
+function formatDate(value: string, granularity: "day" | "month") {
+  return new Intl.DateTimeFormat("id-ID", granularity === "month"
+    ? { month: "long", year: "numeric" }
+    : { weekday: "short", day: "2-digit", month: "short", year: "numeric" },
+  ).format(new Date(`${value}T00:00:00`));
 }

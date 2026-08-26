@@ -29,11 +29,27 @@ import math
 from dataclasses import dataclass
 
 import numpy as np
+import time
+
 import pulp
 
-# Demo service factors (documented, not fitted): how many people one unit covers.
+# CBC stops here and returns its incumbent. Kept as a named constant so the
+# router can tell a genuine optimum from a solve that simply ran out of budget.
+SOLVE_TIME_LIMIT_S = 25
+
+# Service factors: how many people one unit covers.
+#
+# Water tanker: derived from BNPB's official SADD standard of 15 L clean water
+# per person per day (Kalkulator Kebutuhan Dasar, inalogpal.bnpb.go.id/sadd). A
+# 5,000 L BPBD tanker delivers ~333 person-days of water per full load; at a few
+# delivery cycles per day it sustains on the order of 1,300 people. This is a
+# cited standard plus a stated operating assumption, not an invented number.
+PEOPLE_PER_TRUCK = 1333
+# Flood pump: SADD covers basic needs (water, food, shelter), NOT flood pumping,
+# so there is no official per-person standard to anchor this. It stays an
+# explicit assumption -- one pump nominally relieves a neighbourhood-scale
+# drainage area -- and is called out as such rather than dressed up as derived.
 PEOPLE_PER_PUMP = 8000
-PEOPLE_PER_TRUCK = 3000
 SPEED_KMH = 40.0
 MAX_TRAVEL_MIN = 180.0     # feasibility cutoff depot -> district
 # Critical Allocation Threshold: hazard probabilities below 5% are excluded
@@ -58,6 +74,12 @@ class Depot:
     trucks: int
     pumps: int
     crews: int
+    # Metadata does not change the mathematical formulation. It travels with
+    # recommendations so the interface can distinguish local inventory from
+    # assistance that needed a separate authority to confirm it.
+    tier: str = "local"
+    inventory_status: str = "registered_unconfirmed"
+    location_accuracy: str = "kabupaten_centroid"
 
 
 def haversine_min(lat1, lon1, lat2, lon2) -> float:
@@ -117,11 +139,100 @@ def sample_scenarios(active: list[dict]) -> list[dict]:
     return scenarios
 
 
+
+# Why a kecamatan is not in the plan. The optimizer knows all four answers and
+# used to report none of them, so the interface could only say "outside fleet
+# capacity", which is a category rather than a reason.
+UNSERVED_BELOW = "di_bawah_ambang"
+UNSERVED_OUT_OF_REACH = "di_luar_jangkauan"
+UNSERVED_FLEET_SPENT = "armada_habis"
+UNSERVED_OUTRANKED = "kalah_prioritas"
+
+UNSERVED_TEXT = {
+    UNSERVED_BELOW: (
+        "Peluang bahaya di bawah Ambang Alokasi Kritis 5%, sehingga kebutuhan "
+        "belum masuk pertimbangan optimizer."
+    ),
+    UNSERVED_OUT_OF_REACH: (
+        "Tidak ada depot yang dapat mencapai kecamatan ini dalam batas "
+        f"{int(MAX_TRAVEL_MIN)} menit."
+    ),
+    UNSERVED_FLEET_SPENT: (
+        "Armada sudah habis sebelum giliran kecamatan ini. Bukan karena "
+        "risikonya dinilai rendah."
+    ),
+    UNSERVED_OUTRANKED: (
+        "Kecamatan lain memberi pengurangan kekurangan lebih besar untuk unit "
+        "yang sama, terutama pada skenario terburuk."
+    ),
+}
+
+
+def explain_unserved(
+    districts,
+    active,
+    plan,
+    nearest_min,
+    crews_used,
+    crews_total,
+    max_travel_min: float = MAX_TRAVEL_MIN,
+):
+    """One reason per kecamatan that got nothing, ordered by exposure.
+
+    Deliberately capped: this is an explanation an operator reads, not a second
+    copy of the corridor.
+    """
+    served = {p["district_id"] for p in plan}
+    active_ids = {d["district_id"] for d in active}
+    # Crews bind, not vehicles. Every dispatched unit consumes one crew from
+    # its depot, and on a busy date the pumps and trucks still sitting in the
+    # depot cannot move because nobody is left to operate them. Judging this on
+    # fleet_used_pct called 305 kecamatan "outranked" on a date where all 95
+    # crews were already committed, which is a different and much less honest
+    # thing to tell an operator.
+    spent = crews_total > 0 and crews_used >= crews_total
+
+    rows = []
+    for d in districts:
+        did = d["district_id"]
+        if did in served:
+            continue
+        exposure = max(d["flood_prob"], d["drought_prob"]) * d["population"]
+        if did not in active_ids:
+            reason = UNSERVED_BELOW
+        elif did not in nearest_min:
+            reason = UNSERVED_OUT_OF_REACH
+        elif spent:
+            reason = UNSERVED_FLEET_SPENT
+        else:
+            reason = UNSERVED_OUTRANKED
+        rows.append({
+            "district_id": did,
+            "district": d.get("name", ""),
+            "kabupaten": d.get("kabupaten", ""),
+            "people_exposed": int(round(exposure)),
+            "nearest_depot_min": (
+                round(nearest_min[did]) if did in nearest_min else None
+            ),
+            "reason": reason,
+            "text": (
+                "Tidak ada depot yang dapat mencapai kecamatan ini dalam "
+                f"batas {int(max_travel_min)} menit."
+                if reason == UNSERVED_OUT_OF_REACH
+                else UNSERVED_TEXT[reason]
+            ),
+        })
+
+    rows.sort(key=lambda r: -r["people_exposed"])
+    return rows
+
+
 def allocate(
     districts: list[dict],
     depots: list[Depot],
     locks: list[dict] | None = None,
     rejects: list[dict] | None = None,
+    max_travel_min: float = MAX_TRAVEL_MIN,
 ) -> dict:
     """districts: [{district_id, name, kabupaten, lat, lon, population,
                     flood_prob, drought_prob}]
@@ -146,8 +257,15 @@ def allocate(
     for i, d in enumerate(active):
         for dep in depots:
             m = haversine_min(dep.lat, dep.lon, d["lat"], d["lon"])
-            if m <= MAX_TRAVEL_MIN:
+            if m <= max_travel_min:
                 tmin[(dep.depot_id, d["district_id"])] = m
+
+    # Nearest feasible depot per district, kept for the unserved explanation
+    # below: a kecamatan with no entry here is simply out of reach.
+    nearest_min: dict[str, float] = {}
+    for (dep_id, did), m in tmin.items():
+        if did not in nearest_min or m < nearest_min[did]:
+            nearest_min[did] = m
 
     reject_set = {(r["district_id"], r["resource"]) for r in rejects}
     lock_map = {(l["district_id"], l["resource"]): int(l["units"]) for l in locks}
@@ -253,9 +371,41 @@ def allocate(
 
     # 0.5% MIP gap: indistinguishable plans, ~4x faster re-solves (matters for
     # the interactive lock/reject loop).
-    prob.solve(pulp.PULP_CBC_CMD(msg=0, timeLimit=25, gapRel=0.005))
+    t0 = time.perf_counter()
+    prob.solve(pulp.PULP_CBC_CMD(msg=0, timeLimit=SOLVE_TIME_LIMIT_S, gapRel=0.005))
+    solve_s = time.perf_counter() - t0
 
-    return _extract_plan(prob, x, active, depots, resources, tmin, per_unit, prob_key)
+    out = _extract_plan(prob, x, active, depots, resources, tmin, per_unit, prob_key)
+    # CBC reports "Optimal" even when it stops on the time limit and hands back
+    # the incumbent, so the status alone cannot be trusted. Record the wall time
+    # and let the caller judge. Measured on 60 sampled dates, one (2015-11-15)
+    # consumed the whole budget on only 26 active districts.
+    out["summary"]["solve_seconds"] = round(solve_s, 2)
+    out["summary"]["hit_time_limit"] = solve_s >= SOLVE_TIME_LIMIT_S * 0.95
+
+    # The plan explains every line it contains and, until now, nothing about
+    # the hundreds it leaves out. That is the question an operator in an
+    # unserved kecamatan actually asks, and the solver already knows the answer.
+    crews_used = sum(int(p["units"]) for p in out["plan"])
+    crews_total = sum(dep.crews for dep in depots)
+    unserved = explain_unserved(
+        districts,
+        active,
+        out["plan"],
+        nearest_min,
+        crews_used,
+        crews_total,
+        max_travel_min,
+    )
+    out["summary"]["crews_used"] = crews_used
+    out["summary"]["crews_total"] = crews_total
+    counts: dict[str, int] = {}
+    for row in unserved:
+        counts[row["reason"]] = counts.get(row["reason"], 0) + 1
+    # Capped at the 40 largest by exposure; the counts still cover the corridor.
+    out["unserved"] = unserved[:40]
+    out["unserved_counts"] = counts
+    return out
 
 
 RES_LABEL = {"pompa": "pompa banjir", "truk_tangki": "truk tangki air"}
@@ -308,6 +458,19 @@ def _extract_plan(prob, x, active, depots, resources, tmin, per_unit, prob_key):
         # "from depot X" text matches the solver's real sourcing.
         nearest = max(entry["sources"], key=lambda s: (s["units"], -s["minutes"]))
         dep = depmap[nearest["depot_id"]]
+        sources = []
+        for source in sorted(
+            entry["sources"], key=lambda s: (-s["units"], s["minutes"])
+        ):
+            source_dep = depmap[source["depot_id"]]
+            sources.append({
+                "depot_id": source_dep.depot_id,
+                "depot": source_dep.name,
+                "units": source["units"],
+                "minutes": source["minutes"],
+                "source_tier": source_dep.tier,
+                "inventory_status": source_dep.inventory_status,
+            })
         exposed = int(round(prob_val * pop))
         plan.append(
             {
@@ -318,7 +481,11 @@ def _extract_plan(prob, x, active, depots, resources, tmin, per_unit, prob_key):
                 "resource_label": RES_LABEL[r],
                 "units": entry["units"],
                 "from_depot": dep.name,
+                "source_depot_id": dep.depot_id,
+                "source_tier": dep.tier,
+                "inventory_status": dep.inventory_status,
                 "minutes": nearest["minutes"],
+                "sources": sources,
                 "hazard_prob": round(prob_val, 3),
                 "population": pop,
                 "people_exposed": exposed,

@@ -3,7 +3,7 @@ import MapView, { type MapHandle } from "./components/MapView";
 import Controls, { type CompareMode } from "./components/Controls";
 import CompareBanner from "./components/CompareBanner";
 import Legend from "./components/Legend";
-import Sidebar from "./components/Sidebar";
+import Sidebar, { type DiversionOutcome } from "./components/Sidebar";
 import DistrictDrawer from "./components/DistrictDrawer";
 import DepotDrawer from "./components/DepotDrawer";
 import NavRail, { type View } from "./components/NavRail";
@@ -13,17 +13,24 @@ import Inventaris from "./components/Inventaris";
 import About from "./components/About";
 import Toasts, { type Toast } from "./components/Toasts";
 import BootSplash from "./components/BootSplash";
+import SignIn from "./components/SignIn";
 import { ChevronLeftIcon, EyeIcon, ShieldIcon, TargetIcon } from "./icons";
 import { useCountUp } from "./hooks/useCountUp";
 import ReplayControl from "./components/ReplayControl";
 import DispatchOrder from "./components/DispatchOrder";
+import SupplyControls, { type ReserveStatus, type SupplyImpact } from "./components/SupplyControls";
 import {
   appendDecision,
+  clearLog,
+  operatorName,
   readLog,
   type DecisionEntry,
   type DecisionKind,
 } from "./decisionLog";
 import {
+  clearSession,
+  currentSession,
+  getRobSeries,
   friendlyError,
   getDistricts,
   getRisk,
@@ -31,6 +38,7 @@ import {
   getScenario,
   postAllocate,
   type RiskRangeResponse,
+  type RobSeries,
   type AllocateResponse,
   type DistrictProperties,
   type Lock,
@@ -38,6 +46,7 @@ import {
   type Reject,
   type RiskDistrict,
   type ScenarioResponse,
+  type SupplyScope,
 } from "./api/client";
 import type { ViewMode } from "./hazard";
 import { computeKpis, fmtCompact, fmtInt } from "./metrics";
@@ -45,48 +54,256 @@ import "./App.css";
 import "./redesign.css";
 
 const PRESETS = [
-  { label: "Dua bahaya Feb 2015", date: "2015-02-19" },
-  { label: "Kemarau Sep 2023", date: "2023-09-15" },
-  { label: "Musim hujan Jan 2024", date: "2024-01-15" },
+  { label: "Dua bahaya Feb 2015", date: "2015-02-19", note: "Stress test alokasi · in-sample" },
+  { label: "Kemarau Sep 2023", date: "2023-09-15", note: "Demo ramalan · out-of-sample" },
+  { label: "Musim hujan Jan 2024", date: "2024-01-15", note: "Demo ramalan · out-of-sample" },
 ];
+
+const INITIAL_DATE = "2015-02-19";
+const DECISION_CONTEXT_KEY = "siaga_decision_context_v2";
 
 const keyOf = (p: PlanItem) => `${p.district_id}:${p.resource}`;
 
-function loadLocks(): Map<string, Lock> {
+function summarizeDiversion(pending: DiversionPending, result: AllocateResponse): DiversionOutcome {
+  const failed = result.plan.some(
+    (item) => item.district_id === pending.district_id && item.resource === pending.resource,
+  );
+  const totals = (plan: PlanItem[]) => {
+    const byDistrict = new Map<string, { district: string; units: number }>();
+    for (const item of plan) {
+      if (item.resource !== pending.resource || item.district_id === pending.district_id) continue;
+      const current = byDistrict.get(item.district_id);
+      byDistrict.set(item.district_id, {
+        district: item.district,
+        units: (current?.units ?? 0) + item.units,
+      });
+    }
+    return byDistrict;
+  };
+  const before = totals(pending.beforePlan);
+  const after = totals(result.plan);
+  let remaining = pending.units;
+  const destinations = [...after.entries()]
+    .map(([districtId, value]) => ({
+      districtId,
+      district: value.district,
+      units: Math.max(value.units - (before.get(districtId)?.units ?? 0), 0),
+    }))
+    .filter((item) => item.units > 0)
+    .sort((a, b) => b.units - a.units)
+    .map((item) => {
+      const units = Math.min(item.units, remaining);
+      remaining -= units;
+      return { district: item.district, units };
+    })
+    .filter((item) => item.units > 0);
+
+  return {
+    targetDistrict: pending.district,
+    resourceLabel: pending.resource_label,
+    removedUnits: pending.units,
+    destinations,
+    returnedUnits: failed ? 0 : remaining,
+    coverageDelta: Math.round(result.comparison.siaga.expected_covered - pending.beforeCovered),
+    failed,
+  };
+}
+
+interface StoredDecisionContext {
+  date: string;
+  locks: Lock[];
+  rejects: Reject[];
+}
+
+function loadDecisionContext(expectedDate: string): {
+  locks: Map<string, Lock>;
+  rejects: Map<string, Reject>;
+} {
   try {
-    const raw = localStorage.getItem("siaga_locks");
-    if (!raw) return new Map();
-    const items = JSON.parse(raw) as Lock[];
-    return new Map(items.map((l) => [`${l.district_id}:${l.resource}`, l]));
+    const raw = localStorage.getItem(DECISION_CONTEXT_KEY);
+    if (!raw) return { locks: new Map(), rejects: new Map() };
+    const stored = JSON.parse(raw) as StoredDecisionContext;
+    if (stored.date !== expectedDate) return { locks: new Map(), rejects: new Map() };
+    return {
+      locks: new Map((stored.locks ?? []).map((item) => [`${item.district_id}:${item.resource}`, item])),
+      rejects: new Map((stored.rejects ?? []).map((item) => [`${item.district_id}:${item.resource}`, item])),
+    };
   } catch {
-    return new Map();
+    return { locks: new Map(), rejects: new Map() };
   }
 }
 
-type DisruptionTarget = Pick<
+function storeDecisionContext(
+  date: string,
+  locks: Map<string, Lock>,
+  rejects: Map<string, Reject>,
+): void {
+  try {
+    localStorage.setItem(DECISION_CONTEXT_KEY, JSON.stringify({
+      date,
+      locks: [...locks.values()],
+      rejects: [...rejects.values()],
+    } satisfies StoredDecisionContext));
+  } catch {
+    // Storage disabled: the active plan context remains available in memory.
+  }
+}
+
+type DiversionPending = Pick<
   PlanItem,
   "district_id" | "district" | "resource" | "resource_label" | "units"
->;
+> & {
+  beforePlan: PlanItem[];
+  beforeCovered: number;
+};
 
+/** Sign-in wraps the console so nothing is fetched before there is a session.
+ *  "checking" is its own state: rendering the form for a moment and then
+ *  replacing it would flash a login screen at an operator who never left. */
 export default function App() {
+  const [session, setSession] = useState<"checking" | "out" | "in">("checking");
+
+  useEffect(() => {
+    currentSession()
+      .then(() => setSession("in"))
+      .catch(() => setSession("out"));
+  }, []);
+
+  if (session === "checking") return <div className="signin-checking" />;
+  if (session === "out") return <SignIn onSignedIn={() => setSession("in")} />;
+  return <Console onSignOut={() => { clearSession(); setSession("out"); }} />;
+}
+
+function Console({ onSignOut }: { onSignOut: () => void }) {
   const [scenario, setScenario] = useState<ScenarioResponse | null>(null);
-  const [date, setDate] = useState<string>("2015-02-19");
+  const [baseSupplyScope, setBaseSupplyScope] = useState<Exclude<SupplyScope, "provincial">>("corridor");
+  const [maxTravelMin, setMaxTravelMin] = useState(180);
+  const [reserveStatuses, setReserveStatuses] = useState<Record<string, ReserveStatus>>({});
+  const confirmedProvincialDepotIds = useMemo(
+    () => Object.entries(reserveStatuses).filter(([, status]) => status === "confirmed").map(([id]) => id).sort(),
+    [reserveStatuses],
+  );
+  const confirmedReserveKey = confirmedProvincialDepotIds.join(",");
+  const supplyScope: SupplyScope = confirmedProvincialDepotIds.length ? "provincial" : baseSupplyScope;
+  const [date, setDate] = useState<string>(INITIAL_DATE);
   const [mode, setMode] = useState<ViewMode>("gabungan");
+  const [reachDepotId, setReachDepotId] = useState<string | null>(null);
+  const [toasts, setToasts] = useState<Toast[]>([]);
+
+  const pushToast = useCallback((msg: string, kind: Toast["kind"]) => {
+    const id = Date.now() + Math.random();
+    setToasts((current) => [...current, { id, msg, kind }]);
+    setTimeout(
+      () => setToasts((current) => current.filter((item) => item.id !== id)),
+      5000,
+    );
+  }, []);
+
+  // Radar time-lapse. Ten years of observed inundation, one frame per month.
+  // The map otherwise shows a single month, which reduces the thing this
+  // product is arguing -- that the coast is losing land -- to one still frame.
+  const [lapse, setLapse] = useState<{ months: string[]; idx: number } | null>(null);
+  const lapseDataRef = useRef<RobSeries | null>(null);
+  const lapseTimerRef = useRef<number | null>(null);
+  const [lapseLoading, setLapseLoading] = useState(false);
+
+  const stopLapse = useCallback(() => {
+    if (lapseTimerRef.current !== null) {
+      window.clearInterval(lapseTimerRef.current);
+      lapseTimerRef.current = null;
+    }
+    setLapse(null);
+  }, []);
+
+  const startLapse = useCallback(async () => {
+    if (lapseLoading || lapseTimerRef.current !== null) return;
+    setLapseLoading(true);
+    try {
+      const data = lapseDataRef.current ?? (await getRobSeries());
+      lapseDataRef.current = data;
+      if (data.months.length === 0) return;
+      setLapse({ months: data.months, idx: 0 });
+      lapseTimerRef.current = window.setInterval(() => {
+        setLapse((cur) => {
+          if (!cur) return cur;
+          if (cur.idx >= cur.months.length - 1) {
+            // Hold on the final frame instead of snapping back to 2015: the
+            // last month is the point, and a loop erases it.
+            if (lapseTimerRef.current !== null) {
+              window.clearInterval(lapseTimerRef.current);
+              lapseTimerRef.current = null;
+            }
+            return cur;
+          }
+          return { ...cur, idx: cur.idx + 1 };
+        });
+      }, 110);
+    } catch {
+      pushToast("Rekaman radar tidak dapat dimuat.", "info");
+    } finally {
+      setLapseLoading(false);
+    }
+  }, [lapseLoading, pushToast]);
+
+  useEffect(() => () => {
+    if (lapseTimerRef.current !== null) window.clearInterval(lapseTimerRef.current);
+  }, []);
+
+  // One frame's worth of anomaly, keyed by district, for MapView to paint.
+  const lapseFrame = useMemo(() => {
+    const data = lapseDataRef.current;
+    if (!lapse || !data) return null;
+    const m = new Map<string, number | null>();
+    for (const [did, series] of Object.entries(data.districts)) {
+      m.set(did, series[lapse.idx] ?? null);
+    }
+    return m;
+  }, [lapse]);
+
+  // Leaving the radar view mid-playback would leave the map painted with a
+  // month nothing on screen names any more.
+  useEffect(() => {
+    if (lapse && mode !== "rob") stopLapse();
+  }, [lapse, mode, stopLapse]);
   const [compare, setCompare] = useState<CompareMode>("siaga");
   const [view, setView] = useState<View>("peta");
   const [risk, setRisk] = useState<Map<string, RiskDistrict>>(new Map());
+  // Radar coverage for the selected date, and the month it was observed in.
+  const [rob, setRob] = useState<{ available: boolean; month: string | null }>({
+    available: false,
+    month: null,
+  });
   const [result, setResult] = useState<AllocateResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [supplyImpact, setSupplyImpact] = useState<SupplyImpact | null>(null);
+  const pendingSupplySnapshotRef = useRef<{
+    label: string;
+    date: string;
+    districts: number;
+    people: number;
+    units: number;
+  } | null>(null);
+
+  const rememberSupplyBaseline = useCallback(() => {
+    if (!result) return;
+    pendingSupplySnapshotRef.current = {
+      label: scenario?.supply_profile.label ?? "Cakupan sebelumnya",
+      date: result.date,
+      districts: result.summary.n_districts_served,
+      people: result.comparison.siaga.expected_covered,
+      units: Object.values(result.summary.total_dispatched).reduce((sum, value) => sum + value, 0),
+    };
+  }, [result, scenario]);
 
   // Locks are deliberate operator decisions, so they outlive the tab. A control
   // room runs across shift handovers, and a decision that disappears when
   // someone closes a browser is not a decision the next shift can rely on.
-  // Rejects are not persisted: most come from the scripted "jalur putus"
-  // simulation, and restoring a disruption you can't see the cause of is
-  // confusing.
-  const [locks, setLocks] = useState<Map<string, Lock>>(loadLocks);
-  const [rejects, setRejects] = useState<Map<string, Reject>>(new Map());
+  // Rejects are scenario-specific. Restoring one after the date or supply
+  // context has changed would silently carry an old field decision forward.
+  const initialDecisionContext = useRef(loadDecisionContext(INITIAL_DATE));
+  const [locks, setLocks] = useState<Map<string, Lock>>(() => initialDecisionContext.current.locks);
+  const [rejects, setRejects] = useState<Map<string, Reject>>(() => initialDecisionContext.current.rejects);
   const [log, setLog] = useState<DecisionEntry[]>(readLog);
   const [showOrder, setShowOrder] = useState(false);
   // Collapsing either side panel hands its width to the map, which matters
@@ -95,17 +312,13 @@ export default function App() {
   const [railOpen, setRailOpen] = useState(true);
 
   useEffect(() => {
-    try {
-      localStorage.setItem("siaga_locks", JSON.stringify([...locks.values()]));
-    } catch {
-      // storage disabled; locks simply stay in memory
-    }
-  }, [locks]);
+    storeDecisionContext(date, locks, rejects);
+  }, [date, locks, rejects]);
 
   // One place to record a decision, so the audit trail cannot drift from what
   // the buttons actually did.
   const record = useCallback(
-    (kind: DecisionKind, p?: PlanItem) =>
+    (kind: DecisionKind, p?: Partial<PlanItem>) =>
       setLog(
         appendDecision({
           kind,
@@ -126,7 +339,6 @@ export default function App() {
   // and a place are obviously the same thing.
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const mapHandleRef = useRef<MapHandle>(null);
-  const [toasts, setToasts] = useState<Toast[]>([]);
 
   // Hindcast replay: sweep the 3 weeks leading into the selected date. While
   // active, risk frames come from the prefetched range (no per-day fetches,
@@ -136,21 +348,66 @@ export default function App() {
   const replayDataRef = useRef<RiskRangeResponse | null>(null);
   const replayTimerRef = useRef<number | null>(null);
   const replayRequestRef = useRef(0);
-  const [disruption, setDisruption] = useState<DisruptionTarget | null>(null);
-  const disruptionRef = useRef<DisruptionTarget | null>(null);
+  const diversionRef = useRef<DiversionPending | null>(null);
+  const [diversionOutcome, setDiversionOutcome] = useState<DiversionOutcome | null>(null);
   const dateRef = useRef(date);
   dateRef.current = date;
   const propsRef = useRef<Map<string, DistrictProperties>>(new Map());
   const [districtMeta, setDistrictMeta] = useState<Map<string, DistrictProperties>>(new Map());
 
-  const pushToast = useCallback((msg: string, kind: Toast["kind"]) => {
-    const id = Date.now() + Math.random();
-    setToasts((t) => [...t, { id, msg, kind }]);
-    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 5000);
-  }, []);
+  const changeSupplyScope = (next: Exclude<SupplyScope, "provincial">) => {
+    rememberSupplyBaseline();
+    setBaseSupplyScope(next);
+    record("supply_scope_change");
+    pushToast(
+      next === "corridor"
+        ? "Cakupan dikembalikan ke inventaris koridor yang terevaluasi."
+        : "Depot regional terjangkau kini menjadi kandidat perencanaan.",
+      "info",
+    );
+  };
+
+  const requestProvincialSupport = (depotId: string) => {
+    setReserveStatuses((current) => ({ ...current, [depotId]: "pending" }));
+    record("provincial_support_requested");
+    pushToast(
+      "Permintaan dukungan provinsi dicatat; inventaris belum masuk rencana sebelum dikonfirmasi.",
+      "info",
+    );
+  };
+
+  const confirmProvincialSupport = (depotId: string) => {
+    rememberSupplyBaseline();
+    setBaseSupplyScope("regional");
+    setReserveStatuses((current) => ({ ...current, [depotId]: "confirmed" }));
+    record("provincial_support_confirmed");
+    pushToast(
+      "Dukungan provinsi dikonfirmasi dan kini dapat dipertimbangkan optimizer.",
+      "lock",
+    );
+  };
+
+  const cancelProvincialSupport = (depotId: string) => {
+    if (reserveStatuses[depotId] === "confirmed") rememberSupplyBaseline();
+    setReserveStatuses((current) => ({ ...current, [depotId]: "not_requested" }));
+    record("provincial_support_cancelled");
+    pushToast("Inventaris provinsi dikeluarkan dari rencana aktif.", "info");
+  };
+
+  const changeMaxTravel = (value: number) => {
+    rememberSupplyBaseline();
+    setMaxTravelMin(value);
+    record("operational_assumption_change");
+    pushToast(`Batas waktu perencanaan diubah menjadi ${value} menit.`, "info");
+  };
 
   useEffect(() => {
-    getScenario().then(setScenario).catch((e) => setError(friendlyError(e)));
+    getScenario(supplyScope, 100, confirmedProvincialDepotIds)
+      .then(setScenario)
+      .catch((e) => setError(friendlyError(e)));
+  }, [confirmedReserveKey, supplyScope]);
+
+  useEffect(() => {
     getDistricts()
       .then((fc) => {
         const next = new Map<string, DistrictProperties>();
@@ -168,10 +425,22 @@ export default function App() {
         const m = new Map<string, RiskDistrict>();
         for (const d of r.districts) m.set(d.district_id, d);
         setRisk(m);
+        setRob({ available: r.rob_available, month: r.rob_month });
         setError(null);
       })
       .catch((e) => setError(friendlyError(e)));
   }, [date]);
+
+  useEffect(() => {
+    pendingSupplySnapshotRef.current = null;
+    setSupplyImpact(null);
+  }, [date]);
+
+  // Leaving the radar window while the radar view is open would show an empty
+  // map with no explanation, so fall back to the combined view instead.
+  useEffect(() => {
+    if (mode === "rob" && !rob.available) setMode("gabungan");
+  }, [mode, rob.available]);
 
   // Coverage delta between consecutive re-solves on the same date: the
   // visible cost/benefit of each Kunci/Alihkan decision.
@@ -180,6 +449,13 @@ export default function App() {
   const deltaTimerRef = useRef<number | null>(null);
   const allocationRequestRef = useRef(0);
 
+  useEffect(() => {
+    // A change in the available network is a new scenario, not an operator
+    // override. Do not present its coverage difference as a lock/reject gain.
+    prevCoveredRef.current = null;
+    setCoverageDelta(null);
+  }, [confirmedReserveKey, maxTravelMin, supplyScope]);
+
   const reallocate = useCallback(() => {
     const requestId = ++allocationRequestRef.current;
     setLoading(true);
@@ -187,11 +463,27 @@ export default function App() {
       date,
       locks: [...locks.values()],
       rejects: [...rejects.values()],
+      supply_scope: supplyScope,
+      availability_pct: 100,
+      max_travel_min: maxTravelMin,
+      confirmed_provincial_depot_ids: confirmedProvincialDepotIds,
     })
       .then((res) => {
         if (requestId !== allocationRequestRef.current) return;
         setResult(res);
         setError(null);
+        const supplyBefore = pendingSupplySnapshotRef.current;
+        if (supplyBefore && supplyBefore.date === res.date) {
+          const dispatched = Object.values(res.summary.total_dispatched).reduce((sum, value) => sum + value, 0);
+          setSupplyImpact({
+            fromLabel: supplyBefore.label,
+            toLabel: res.supply_profile.label,
+            districtsDelta: res.summary.n_districts_served - supplyBefore.districts,
+            peopleDelta: Math.round(res.comparison.siaga.expected_covered - supplyBefore.people),
+            unitsDelta: dispatched - supplyBefore.units,
+          });
+          pendingSupplySnapshotRef.current = null;
+        }
         const cov = res.comparison?.siaga.expected_covered;
         if (cov !== undefined) {
           const prev = prevCoveredRef.current;
@@ -206,45 +498,32 @@ export default function App() {
           prevCoveredRef.current = { date: res.date, covered: cov };
         }
 
-        const disrupted = disruptionRef.current;
-        if (disrupted) {
-          const rejectedStillPresent = res.plan.some(
-            (item) => item.district_id === disrupted.district_id && item.resource === disrupted.resource,
+        const diversion = diversionRef.current;
+        if (diversion) {
+          const outcome = summarizeDiversion(diversion, res);
+          setDiversionOutcome(outcome);
+          pushToast(
+            outcome.failed
+              ? `Pengalihan ${diversion.resource_label} belum berhasil diterapkan.`
+              : `Rencana diperbarui setelah alokasi ke ${diversion.district} dikeluarkan.`,
+            outcome.failed ? "reject" : "info",
           );
-          const replacement = res.plan.find(
-            (item) => item.resource === disrupted.resource && item.district_id !== disrupted.district_id,
-          );
-          if (rejectedStillPresent) {
-            pushToast(`Pengalihan ${disrupted.resource_label} belum berhasil diterapkan.`, "reject");
-          } else if (replacement) {
-            pushToast(
-              `Rute diperbarui: ${disrupted.resource_label} dari ${disrupted.district} dialihkan ke ${replacement.district}.`,
-              "info",
-            );
-          } else {
-            pushToast(
-              `Rute ke ${disrupted.district} ditutup; ${disrupted.resource_label} dilepas dari rencana aktif.`,
-              "info",
-            );
-          }
-          disruptionRef.current = null;
-          setDisruption(null);
+          diversionRef.current = null;
         }
       })
       .catch((e) => {
         if (requestId !== allocationRequestRef.current) return;
         const message = friendlyError(e);
         setError(message);
-        if (disruptionRef.current) {
-          pushToast("Pengalihan rute gagal. Periksa koneksi backend lalu coba lagi.", "reject");
-          disruptionRef.current = null;
-          setDisruption(null);
+        if (diversionRef.current) {
+          pushToast("Pengalihan gagal. Periksa koneksi backend lalu coba lagi.", "reject");
+          diversionRef.current = null;
         }
       })
       .finally(() => {
         if (requestId === allocationRequestRef.current) setLoading(false);
       });
-  }, [date, locks, pushToast, rejects]);
+  }, [confirmedReserveKey, date, locks, maxTravelMin, pushToast, rejects, supplyScope]);
 
   useEffect(() => {
     reallocate();
@@ -278,6 +557,16 @@ export default function App() {
     } else pushToast(`Kunci dilepas untuk ${p.district}.`, "info");
   };
   const onReject = (p: PlanItem) => {
+    diversionRef.current = {
+      district_id: p.district_id,
+      district: p.district,
+      resource: p.resource,
+      resource_label: p.resource_label,
+      units: p.units,
+      beforePlan: result?.plan ?? [],
+      beforeCovered: result?.comparison.siaga.expected_covered ?? 0,
+    };
+    setDiversionOutcome(null);
     const k = keyOf(p);
     setRejects((prev) => new Map(prev).set(k, { district_id: p.district_id, resource: p.resource }));
     setLocks((prev) => {
@@ -287,21 +576,45 @@ export default function App() {
       return next;
     });
     record("reject", p);
-    // Cut the route on the map while the optimizer re-solves around it.
+    // The line animation communicates the operator's access constraint. The
+    // optimizer excludes the selected district-resource pair; it does not
+    // claim to calculate a replacement road route.
     mapHandleRef.current?.redirect(p);
     pushToast(
-      `Rute ke ${p.district} ditutup. Mengalihkan ${p.resource_label}…`,
+      `${p.units} ${p.resource_label} ke ${p.district} dikeluarkan; menghitung ulang rencana…`,
       "reject",
     );
   };
   const onClearReject = (k: string) => {
+    const [districtId, resource] = k.split(":");
+    const district = risk.get(districtId);
     setRejects((prev) => {
       const next = new Map(prev);
       next.delete(k);
       return next;
     });
-    record("clear_reject");
+    record("clear_reject", {
+      district_id: districtId,
+      district: district?.name,
+      resource: resource as PlanItem["resource"],
+      resource_label: resource === "pompa" ? "pompa banjir" : "truk tangki air",
+    });
     pushToast("Penolakan dibatalkan. Rencana dioptimasi ulang.", "info");
+  };
+
+  const changeDate = (nextDate: string) => {
+    if (nextDate === date) return;
+    setLocks(new Map());
+    setRejects(new Map());
+    setDiversionOutcome(null);
+    diversionRef.current = null;
+    setSelected(null);
+    setSelectedDepot(null);
+    setReachDepotId(null);
+    clearLog();
+    setLog(appendDecision({ kind: "date_change", planDate: nextDate }));
+    setDate(nextDate);
+    pushToast("Tanggal berubah; keputusan dari rencana sebelumnya telah dikosongkan.", "info");
   };
 
   const applyReplayFrame = useCallback((idx: number) => {
@@ -407,42 +720,6 @@ export default function App() {
       });
   }, [applyReplayFrame, pushToast, replayLoading, stopReplay]);
 
-  // Scripted disruption: a field report cuts the route to the top flood
-  // allocation; the operator rejects it and watches the plan re-route. Same
-  // mechanics as a manual Alihkan, only the narrative differs.
-  const simulateDisruption = useCallback(() => {
-    if (loading || disruptionRef.current) return;
-    const p = result?.plan ?? [];
-    const top = p.find((x) => x.resource === "pompa") ?? p[0];
-    if (!top) {
-      pushToast("Belum ada alokasi aktif yang dapat dialihkan.", "info");
-      return;
-    }
-    const target: DisruptionTarget = {
-      district_id: top.district_id,
-      district: top.district,
-      resource: top.resource,
-      resource_label: top.resource_label,
-      units: top.units,
-    };
-    disruptionRef.current = target;
-    setDisruption(target);
-    const k = keyOf(top);
-    setRejects((prev) =>
-      new Map(prev).set(k, { district_id: top.district_id, resource: top.resource }),
-    );
-    setLocks((prev) => {
-      if (!prev.has(k)) return prev;
-      const next = new Map(prev);
-      next.delete(k);
-      return next;
-    });
-    pushToast(
-      `Laporan diterima: akses ke ${top.district} terputus. Optimizer sedang mengalihkan ${top.units} ${top.resource_label}.`,
-      "reject",
-    );
-  }, [loading, result, pushToast]);
-
   const labelFor = useCallback((key: string) => {
     const [did, res] = key.split(":");
     const name = propsRef.current.get(did)?.name ?? did;
@@ -502,6 +779,7 @@ export default function App() {
   const openDistrict = (id: string) => {
     setView("peta");
     setSelectedDepot(null);
+    setReachDepotId(null);
     setSelected(id);
     // Selecting from a list should move the map, otherwise the operator has to
     // find the kecamatan themselves to see what the card is talking about.
@@ -510,6 +788,7 @@ export default function App() {
   const onDepot = (depotId: string) => {
     setSelected(null);
     setSelectedDepot(depotId);
+    setReachDepotId((current) => current === depotId ? current : null);
   };
   const depotObj = scenario?.depots.find((d) => d.depot_id === selectedDepot) ?? null;
 
@@ -518,6 +797,8 @@ export default function App() {
       {/* The rail is full height and sits beside the command bar, so there is
           one navigation surface rather than two competing strips of chrome. */}
       <NavRail
+        operator={operatorName()}
+        onSignOut={onSignOut}
         view={view}
         onView={setView}
         monitoringCount={kpis.aboveMonitoring}
@@ -525,7 +806,7 @@ export default function App() {
         dateMin={scenario?.date_min ?? "2015-01-30"}
         dateMax={scenario?.date_max ?? "2024-12-31"}
         presets={PRESETS}
-        onDate={setDate}
+        onDate={changeDate}
         disabled={replayLoading || replay !== null}
         collapsed={!railOpen}
         onToggleCollapsed={() => setRailOpen((open) => !open)}
@@ -597,19 +878,37 @@ export default function App() {
                   onDepot={onDepot}
                   highlightedId={hoveredId ?? selected}
                   lockedKeys={lockedKeySet}
+                  reachDepotId={reachDepotId}
+                  robOverride={lapseFrame}
                 />
                 <Controls
                   mode={mode}
                   onMode={setMode}
+                  robAvailable={rob.available}
+                  onTimelapse={mode === "rob" ? startLapse : undefined}
+                  timelapseLoading={lapseLoading}
+                  timelapseRunning={lapse !== null}
+                  counts={{
+                    gabungan: kpis.aboveMonitoring,
+                    banjir: kpis.floodMonitoring,
+                    cekaman: kpis.droughtMonitoring,
+                    rob: kpis.robWatch,
+                  }}
                   compare={compare}
                   onCompare={setCompare}
                   onReplay={startReplay}
-                  onDisrupt={simulateDisruption}
                   disabled={!!replay}
                   replayLoading={replayLoading}
-                  disrupting={disruption !== null}
-                  canDisrupt={compare === "siaga" && !loading && (result?.plan.length ?? 0) > 0}
                 />
+                {lapse && (
+                  <ReplayControl
+                    dates={lapse.months}
+                    idx={lapse.idx}
+                    onStop={stopLapse}
+                    label="Genangan terpantau radar"
+                    granularity="month"
+                  />
+                )}
                 {replay && (
                   <ReplayControl
                     dates={replay.dates}
@@ -636,6 +935,12 @@ export default function App() {
                     assignments={assignmentsForSelected}
                     date={date}
                     calibration={scenario?.calibration}
+                    robMonth={rob.month}
+                    unserved={
+                      selected
+                        ? result?.unserved.find((u) => u.district_id === selected) ?? null
+                        : null
+                    }
                     onClose={() => setSelected(null)}
                   />
                 )}
@@ -643,7 +948,16 @@ export default function App() {
                   <DepotDrawer
                     depot={depotObj}
                     result={result}
-                    onClose={() => setSelectedDepot(null)}
+                    reachVisible={reachDepotId === depotObj.depot_id}
+                    onToggleReach={() => {
+                      const turningOn = reachDepotId !== depotObj.depot_id;
+                      setReachDepotId(turningOn ? depotObj.depot_id : null);
+                      if (turningOn) mapHandleRef.current?.focusDepotReach(depotObj.depot_id);
+                    }}
+                    onClose={() => {
+                      setSelectedDepot(null);
+                      setReachDepotId(null);
+                    }}
                   />
                 )}
               </div>
@@ -664,20 +978,40 @@ export default function App() {
                 labelFor={labelFor}
                 readonly={compare === "terpisah"}
                 coverageDelta={coverageDelta}
+                diversionOutcome={diversionOutcome}
+                onDismissDiversion={() => setDiversionOutcome(null)}
                 crew={crew}
                 selectedId={selected}
                 onHover={setHoveredId}
                 onPublishOrder={() => setShowOrder(true)}
                 onCollapse={() => setPlanOpen(false)}
+                supplyControl={(
+                  <SupplyControls
+                    scope={supplyScope}
+                    baseScope={baseSupplyScope}
+                    profile={scenario?.supply_profile}
+                    depots={scenario?.depots}
+                    provincialReserves={scenario?.provincial_reserves}
+                    maxTravelMin={maxTravelMin}
+                    reserveStatuses={reserveStatuses}
+                    impact={supplyImpact}
+                    disabled={!!replay || loading}
+                    onScope={changeSupplyScope}
+                    onMaxTravel={changeMaxTravel}
+                    onRequestReserve={requestProvincialSupport}
+                    onConfirmReserve={confirmProvincialSupport}
+                    onCancelReserve={cancelProvincialSupport}
+                  />
+                )}
               />
             </main>
             {/* Honesty line. Kept on the primary screen rather than buried in
                 Metode & Data, because a judge reads the map first. */}
             <footer className="source-note">
-              <b>Hindcast 2015–2024, bukan kondisi waktu nyata.</b>{" "}
+              <b>{scenario?.supply_profile.label ?? "Inventaris koridor"} · {scenario?.supply_profile.evaluation_status === "historically_evaluated" ? "profil terevaluasi" : "skenario eksploratif"}.</b>{" "}
+              Hindcast 2015–2024, bukan kondisi waktu nyata. Inventaris peralatan terdaftar dari InaLogpal; kesiapan unit dan regu memerlukan konfirmasi BPBD. {" "}
               Curah hujan ERA5 &amp; debit sungai GloFAS via Open-Meteo · batas kecamatan GADM ·
-              populasi WorldPop. Lokasi depot memakai kedudukan BPBD sebenarnya; jumlah armada dan
-              regu bersifat skenario karena inventaris BNPB tidak terbuka.
+              populasi WorldPop. Lokasi depot adalah centroid administratif; waktu tempuh merupakan estimasi perencanaan.
             </footer>
           </div>
         )}
@@ -692,7 +1026,12 @@ export default function App() {
           />
         )}
         {view === "inventaris" && (
-          <Inventaris depots={scenario?.depots ?? []} result={result} note={scenario?.note} />
+          <Inventaris
+            depots={scenario?.depots ?? []}
+            result={result}
+            note={scenario?.note}
+            profile={scenario?.supply_profile}
+          />
         )}
         {view === "ringkasan" && (
           <Overview

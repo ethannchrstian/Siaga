@@ -1,0 +1,15 @@
+{
+  "source": "COPERNICUS/S1_GRD, IW, VV, monthly median",
+  "threshold_db": -16.0,
+  "scale_m": 100,
+  "anomaly_watch": 0.02,
+  "anomaly_high": 0.06,
+  "trend_chronic": 0.03,
+  "min_baseline_n": 5,
+  "months": [
+    "2015-01-01",
+    "2024-12-01"
+  ],
+  "n_districts": 324,
+  "n_chronic": 20
+}

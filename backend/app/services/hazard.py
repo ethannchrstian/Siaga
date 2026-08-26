@@ -19,9 +19,14 @@ ART = Path(__file__).resolve().parents[1] / "artifacts"
 def _artifacts() -> dict:
     meta = json.loads((ART / "model_meta.json").read_text())
     out = {"meta": meta}
-    for name in ("flood", "drought"):
+    # rob is optional: it only exists where the Sentinel-1 tables were built,
+    # and the two forecast heads must load and serve without it.
+    for name in ("flood", "drought", "rob"):
+        model_path = ART / f"{name}_model.json"
+        if not model_path.exists():
+            continue
         booster = xgb.Booster()
-        booster.load_model(str(ART / f"{name}_model.json"))
+        booster.load_model(str(model_path))
         with open(ART / f"{name}_calibrator.pkl", "rb") as f:
             cal = pickle.load(f)
         out[name] = {"booster": booster, "cal": cal}
@@ -61,9 +66,21 @@ def score_drought(feats_df: pd.DataFrame) -> np.ndarray:
     return _score("drought", feats_df)
 
 
+def score_rob(feats_df: pd.DataFrame) -> np.ndarray:
+    """Probability that radar will see inundation above this kecamatan's own
+    seasonal normal next month. Trained on Sentinel-1 labels, so unlike the
+    flood head it is not blind to water that arrives without a river."""
+    return _score("rob", feats_df)
+
+
+def has_rob() -> bool:
+    return "rob" in _artifacts()
+
+
 def operating_thresholds() -> dict:
     art = _artifacts()
     return {
         name: float(art[name]["cal"].get("op_threshold", 0.5))
-        for name in ("flood", "drought")
+        for name in ("flood", "drought", "rob")
+        if name in art
     }

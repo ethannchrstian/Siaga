@@ -45,6 +45,17 @@ FLOOD_FEATS = [
 ]
 DROUGHT_FEATS = ["spi1", "spi3", "spi6", "p1", "dry_run", "month", "coastal"]
 
+# The inundation head. Its label comes from Sentinel-1 radar rather than from a
+# discharge percentile, which is the whole point: it is the only head that can
+# see water arriving without a river behind it. Optional, because the corridor
+# data ships without the radar tables. See ml/build_rob_features.py.
+ROB_FEATS = [
+    "month_of_year", "coastal", "water_base", "subsid_trend",
+    "anom_lag1", "anom_lag2",
+    "rain_sum", "rain_max", "wet_days", "disc_mean", "disc_max",
+    "spi1", "spi3",
+]
+
 
 def dev_test_split(df: pd.DataFrame):
     """Development years 2015-2022 (train + calibration), test 2023-2024."""
@@ -265,10 +276,18 @@ def main() -> None:
         "flood": train_one("flood", flood, FLOOD_FEATS, "flood_label"),
         "drought": train_one("drought", drought, DROUGHT_FEATS, "drought_label"),
     }
-    (ART / "model_meta.json").write_text(
-        json.dumps({"flood_feats": FLOOD_FEATS, "drought_feats": DROUGHT_FEATS}),
-        encoding="utf-8",
-    )
+    meta = {"flood_feats": FLOOD_FEATS, "drought_feats": DROUGHT_FEATS}
+
+    rob_path = DATA / "rob_dataset.parquet"
+    if rob_path.exists():
+        rob = pd.read_parquet(rob_path)
+        metrics["rob"] = train_one("rob", rob, ROB_FEATS, "rob_label")
+        meta["rob_feats"] = ROB_FEATS
+    else:
+        print("\n[rob] skipped: no rob_dataset.parquet "
+              "(run ml/fetch_sar_water.py then ml/build_rob_features.py)")
+
+    (ART / "model_meta.json").write_text(json.dumps(meta), encoding="utf-8")
     (ART / "metrics.json").write_text(json.dumps(metrics, indent=2), encoding="utf-8")
     print(f"\nSaved models + metrics to {ART}")
 

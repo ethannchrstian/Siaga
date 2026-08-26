@@ -3,6 +3,8 @@ population, precomputed risk history, and the depot fleet. Routers build on this
 """
 
 import json
+import copy
+import math
 from functools import lru_cache
 from pathlib import Path
 
@@ -11,6 +13,13 @@ import pandas as pd
 from app.services.allocator import Depot
 
 DATA = Path(__file__).resolve().parents[1].parent / "data"
+
+SUPPLY_SCOPES = {"corridor", "regional", "provincial"}
+SUPPLY_TIERS = {
+    "corridor": {"local"},
+    "regional": {"local", "regional"},
+    "provincial": {"local", "regional", "provincial_reserve"},
+}
 
 
 @lru_cache(maxsize=1)
@@ -42,8 +51,105 @@ def depots_raw() -> dict:
     return json.loads((DATA / "depots.json").read_text(encoding="utf-8"))
 
 
-@lru_cache(maxsize=1)
-def depots() -> tuple[Depot, ...]:
+@lru_cache(maxsize=3)
+def provincial_reserve_rows() -> list[dict]:
+    """All province-owned InaLogpal records, whether activated or not."""
+    raw = json.loads((DATA / "depots.expanded.json").read_text(encoding="utf-8"))
+    return [d for d in raw["depots"] if d.get("tier") == "provincial_reserve"]
+
+
+def known_provincial_reserve_ids() -> frozenset[str]:
+    return frozenset(d["depot_id"] for d in provincial_reserve_rows())
+
+
+def supply_raw(
+    supply_scope: str = "corridor",
+    confirmed_provincial_depot_ids: tuple[str, ...] = (),
+) -> dict:
+    """Registered inventory for one operational supply scope.
+
+    The corridor file is retained byte-for-byte as the evaluated profile. The
+    expanded file is filtered by tier, so provincial stock cannot accidentally
+    enter a plan merely because it exists in InaLogpal.
+    """
+    if supply_scope not in SUPPLY_SCOPES:
+        raise ValueError(f"unknown supply scope: {supply_scope}")
+    if supply_scope == "corridor":
+        raw = depots_raw()
+        raw = copy.deepcopy(raw)
+        for d in raw["depots"]:
+            d.setdefault("tier", "local")
+            d.setdefault("inventory_status", "registered_unconfirmed")
+            d.setdefault("location_accuracy", "kabupaten_centroid")
+        raw.setdefault("profile", {
+            "key": "corridor",
+            "label": "Inventaris koridor",
+            "evaluation_status": "historically_evaluated",
+        })
+        return raw
+
+    path = DATA / "depots.expanded.json"
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    allowed = SUPPLY_TIERS[supply_scope]
+    confirmed = set(confirmed_provincial_depot_ids)
+    raw["depots"] = [
+        d for d in raw["depots"]
+        if d.get("tier") in allowed
+        and (
+            d.get("tier") != "provincial_reserve"
+            or d["depot_id"] in confirmed
+        )
+    ]
+    raw["profile"] = {
+        "key": supply_scope,
+        "label": (
+            "Koridor + depot regional"
+            if supply_scope == "regional"
+            else (
+                f"Koridor + regional + {len(confirmed)} dukungan provinsi"
+                if confirmed
+                else "Koridor + depot regional"
+            )
+        ),
+        "evaluation_status": "exploratory",
+    }
+    return raw
+
+
+def _available_units(registered: int, availability_pct: int) -> int:
+    # Round halves upward (Python's round uses banker's rounding). A registered
+    # single unit at 50% therefore remains one planning unit, rather than
+    # disappearing because 0.5 rounded to the even number zero.
+    return int(math.floor(registered * availability_pct / 100.0 + 0.5))
+
+
+def supply_view(
+    supply_scope: str = "corridor",
+    availability_pct: int = 100,
+    confirmed_provincial_depot_ids: tuple[str, ...] = (),
+) -> dict:
+    """API-facing inventory with registered and scenario-available counts."""
+    if not 25 <= availability_pct <= 100:
+        raise ValueError("availability_pct must be between 25 and 100")
+    raw = copy.deepcopy(supply_raw(supply_scope, confirmed_provincial_depot_ids))
+    for d in raw["depots"]:
+        registered = dict(d["fleet"])
+        d["registered_fleet"] = registered
+        d["fleet"] = {
+            key: _available_units(int(value), availability_pct)
+            for key, value in registered.items()
+        }
+        d["availability_pct"] = availability_pct
+        d["crew_source"] = "scenario_assumption"
+    return raw
+
+
+@lru_cache(maxsize=24)
+def depots(
+    supply_scope: str = "corridor",
+    availability_pct: int = 100,
+    confirmed_provincial_depot_ids: tuple[str, ...] = (),
+) -> tuple[Depot, ...]:
     return tuple(
         Depot(
             depot_id=d["depot_id"],
@@ -53,8 +159,13 @@ def depots() -> tuple[Depot, ...]:
             trucks=d["fleet"]["truk_tangki"],
             pumps=d["fleet"]["pompa"],
             crews=d["fleet"]["regu"],
+            tier=d.get("tier", "local"),
+            inventory_status=d.get("inventory_status", "registered_unconfirmed"),
+            location_accuracy=d.get("location_accuracy", "kabupaten_centroid"),
         )
-        for d in depots_raw()["depots"]
+        for d in supply_view(
+            supply_scope, availability_pct, confirmed_provincial_depot_ids
+        )["depots"]
     )
 
 
@@ -129,13 +240,32 @@ def _nearest_available_date(date: str | None) -> pd.Timestamp:
     return uniq.loc[idx]
 
 
+@lru_cache(maxsize=1)
+def modeled_ids() -> frozenset[str]:
+    """Districts the hazard models actually cover: 318 of 324.
+
+    The remaining six sit on the Cirebon and Indramayu coast and have no
+    modelled river reach, so no flood row was ever produced for them.
+    """
+    return frozenset(risk_history()["district_id"].unique())
+
+
 def risk_on(date: str | None = None) -> tuple[pd.Timestamp, pd.DataFrame]:
     """District metadata joined with flood/drought probability for a date.
-    Districts without a modeled river (no flood row) get flood_prob 0."""
+
+    Districts the models do not cover keep a probability of 0.0 so every
+    downstream consumer -- the optimizer above all, which compares against
+    RISK_FLOOR -- keeps working on plain floats. They are marked `modeled`
+    False instead, and it is the interface's job to render that as "not
+    assessed" rather than as "0%, safe". The distinction matters: all six are
+    on the rob-exposed coast, which is precisely where a confident zero is
+    most misleading.
+    """
     ts = _nearest_available_date(date)
     r = risk_history()
     day = r[r["date"] == ts][["district_id", "flood_prob", "drought_prob"]]
     merged = district_meta().merge(day, on="district_id", how="left")
+    merged["modeled"] = merged["district_id"].isin(modeled_ids())
     merged["flood_prob"] = merged["flood_prob"].fillna(0.0)
     merged["drought_prob"] = merged["drought_prob"].fillna(0.0)
     return ts, merged
@@ -145,7 +275,7 @@ def risk_records(date: str | None = None) -> tuple[pd.Timestamp, list[dict]]:
     ts, df = risk_on(date)
     cols = [
         "district_id", "name", "kabupaten", "lat", "lon",
-        "population", "flood_prob", "drought_prob",
+        "population", "flood_prob", "drought_prob", "modeled",
     ]
     return ts, df[cols].to_dict("records")
 

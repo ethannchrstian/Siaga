@@ -3,11 +3,16 @@ import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import {
   getDistricts,
+  sourcesOf,
   type Depot,
   type PlanItem,
   type RiskDistrict,
 } from "../api/client";
-import { mapStyleFor, type ViewMode } from "../hazard";
+import { mapStyleFor, ROB_HIGH, ROB_WATCH, type ViewMode } from "../hazard";
+
+// Same teal the radar layer uses, so a flagged boundary reads as "radar", not
+// as a fourth risk level.
+const ROB_OUTLINE_HEX = "#2f6f6c";
 import { playDispatch, playRedirect } from "./dispatchAnimation";
 import { CRITICAL_ALLOCATION_THRESHOLD, MONITORING_THRESHOLD } from "../thresholds";
 import {
@@ -64,6 +69,12 @@ interface Props {
   risk: Map<string, RiskDistrict>;
   mode: ViewMode;
   depots: Depot[];
+  /** Draw the approximate 180-minute reach for the depot being inspected.
+   *  One depot at a time keeps the operational map readable. */
+  reachDepotId?: string | null;
+  /** During the radar time-lapse, the anomaly to paint instead of the one
+   *  attached to the selected date. Absent the rest of the time. */
+  robOverride?: Map<string, number | null> | null;
   plan: PlanItem[];
   onSelect: (districtId: string) => void;
   onDepot: (depotId: string) => void;
@@ -76,6 +87,8 @@ interface Props {
 export interface MapHandle {
   /** Pan to a kecamatan and pulse it, so a card click has a visible target. */
   focusDistrict: (districtId: string) => void;
+  /** Frame one depot's approximate planning reach after its drawer opens. */
+  focusDepotReach: (depotId: string) => void;
   /** Send a unit along its route; resolves on arrival. */
   dispatch: (item: PlanItem) => void;
   /** Show a route being cut before the optimizer re-solves around it. */
@@ -161,10 +174,31 @@ function centroid(geom: GeoJSON.Geometry): [number, number] {
   return n ? [sx / n, sy / n] : [0, 0];
 }
 
+
+// The optimizer's feasibility cutoff, drawn. MAX_TRAVEL_MIN / 60 * SPEED_KMH
+// in backend/app/services/allocator.py: 180 minutes at 40 km/h is 120 km, and
+// a kecamatan outside every circle cannot be served by anyone.
+const REACH_KM = 120;
+const REACH_SOURCE = "depot-reach";
+
+/** Circle as a GeoJSON ring. maplibre has no true geodesic circle, and at this
+ *  latitude and radius the error is well under a pixel at corridor zoom. */
+function reachRing(lon: number, lat: number, km: number, steps = 72) {
+  const dLat = km / 110.574;
+  const dLon = km / (111.320 * Math.cos((lat * Math.PI) / 180));
+  const ring: [number, number][] = [];
+  for (let i = 0; i <= steps; i++) {
+    const th = (i / steps) * Math.PI * 2;
+    ring.push([lon + dLon * Math.cos(th), lat + dLat * Math.sin(th)]);
+  }
+  return ring;
+}
+
 function styleDistricts(
   data: DistrictData,
   risk: Map<string, RiskDistrict>,
   mode: ViewMode,
+  robOverride: Map<string, number | null> | null = null,
 ): DistrictData {
   return {
     ...data,
@@ -174,15 +208,30 @@ function styleDistricts(
         mode,
         districtRisk?.flood_prob ?? 0,
         districtRisk?.drought_prob ?? 0,
+        robOverride ? robOverride.get(feature.properties.district_id) : districtRisk?.rob?.anomaly,
       );
+      // Radar is independent evidence. A teal boundary in the combined view
+      // therefore means "inspect ROB too" even when the river/drought forecast
+      // remains below its visual threshold. In the flood-only view we retain
+      // the narrower, strict model-blind-spot flag.
+      const flagBlindSpot =
+        (mode === "banjir" || mode === "gabungan") && districtRisk?.rob_blind_spot;
+      const flagRobInCombined =
+        mode === "gabungan" &&
+        districtRisk?.rob?.anomaly !== null &&
+        districtRisk?.rob?.anomaly !== undefined &&
+        districtRisk.rob.anomaly >= ROB_WATCH;
+      const flagRadar = flagBlindSpot || flagRobInCombined;
       return {
         ...feature,
         properties: {
           ...feature.properties,
           color: style.fill,
-          outline: style.outline,
+          outline: flagRadar ? ROB_OUTLINE_HEX : style.outline,
           opacity: style.opacity,
-          outlineWidth: style.outlineWidth,
+          outlineWidth: flagRadar
+            ? Math.max(style.outlineWidth, flagBlindSpot ? 1.7 : 1.35)
+            : style.outlineWidth,
         },
       };
     }),
@@ -190,7 +239,8 @@ function styleDistricts(
 }
 
 function MapView(
-  { risk, mode, depots, plan, onSelect, onDepot, highlightedId, lockedKeys }: Props,
+  { risk, mode, depots, plan, onSelect, onDepot, highlightedId, lockedKeys,
+    reachDepotId = null, robOverride = null }: Props,
   ref: React.Ref<MapHandle>,
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -200,6 +250,10 @@ function MapView(
   const geoRef = useRef<DistrictData | null>(null);
   const depotsRef = useRef<Depot[]>(depots);
   depotsRef.current = depots;
+  const robOverrideRef = useRef(robOverride);
+  robOverrideRef.current = robOverride;
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
   const riskRef = useRef<Map<string, RiskDistrict>>(risk);
   riskRef.current = risk;
   const planRef = useRef<PlanItem[]>(plan);
@@ -292,6 +346,7 @@ function MapView(
         districts as unknown as DistrictData,
         riskRef.current,
         mode,
+        robOverrideRef.current,
       );
 
       map.addSource("districts", { type: "geojson", data: geoRef.current as unknown as GeoJSON.FeatureCollection });
@@ -302,6 +357,21 @@ function MapView(
         paint: {
           "fill-color": ["coalesce", ["get", "color"], "#f3f4f4"],
           "fill-opacity": ["coalesce", ["get", "opacity"], 0.66],
+        },
+      });
+      // The style model already assigns every kecamatan a semantic boundary,
+      // but without a line layer those values never reached the map. This is
+      // especially damaging in ROB mode, where adjacent teal fills otherwise
+      // merge into one continuous shape.
+      map.addLayer({
+        id: "district-boundaries",
+        type: "line",
+        source: "districts",
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: {
+          "line-color": ["coalesce", ["get", "outline"], "#a6adb3"],
+          "line-width": ["coalesce", ["get", "outlineWidth"], 0.5],
+          "line-opacity": 0.82,
         },
       });
       // The kecamatan the operator is pointing at in the plan list. A fill
@@ -316,6 +386,21 @@ function MapView(
         paint: {
           "fill-color": "#12182d",
           "fill-opacity": 0.24,
+        },
+      });
+      // A light casing keeps the selected kecamatan legible on the darkest ROB,
+      // flood, drought, and compound fills. The dark inner stroke preserves the
+      // same selection language used elsewhere in the console.
+      map.addLayer({
+        id: "district-highlight-casing",
+        type: "line",
+        source: "districts",
+        filter: ["==", ["get", "district_id"], "__none__"],
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: {
+          "line-color": "#ffffff",
+          "line-width": 4.5,
+          "line-opacity": 0.9,
         },
       });
       map.addLayer({
@@ -362,19 +447,43 @@ function MapView(
         const r = riskRef.current.get(id);
         const fp = r ? Math.round(r.flood_prob * 100) : 0;
         const dp = r ? Math.round(r.drought_prob * 100) : 0;
+        const currentMode = modeRef.current;
+        const robAnomaly = robOverrideRef.current
+          ? robOverrideRef.current.get(id)
+          : r?.rob?.anomaly;
         const peak = Math.max(r?.flood_prob ?? 0, r?.drought_prob ?? 0);
         const thresholdContext = peak >= MONITORING_THRESHOLD
           ? "Melewati Ambang Pemantauan 50%"
           : peak >= CRITICAL_ALLOCATION_THRESHOLD
             ? "Di bawah pemantauan · masuk rentang optimizer 5–49%"
             : "Di bawah kedua ambang";
+        const robContext = robAnomaly === null || robAnomaly === undefined
+          ? "Tidak terpantau radar bulan ini"
+          : robAnomaly >= ROB_HIGH
+            ? "Genangan luas"
+            : robAnomaly >= ROB_WATCH
+              ? "Genangan di atas normal"
+              : "Normal untuk bulan ini";
+        const robValue = robAnomaly === null || robAnomaly === undefined
+          ? "Data ROB tidak tersedia"
+          : `ROB ${(robAnomaly * 100).toFixed(1).replace(".", ",")}% luas wilayah`;
+        const combinedRobContext =
+          currentMode === "gabungan" &&
+          robAnomaly !== null &&
+          robAnomaly !== undefined &&
+          robAnomaly >= ROB_WATCH
+            ? `<br/><small style="color:${ROB_OUTLINE_HEX}">ROB +${(robAnomaly * 100).toFixed(1).replace(".", ",")} poin persentase di atas normal</small>`
+            : "";
         popup
           .setLngLat(e.lngLat)
           .setHTML(
             `<strong>${f.properties!.name}</strong><br/>${f.properties!.kabupaten}<br/>` +
-              `<span style="color:${FLOOD}">Banjir ${fp}%</span> &middot; ` +
-              `<span style="color:${DROUGHT}">Cekaman air ${dp}%</span><br/>` +
-              `<small>${thresholdContext}</small>`,
+              (currentMode === "rob"
+                ? `<span style="color:${ROB_OUTLINE_HEX}">${robValue}</span><br/>` +
+                  `<small>${robContext}</small>`
+                : `<span style="color:${FLOOD}">Banjir ${fp}%</span> &middot; ` +
+                  `<span style="color:${DROUGHT}">Cekaman air ${dp}%</span><br/>` +
+                  `<small>${thresholdContext}</small>${combinedRobContext}`),
           )
           .addTo(map);
       });
@@ -435,7 +544,7 @@ function MapView(
     const map = mapRef.current;
     const data = geoRef.current;
     if (!map || !readyRef.current || !data) return;
-    const nextData = styleDistricts(data, riskRef.current, mode);
+    const nextData = styleDistricts(data, riskRef.current, mode, robOverrideRef.current);
     geoRef.current = nextData;
     (map.getSource("districts") as maplibregl.GeoJSONSource).setData(
       nextData as unknown as GeoJSON.FeatureCollection,
@@ -445,17 +554,20 @@ function MapView(
   function paintArrows() {
     const map = mapRef.current;
     if (!map || !readyRef.current) return;
-    const depotById = new Map(depotsRef.current.map((d) => [d.name, d]));
+    const depotById = new Map(depotsRef.current.map((d) => [d.depot_id, d]));
     const feats: GeoJSON.Feature[] = [];
     for (const p of planRef.current) {
       const dc = centroidsRef.current.get(p.district_id);
-      const dep = depotById.get(p.from_depot);
-      if (!dc || !dep) continue;
-      feats.push({
-        type: "Feature",
-        properties: { resource: p.resource },
-        geometry: { type: "LineString", coordinates: [[dep.lon, dep.lat], dc] },
-      });
+      if (!dc) continue;
+      for (const source of sourcesOf(p)) {
+        const dep = depotById.get(source.depot_id);
+        if (!dep) continue;
+        feats.push({
+          type: "Feature",
+          properties: { resource: p.resource },
+          geometry: { type: "LineString", coordinates: [[dep.lon, dep.lat], dc] },
+        });
+      }
     }
     (map.getSource("arrows") as maplibregl.GeoJSONSource).setData({
       type: "FeatureCollection",
@@ -483,6 +595,51 @@ function MapView(
         new maplibregl.Marker({ element: el }).setLngLat([d.lon, d.lat]).addTo(map),
       );
     }
+  }
+
+  function paintReach() {
+    const map = mapRef.current;
+    if (!map || !readyRef.current) return;
+
+    const fc = {
+      type: "FeatureCollection" as const,
+      features: reachDepotId
+        ? depotsRef.current.filter((d) => d.depot_id === reachDepotId).map((d) => ({
+            type: "Feature" as const,
+            geometry: {
+              type: "Polygon" as const,
+              coordinates: [reachRing(d.lon, d.lat, REACH_KM)],
+            },
+            properties: { name: d.name },
+          }))
+        : [],
+    };
+
+    const src = map.getSource(REACH_SOURCE) as maplibregl.GeoJSONSource | undefined;
+    if (src) {
+      src.setData(fc);
+      return;
+    }
+    map.addSource(REACH_SOURCE, { type: "geojson", data: fc });
+    map.addLayer({
+      id: "depot-reach-fill",
+      type: "fill",
+      source: REACH_SOURCE,
+      paint: { "fill-color": "#0f4c75", "fill-opacity": 0.055 },
+    });
+    // With only one depot selected, a restrained fill plus a clear dashed
+    // boundary communicates inside/outside without obscuring the risk ramp.
+    map.addLayer({
+      id: "depot-reach-line",
+      type: "line",
+      source: REACH_SOURCE,
+      paint: {
+        "line-color": "#0f4c75",
+        "line-width": 2,
+        "line-opacity": 0.78,
+        "line-dasharray": [4, 3],
+      },
+    });
   }
 
   function paintAllocMarkers() {
@@ -567,8 +724,11 @@ function MapView(
 
     const setLineOpacity = (v: number) => {
       if (!map.getLayer("arrows")) return;
-      map.setPaintProperty("arrows", "line-opacity", 0.95 * v);
-      map.setPaintProperty("arrows-casing", "line-opacity", 0.7 * v);
+      // A browser may supply an animation timestamp just before performance.now()
+      // (notably after hot reload), so clamp both ends before MapLibre validates it.
+      const opacity = Math.max(0, Math.min(1, v));
+      map.setPaintProperty("arrows", "line-opacity", 0.95 * opacity);
+      map.setPaintProperty("arrows-casing", "line-opacity", 0.7 * opacity);
     };
     for (const m of allocMarkersRef.current) m.getElement().style.opacity = "0";
 
@@ -602,6 +762,16 @@ function MapView(
     paintDepotMarkers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [depots]);
+
+  useEffect(() => {
+    paintReach();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reachDepotId, depots]);
+
+  useEffect(() => {
+    paint();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [robOverride]);
   useEffect(() => {
     const swapping = hadPlanRef.current && plan.length > 0;
     hadPlanRef.current = plan.length > 0;
@@ -621,6 +791,7 @@ function MapView(
       !map ||
       !readyRef.current ||
       !map.getLayer("district-highlight") ||
+      !map.getLayer("district-highlight-casing") ||
       !map.getLayer("district-highlight-fill")
     ) {
       return;
@@ -631,6 +802,7 @@ function MapView(
       highlightedId ?? "__none__",
     ];
     map.setFilter("district-highlight", filter);
+    map.setFilter("district-highlight-casing", filter);
     map.setFilter("district-highlight-fill", filter);
   }, [highlightedId]);
 
@@ -661,10 +833,29 @@ function MapView(
         pulseAt(m, center);
       }, 240);
     },
+    focusDepotReach(depotId: string) {
+      const depot = depotsRef.current.find((item) => item.depot_id === depotId);
+      if (!depot) return;
+      const latRadius = REACH_KM / 110.574;
+      const lonRadius = REACH_KM / (111.320 * Math.cos((depot.lat * Math.PI) / 180));
+      window.setTimeout(() => {
+        const map = mapRef.current;
+        if (!map) return;
+        map.resize();
+        map.fitBounds(
+          [
+            [depot.lon - lonRadius, depot.lat - latRadius],
+            [depot.lon + lonRadius, depot.lat + latRadius],
+          ],
+          { padding: { top: 112, bottom: 44, left: 34, right: 34 }, maxZoom: 8.8, duration: 650 },
+        );
+      }, 240);
+    },
     dispatch(item: PlanItem) {
       const map = mapRef.current;
       const to = centroidsRef.current.get(item.district_id);
-      const dep = depotsRef.current.find((d) => d.name === item.from_depot);
+      const lead = sourcesOf(item)[0];
+      const dep = depotsRef.current.find((d) => d.depot_id === lead?.depot_id);
       if (!map || !to || !dep) return;
       const token = ++dispatchTokenRef.current;
       const from: [number, number] = [dep.lon, dep.lat];
@@ -690,7 +881,8 @@ function MapView(
     redirect(item: PlanItem) {
       const map = mapRef.current;
       const to = centroidsRef.current.get(item.district_id);
-      const dep = depotsRef.current.find((d) => d.name === item.from_depot);
+      const lead = sourcesOf(item)[0];
+      const dep = depotsRef.current.find((d) => d.depot_id === lead?.depot_id);
       if (!map || !to || !dep) return;
       dispatchTokenRef.current += 1; // cancel any unit still in flight
       const from: [number, number] = [dep.lon, dep.lat];

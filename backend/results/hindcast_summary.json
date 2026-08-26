@@ -26,33 +26,33 @@
       },
       "B1": {
         "label": "Prakiraan + greedy top-K",
-        "mean_uncovered": 4386325.768707483,
-        "median_uncovered": 1912759.0,
-        "mean_cvar_uncovered": 4965336.557823129,
-        "coverage_pct": 2.091512517056182,
-        "tail_coverage_pct": 2.3354169552135207,
-        "mean_units": 43.25170068027211,
-        "mean_districts_served": 10.537414965986395
+        "mean_uncovered": 4456050.360544218,
+        "median_uncovered": 1972927.0,
+        "mean_cvar_uncovered": 5051580.251700681,
+        "coverage_pct": 0.5351690790465824,
+        "tail_coverage_pct": 0.6390658006231065,
+        "mean_units": 12.97278911564626,
+        "mean_districts_served": 5.0272108843537415
       },
       "B2": {
         "label": "Dua meja independen",
-        "mean_uncovered": 4386359.782312925,
-        "median_uncovered": 1912759.0,
-        "mean_cvar_uncovered": 4965377.37414966,
-        "coverage_pct": 2.090753289210767,
-        "tail_coverage_pct": 2.3346141275570997,
-        "mean_units": 43.23809523809524,
-        "mean_districts_served": 10.537414965986395
+        "mean_uncovered": 4456062.748299319,
+        "median_uncovered": 1972927.0,
+        "mean_cvar_uncovered": 5051601.414965986,
+        "coverage_pct": 0.5348925682652883,
+        "tail_coverage_pct": 0.6386495344832599,
+        "mean_units": 12.952380952380953,
+        "mean_districts_served": 5.0272108843537415
       },
       "B3": {
         "label": "SIAGA (MILP terkopel, CVaR)",
-        "mean_uncovered": 4377420.462585034,
-        "median_uncovered": 1911559.0,
-        "mean_cvar_uncovered": 4898216.108843537,
-        "coverage_pct": 2.2902905146326202,
-        "tail_coverage_pct": 3.6556276976338897,
-        "mean_units": 45.45578231292517,
-        "mean_districts_served": 6.272108843537415
+        "mean_uncovered": 4453372.176870748,
+        "median_uncovered": 1973015.0,
+        "mean_cvar_uncovered": 5026388.210884354,
+        "coverage_pct": 0.5949496166759549,
+        "tail_coverage_pct": 1.1345750443011338,
+        "mean_units": 13.36734693877551,
+        "mean_districts_served": 3.938775510204082
       }
     },
     "head_to_head_vs_B3": {
@@ -61,53 +61,53 @@
           "b3_better": 134,
           "tie": 13,
           "b3_worse": 0,
-          "median_gain": 104797.0,
-          "mean_gain": 102605.61224489796,
-          "gain_pct_of_demand": 2.290290514632619
+          "median_gain": 16499.0,
+          "mean_gain": 26653.897959183672,
+          "gain_pct_of_demand": 0.5949496166759586
         },
         "tail": {
           "b3_better": 134,
           "tie": 13,
           "b3_worse": 0,
-          "median_gain": 141000.0,
-          "mean_gain": 185854.7006802721,
-          "gain_pct_of_demand": 3.6556276976338937
+          "median_gain": 45333.0,
+          "mean_gain": 57682.598639455784,
+          "gain_pct_of_demand": 1.134575044301134
         }
       },
       "B1": {
         "mean": {
-          "b3_better": 98,
-          "tie": 32,
-          "b3_worse": 17,
-          "median_gain": 3802.0,
-          "mean_gain": 8905.30612244898,
-          "gain_pct_of_demand": 0.19877799757643236
+          "b3_better": 80,
+          "tie": 30,
+          "b3_worse": 37,
+          "median_gain": 216.0,
+          "mean_gain": 2678.183673469388,
+          "gain_pct_of_demand": 0.05978053762937206
         },
         "tail": {
           "b3_better": 99,
-          "tie": 47,
-          "b3_worse": 1,
-          "median_gain": 55948.0,
-          "mean_gain": 67120.44897959183,
-          "gain_pct_of_demand": 1.3202107424203746
+          "tie": 43,
+          "b3_worse": 5,
+          "median_gain": 13683.0,
+          "mean_gain": 25192.04081632653,
+          "gain_pct_of_demand": 0.49550924367802224
         }
       },
       "B2": {
         "mean": {
-          "b3_better": 99,
-          "tie": 32,
-          "b3_worse": 16,
-          "median_gain": 3802.0,
-          "mean_gain": 8939.319727891156,
-          "gain_pct_of_demand": 0.19953722542185215
+          "b3_better": 80,
+          "tie": 30,
+          "b3_worse": 37,
+          "median_gain": 216.0,
+          "mean_gain": 2690.5714285714284,
+          "gain_pct_of_demand": 0.060057048410673955
         },
         "tail": {
-          "b3_better": 99,
-          "tie": 47,
-          "b3_worse": 1,
-          "median_gain": 55948.0,
-          "mean_gain": 67161.26530612246,
-          "gain_pct_of_demand": 1.3210135700767902
+          "b3_better": 100,
+          "tie": 42,
+          "b3_worse": 5,
+          "median_gain": 13683.0,
+          "mean_gain": 25213.20408163265,
+          "gain_pct_of_demand": 0.49592550981787376
         }
       }
     }
@@ -132,33 +132,33 @@
       },
       "B1": {
         "label": "Prakiraan + greedy top-K",
-        "mean_uncovered": 15272939.325203253,
-        "median_uncovered": 17274920.0,
-        "mean_cvar_uncovered": 16248458.512195121,
-        "coverage_pct": 1.3693663892993202,
-        "tail_coverage_pct": 1.4565915575727617,
-        "mean_units": 85.5040650406504,
-        "mean_districts_served": 14.715447154471544
+        "mean_uncovered": 15444891.31707317,
+        "median_uncovered": 17461890.0,
+        "mean_cvar_uncovered": 16439206.959349593,
+        "coverage_pct": 0.2589230392910258,
+        "tail_coverage_pct": 0.2997432249389975,
+        "mean_units": 21.67479674796748,
+        "mean_districts_served": 8.138211382113822
       },
       "B2": {
         "label": "Dua meja independen",
-        "mean_uncovered": 15277574.089430895,
-        "median_uncovered": 17280454.0,
-        "mean_cvar_uncovered": 16250648.341463415,
-        "coverage_pct": 1.3394356914372407,
-        "tail_coverage_pct": 1.4433107137411638,
-        "mean_units": 85.3170731707317,
-        "mean_districts_served": 16.4390243902439
+        "mean_uncovered": 15439997.731707318,
+        "median_uncovered": 17457666.0,
+        "mean_cvar_uncovered": 16431856.447154472,
+        "coverage_pct": 0.2905251700259903,
+        "tail_coverage_pct": 0.3443225014876705,
+        "mean_units": 21.56910569105691,
+        "mean_districts_served": 7.723577235772358
       },
       "B3": {
         "label": "SIAGA (MILP terkopel, CVaR)",
-        "mean_uncovered": 15251849.43089431,
-        "median_uncovered": 17271187.0,
-        "mean_cvar_uncovered": 16118001.040650407,
-        "coverage_pct": 1.5055621532045205,
-        "tail_coverage_pct": 2.247788082039892,
-        "mean_units": 89.34959349593495,
-        "mean_districts_served": 12.178861788617887
+        "mean_uncovered": 15433239.837398374,
+        "median_uncovered": 17462999.0,
+        "mean_cvar_uncovered": 16386312.943089431,
+        "coverage_pct": 0.33416676273927415,
+        "tail_coverage_pct": 0.6205340645483948,
+        "mean_units": 21.89430894308943,
+        "mean_districts_served": 6.495934959349594
       }
     },
     "head_to_head_vs_B3": {
@@ -167,53 +167,53 @@
           "b3_better": 123,
           "tie": 0,
           "b3_worse": 0,
-          "median_gain": 225147.0,
-          "mean_gain": 233136.081300813,
-          "gain_pct_of_demand": 1.5055621532045211
+          "median_gain": 48932.0,
+          "mean_gain": 51745.67479674797,
+          "gain_pct_of_demand": 0.33416676273927365
         },
         "tail": {
           "b3_better": 123,
           "tie": 0,
           "b3_worse": 0,
-          "median_gain": 390893.0,
-          "mean_gain": 370629.47154471546,
-          "gain_pct_of_demand": 2.247788082039894
+          "median_gain": 106666.0,
+          "mean_gain": 102317.56910569106,
+          "gain_pct_of_demand": 0.620534064548394
         }
       },
       "B1": {
         "mean": {
-          "b3_better": 101,
+          "b3_better": 112,
           "tie": 0,
-          "b3_worse": 22,
-          "median_gain": 16597.0,
-          "mean_gain": 21089.89430894309,
-          "gain_pct_of_demand": 0.1361957639051961
+          "b3_worse": 11,
+          "median_gain": 8667.0,
+          "mean_gain": 11651.479674796748,
+          "gain_pct_of_demand": 0.07524372344824401
         },
         "tail": {
           "b3_better": 123,
           "tie": 0,
           "b3_worse": 0,
-          "median_gain": 124934.0,
-          "mean_gain": 130457.47154471544,
-          "gain_pct_of_demand": 0.7911965244671355
+          "median_gain": 52891.0,
+          "mean_gain": 52894.0162601626,
+          "gain_pct_of_demand": 0.32079083960940097
         }
       },
       "B2": {
         "mean": {
-          "b3_better": 110,
+          "b3_better": 99,
           "tie": 0,
-          "b3_worse": 13,
-          "median_gain": 22795.0,
-          "mean_gain": 25724.658536585364,
-          "gain_pct_of_demand": 0.166126461767278
+          "b3_worse": 24,
+          "median_gain": 5556.0,
+          "mean_gain": 6757.8943089430895,
+          "gain_pct_of_demand": 0.0436415927132831
         },
         "tail": {
-          "b3_better": 123,
+          "b3_better": 122,
           "tie": 0,
-          "b3_worse": 0,
-          "median_gain": 127844.0,
-          "mean_gain": 132647.30081300813,
-          "gain_pct_of_demand": 0.8044773682987264
+          "b3_worse": 1,
+          "median_gain": 40000.0,
+          "mean_gain": 45543.50406504065,
+          "gain_pct_of_demand": 0.2762115630607182
         }
       }
     }

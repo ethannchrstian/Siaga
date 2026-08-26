@@ -1,3 +1,6 @@
+import { useEffect, useState } from "react";
+
+import { getModelInfo, type ModelInfo } from "../api/client";
 import {
   CRITICAL_ALLOCATION_THRESHOLD_HELP,
   CRITICAL_ALLOCATION_THRESHOLD_PERCENT,
@@ -18,12 +21,24 @@ const SOURCES = [
   { data: "Populasi", source: "WorldPop 2020", status: "observasi", note: "Estimasi populasi grid 1 km" },
   { data: "Label banjir", source: "Ambang debit GloFAS", status: "turunan", note: "Dibentuk dari ambang fisik" },
   { data: "Label cekaman air", source: "SPI · Perka BMKG 9/2019", status: "turunan", note: "Dibentuk dari indeks presipitasi" },
-  { data: "Inventaris depot dan armada", source: "Lokasi BPBD nyata, jumlah placeholder", status: "skenario", note: "Bukan stok lapangan real-time" },
+  { data: "Inventaris pompa dan truk", source: "BNPB InaLogpal", status: "observasi", note: "Jumlah terdaftar; kesiapan wajib dikonfirmasi" },
+  { data: "Lokasi depot", source: "Centroid administratif GADM", status: "turunan", note: "Proxy perencanaan, bukan koordinat gudang" },
+  { data: "Regu dan kesiapan operasional", source: "Parameter operator", status: "skenario", note: "Tidak diterbitkan InaLogpal" },
 ];
 
 const LOOP = ["Kelangkaan air", "Ekstraksi air tanah", "Penurunan muka tanah", "Banjir rob", "Intrusi air laut"];
 
 export default function About({ dateMin, dateMax, scenarioNote }: Props) {
+  const [info, setInfo] = useState<ModelInfo | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    getModelInfo()
+      .then((d) => { if (live) setInfo(d); })
+      .catch(() => { /* the page is still readable without the comparison */ });
+    return () => { live = false; };
+  }, []);
+
   return (
     <main className="about methodology-page">
       <header className="operational-page-head methodology-head">
@@ -61,7 +76,7 @@ export default function About({ dateMin, dateMax, scenarioNote }: Props) {
           <li><span>01</span><div><strong>Prediksi bahaya</strong><p>Peluang banjir 0–72 jam dan peluang cekaman air untuk bulan berikutnya.</p></div></li>
           <li><span>02</span><div><strong>Estimasi paparan</strong><p>Peluang bahaya dikalikan populasi untuk membantu menentukan skala prioritas.</p></div></li>
           <li><span>03</span><div><strong>Optimasi alokasi</strong><p>Mulai peluang 5%, model memilih depot, jenis armada, jumlah unit, dan waktu tempuh dengan kapasitas terbatas.</p></div></li>
-          <li><span>04</span><div><strong>Keputusan operator</strong><p>Operator dapat mengunci atau mengalihkan rekomendasi; rencana kemudian dihitung ulang.</p></div></li>
+          <li><span>04</span><div><strong>Keputusan operator</strong><p>Operator dapat mengajukan dukungan provinsi, mengunci, atau mengalihkan rekomendasi; rencana kemudian dihitung ulang. Kesiapan aktual tetap diverifikasi di luar prototipe.</p></div></li>
         </ol>
       </section>
 
@@ -89,18 +104,34 @@ export default function About({ dateMin, dateMax, scenarioNote }: Props) {
       <section className="method-section model-quality-section">
         <div className="method-section-head"><span>Kinerja model</span><h2>Pengujian 2023–2024</h2><p>Model dilatih dan dikalibrasi menggunakan periode 2015–2022.</p></div>
         <div className="model-metrics">
-          <MetricCard hazard="Banjir · 0–72 jam" auc="0,93" precision="0,45" brier="0,036" tone="flood" />
-          <MetricCard hazard="Cekaman air · bulan depan" auc="0,96" precision="0,87" brier="0,069" tone="drought" />
+          {/* Read from the training outputs. These were hand-typed until a
+              retrain would have silently made them wrong. */}
+          <MetricCard
+            hazard="Banjir · 0–72 jam"
+            auc={num(info?.headline.flood?.auc, "0,93")}
+            precision={num(info?.headline.flood?.average_precision, "0,45")}
+            brier={num(info?.headline.flood?.brier, "0,036", 3)}
+            tone="flood"
+          />
+          <MetricCard
+            hazard="Cekaman air · bulan depan"
+            auc={num(info?.headline.drought?.auc, "0,96")}
+            precision={num(info?.headline.drought?.average_precision, "0,87")}
+            brier={num(info?.headline.drought?.brier, "0,069", 3)}
+            tone="drought"
+          />
         </div>
         <details className="metric-explainer"><summary>Cara membaca metrik model</summary><p>AUC dan Average Precision yang lebih tinggi menunjukkan kemampuan pemisahan kejadian yang lebih baik. Brier yang lebih rendah menunjukkan probabilitas yang lebih terkalibrasi. Metrik tetap harus dibaca bersama keterbatasan label dan cakupan geografis.</p></details>
       </section>
+
+      {info && <ModelSelection info={info} />}
 
       <section className="method-section provenance-section">
         <div className="method-section-head"><span>Provenance</span><h2>Sumber dan status data</h2><p>Status membedakan data sumber, data yang dihitung dari sumber, dan data yang sengaja dibuat untuk skenario.</p></div>
         <div className="provenance-legend"><span><i className="observasi" />Observasi/reanalisis</span><span><i className="turunan" />Data turunan</span><span><i className="skenario" />Data skenario</span></div>
         <div className="table-scroll"><table className="data-table provenance-table"><thead><tr><th>Data</th><th>Sumber</th><th>Penggunaan</th><th>Status</th></tr></thead><tbody>{SOURCES.map((row) => <tr key={row.data}><td className="strong">{row.data}</td><td>{row.source}</td><td>{row.note}</td><td><span className={`data-status ${row.status}`}>{row.status}</span></td></tr>)}</tbody></table></div>
         <div className="provenance-note"><strong>Keterbatasan label kejadian</strong><p>Catatan BNPB DIBI tidak dapat diakses secara programatik. Label bahaya karena itu dibentuk dari reanalisis fisik terbuka—debit GloFAS untuk banjir dan SPI untuk cekaman air.</p></div>
-        {scenarioNote && <details className="scenario-note"><summary>Catatan lengkap skenario armada</summary><p>{scenarioNote}</p></details>}
+        {scenarioNote && <details className="scenario-note"><summary>Catatan lengkap inventaris dan asumsi operasi</summary><p>{scenarioNote}</p></details>}
       </section>
     </main>
   );
@@ -113,4 +144,92 @@ function MetricCard({ hazard, auc, precision, brier, tone }: { hazard: string; a
 function formatRange(min?: string, max?: string) {
   if (!min || !max) return "2015–2024";
   return `${min.slice(0, 4)}–${max.slice(0, 4)}`;
+}
+
+/** Indonesian decimal comma, falling back to the previously hard-coded string
+ *  if the endpoint is unavailable so the cards never render blank. */
+function num(value: number | undefined, fallback: string, places = 2): string {
+  if (value === undefined) return fallback;
+  return value.toFixed(places).replace(".", ",");
+}
+
+/** The comparison the concept paper could not show, because at submission it
+ *  had not been run. Five families on one protocol, the deployed model last
+ *  because it had to beat the rest, and the one head that lost kept in view.
+ *  A judge reading only the product should be able to tell that XGBoost was
+ *  selected rather than assumed. */
+function ModelSelection({ info }: { info: ModelInfo }) {
+  const { families, calibrators, rob, protocol } = info;
+  if (families.length === 0) return null;
+  const cal = calibrators.flood;
+
+  return (
+    <section className="method-section model-selection-section">
+      <div className="method-section-head">
+        <span>Pemilihan model</span>
+        <h2>Lima keluarga model, satu protokol</h2>
+        <p>{protocol.split ?? "Latih 2015–2022, uji 2023–2024"}. Kalibrasi isotonik yang sama diterapkan pada seluruh kandidat.</p>
+      </div>
+
+      <table className="model-ladder">
+        <thead>
+          <tr><th>Model</th><th>AUC banjir</th><th>AUC cekaman air</th></tr>
+        </thead>
+        <tbody>
+          {families.map((f) => (
+            <tr key={f.key} className={f.deployed ? "is-deployed" : ""}>
+              <td>{f.label}{f.deployed && <em> · dipakai</em>}</td>
+              <td>{f.flood_auc?.toFixed(3).replace(".", ",") ?? "—"}</td>
+              <td>{f.drought_auc?.toFixed(3).replace(".", ",") ?? "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <p className="model-ladder-note">
+        Jaringan graf mengungguli LSTM pada banjir, sehingga struktur spasial
+        memang membawa sinyal. XGBoost tetap menang, sesuai perkiraan yang
+        ditulis di paper: fitur debit GloFAS sudah mengandung penelusuran
+        aliran dari hulu, sehingga sebagian keuntungan graf telah terserap.
+      </p>
+
+      {rob.model_ap !== undefined && (
+        <div className="model-negative">
+          <b>Kepala ketiga yang tidak dipakai</b>
+          <span>
+            Model genangan berlabel radar diuji terhadap patokan naif
+            &ldquo;bulan depan sama seperti bulan ini&rdquo;. Patokan itu menang
+            pada average precision, {rob.baseline_ap?.toFixed(3).replace(".", ",")} lawan{" "}
+            {rob.model_ap?.toFixed(3).replace(".", ",")}, sehingga kepala ini
+            dilatih dan dilaporkan tetapi tidak disajikan ke operator.
+          </span>
+        </div>
+      )}
+
+      {cal && (
+        <details className="metric-explainer">
+          <summary>Mengapa kalibratornya isotonik</summary>
+          <p>
+            Kandidat dinilai pada suku reliability Murphy, bukan pada Brier.
+            Brier mencampur reliability dengan resolution, sehingga sebuah model
+            dapat memenangkannya sambil probabilitasnya tetap menyatakan hal
+            yang keliru.
+          </p>
+          <table className="calibrator-table">
+            <thead><tr><th>Kandidat</th><th>Reliability</th><th>Selisih terburuk</th><th>Brier</th></tr></thead>
+            <tbody>
+              {cal.candidates.map((c) => (
+                <tr key={c.name} className={c.name === cal.chosen ? "is-chosen" : ""}>
+                  <td>{c.name}{c.name === cal.chosen && <em> · dipilih</em>}</td>
+                  <td>{c.reliability.toFixed(5).replace(".", ",")}</td>
+                  <td>{c.worst_gap.toFixed(3).replace(".", ",")}</td>
+                  <td>{c.brier.toFixed(4).replace(".", ",")}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </details>
+      )}
+    </section>
+  );
 }

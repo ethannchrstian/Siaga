@@ -1,0 +1,31 @@
+{
+  "machine": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "python": "3.13.1",
+    "cpu_count": 28
+  },
+  "n_dates": 60,
+  "cold_ms": 964.2,
+  "warm_full_solve": {
+    "n": 60,
+    "p50_ms": 264.9,
+    "p95_ms": 896.5,
+    "max_ms": 25080.3,
+    "mean_ms": 752.9
+  },
+  "warm_resolve_after_lock": {
+    "n": 58,
+    "p50_ms": 261.1,
+    "p95_ms": 1002.2,
+    "max_ms": 1045.9,
+    "mean_ms": 356.1
+  },
+  "stage_medians_ms": {
+    "risk_lookup": 14.6,
+    "solve": 217.6,
+    "baseline_and_metrics": 28.1,
+    "total": 261.3
+  },
+  "note": "measured through the FastAPI request path with TestClient, same code the frontend calls. CBC runs with a 0.5% MIP gap and a 25 s time limit."
+}
