@@ -5985,10 +5985,10 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
    The first viewport answers: what is ready, what remains, and who authorises.
    --------------------------------------------------------------------------- */
 .operation-report {
-  --command-navy: #0c1b35;
-  --command-navy-2: #14294a;
-  --command-blue: #4ca7d3;
-  --command-cyan: #7bd4dd;
+  --command-navy: var(--signal-navy);
+  --command-navy-2: var(--signal-navy);
+  --command-blue: var(--signal-navy);
+  --command-cyan: #c7d2e0;
   --command-line: #d9e1ea;
   --command-soft: #f2f5f8;
   --command-ink: #122038;
@@ -5996,7 +5996,7 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   margin: 0 auto;
   padding: 26px clamp(20px, 2.5vw, 40px) 44px;
   background:
-    radial-gradient(circle at 86% 1%, rgba(75, 167, 211, .09), transparent 24rem),
+    radial-gradient(circle at 86% 1%, rgba(255, 255, 255, .18), transparent 24rem),
     #edf2f6;
 }
 
@@ -6066,7 +6066,7 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   transition: transform 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
 }
 .operation-report .btn-order:hover:not(:disabled) {
-  background: #18345d;
+  background: var(--signal-navy);
   box-shadow: 0 11px 24px rgba(12, 27, 53, .22);
   transform: translateY(-1px);
 }
@@ -6081,7 +6081,7 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   padding: clamp(24px, 2.4vw, 36px);
   color: #fff;
   background:
-    linear-gradient(112deg, rgba(76, 167, 211, .14), transparent 46%),
+    linear-gradient(112deg, rgba(255, 255, 255, .07), transparent 46%),
     var(--command-navy);
   border: 1px solid rgba(255, 255, 255, .08);
   border-radius: 15px;
@@ -6093,9 +6093,9 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   right: -110px;
   width: 390px;
   height: 390px;
-  border: 1px solid rgba(123, 212, 221, .16);
+  border: 1px solid rgba(255, 255, 255, .16);
   border-radius: 50%;
-  box-shadow: 0 0 0 46px rgba(123, 212, 221, .035), 0 0 0 94px rgba(123, 212, 221, .025);
+  box-shadow: 0 0 0 46px rgba(255, 255, 255, .035), 0 0 0 94px rgba(255, 255, 255, .025);
   content: "";
   pointer-events: none;
 }
@@ -6128,7 +6128,7 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 .command-brief-owner {
   align-self: end;
   padding: 15px 0 2px 19px;
-  border-left: 1px solid rgba(123, 212, 221, .31);
+  border-left: 1px solid rgba(255, 255, 255, .24);
 }
 .command-brief-owner span,
 .command-brief-owner small { display: block; color: #aebfd2; font-size: 12px; }
@@ -6165,6 +6165,53 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 .command-metric.warning strong { color: #f5cb8d; }
 .command-metric.critical strong { color: #f3a9ae; }
 
+/* Decision summary follows the report's quiet card system, with no edge
+   stripe or decorative line competing with the operational content. */
+.command-brief {
+  gap: 22px 30px;
+  overflow: visible;
+  padding: clamp(22px, 2vw, 30px);
+  color: var(--command-ink);
+  background: rgba(255, 255, 255, .94);
+  border: 1px solid var(--command-line);
+  border-radius: 11px;
+  box-shadow: 0 7px 22px rgba(25, 48, 77, .055);
+}
+.command-brief::after { display: none; }
+.command-brief-label { margin-bottom: 9px; color: var(--signal-navy); }
+.command-brief-copy h2 { color: var(--command-ink); font-size: clamp(20px, 1.75vw, 26px); }
+.command-brief-copy p { color: #657487; font-size: 13px; }
+.command-brief-owner {
+  align-self: end;
+  padding: 15px 0 2px 19px;
+  background: transparent;
+  border: 0;
+  border-left: 1px solid var(--command-line);
+  border-radius: 0;
+}
+.command-brief-owner span,
+.command-brief-owner small { color: #6b7a8d; font-size: 12px; }
+.command-brief-owner strong { margin: 6px 0; color: var(--command-ink); font-size: 16px; }
+.command-metric-rail { gap: 9px; margin-top: 0; padding-top: 0; border-top: 0; }
+.command-metric,
+.command-metric:first-child {
+  min-width: 0;
+  padding: 12px 13px;
+  background: #f5f7f9;
+  border: 1px solid #e0e6ec;
+  border-radius: 8px;
+}
+.command-metric span { display: flex; align-items: center; gap: 6px; color: #657487; font-size: 11px; font-weight: 650; }
+.command-metric span::before { width: 6px; height: 6px; flex: none; background: var(--signal-navy); border-radius: 50%; content: ""; }
+.command-metric strong,
+.command-metric.ready strong,
+.command-metric.warning strong,
+.command-metric.critical strong { color: var(--command-ink); }
+.command-metric small { color: #748296; font-size: 11px; }
+.command-metric.ready span::before { background: #2a9a68; }
+.command-metric.warning span::before { background: #c58a31; }
+.command-metric.critical span::before { background: #b94a52; }
+
 .command-jumpbar {
   display: flex;
   align-items: center;
@@ -6190,7 +6237,7 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 }
 .command-jumpbar a:first-child { color: #fff; background: var(--command-navy-2); }
 .command-jumpbar a:hover { background: #e8eef4; }
-.command-jumpbar a:first-child:hover { background: #1c3964; }
+.command-jumpbar a:first-child:hover { background: var(--signal-navy); }
 .command-jumpbar span {
   min-width: 23px;
   padding: 2px 6px;
@@ -6265,7 +6312,7 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 .operation-report .priority-map-link {
   min-height: 34px;
   padding: 0 9px;
-  color: #244f7b;
+  color: var(--signal-navy);
   background: #edf4f8;
   border: 1px solid #d3e1e9;
   border-radius: 6px;
@@ -6273,7 +6320,7 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   font-weight: 680;
   white-space: nowrap;
 }
-.operation-report .priority-map-link:hover { color: #fff; background: #244f7b; border-color: #244f7b; }
+.operation-report .priority-map-link:hover { color: #fff; background: var(--signal-navy); border-color: var(--signal-navy); }
 
 .command-control-rail { display: flex; flex-direction: column; gap: 14px; }
 .command-rail-section { overflow: hidden; padding: 18px; }
@@ -6322,18 +6369,18 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   border-radius: 0;
 }
 .command-next-actions .handover-item:last-child { border-bottom: 0; }
-.command-next-actions .handover-order { display: grid; width: 25px; height: 25px; place-items: center; color: #355773; background: #e9f1f6; border-radius: 50%; font-size: 10px; }
+.command-next-actions .handover-order { display: grid; width: 25px; height: 25px; place-items: center; color: var(--signal-navy); background: #e9edf0; border-radius: 50%; font-size: 10px; }
 .command-next-actions .handover-item strong { font-size: 12.5px; }
 .command-next-actions .handover-item p { margin-top: 4px; color: #66768a; font-size: 11.5px; }
 .handover-carousel { overflow: hidden; }
 .command-next-actions .handover-carousel .handover-item { min-height: 76px; border-bottom: 0; }
 .handover-carousel-controls { display: grid; grid-template-columns: 30px 1fr 30px; align-items: center; gap: 9px; margin-top: 11px; }
-.handover-carousel-controls button { display: grid; width: 30px; height: 30px; padding: 0; place-items: center; color: #315777; background: #edf3f7; border: 1px solid #d5e0e8; border-radius: 6px; cursor: pointer; }
-.handover-carousel-controls button:hover:not(:disabled) { color: #fff; background: #315777; border-color: #315777; }
+.handover-carousel-controls button { display: grid; width: 30px; height: 30px; padding: 0; place-items: center; color: var(--signal-navy); background: #edf0f2; border: 1px solid #d5dde5; border-radius: 6px; cursor: pointer; }
+.handover-carousel-controls button:hover:not(:disabled) { color: #fff; background: var(--signal-navy); border-color: var(--signal-navy); }
 .handover-carousel-controls button:disabled { opacity: .38; cursor: default; }
 .handover-carousel-controls > div { display: flex; align-items: center; justify-content: center; gap: 5px; }
 .handover-carousel-controls > div span { width: 5px; height: 5px; background: #c7d1da; border-radius: 50%; }
-.handover-carousel-controls > div span.active { width: 15px; background: #315777; border-radius: 5px; }
+.handover-carousel-controls > div span.active { width: 15px; background: var(--signal-navy); border-radius: 5px; }
 
 @media (min-width: 1221px) {
   .command-workspace { height: 640px; align-items: stretch; }
@@ -6382,7 +6429,7 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 .command-audit > summary span { display: flex; flex-direction: column; gap: 4px; }
 .command-audit > summary strong { color: var(--command-ink); font-size: 14px; }
 .command-audit > summary small { color: #68788b; font-size: 12px; }
-.command-audit > summary b { flex: none; color: #315777; font-size: 12px; }
+.command-audit > summary b { flex: none; color: var(--signal-navy); font-size: 12px; }
 .command-audit[open] > summary { border-bottom: 1px solid var(--command-line); }
 .command-audit[open] > summary b { font-size: 0; }
 .command-audit[open] > summary b::after { content: "Tutup detail"; font-size: 12px; }
@@ -6400,7 +6447,7 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   font-size: 12px;
 }
 .operation-report-footer span { color: #263b54; }
-.operation-report :is(button, a, summary):focus-visible { outline: 3px solid rgba(66, 146, 191, .42); outline-offset: 2px; }
+.operation-report :is(button, a, summary):focus-visible { outline: 3px solid var(--signal-navy); outline-offset: 2px; }
 
 @media (max-width: 1220px) {
   .command-workspace { grid-template-columns: 1fr; }
@@ -6416,7 +6463,7 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   .command-brief { grid-template-columns: 1fr; gap: 20px; }
   .command-brief-owner { align-self: auto; }
   .command-metric-rail { grid-template-columns: 1fr 1fr; gap: 18px 0; }
-  .command-metric:nth-child(3) { padding-left: 0; border-left: 0; }
+  .command-metric:nth-child(3) { padding-left: 13px; border-left: 1px solid #e0e6ec; }
   .command-workspace,
   .command-control-rail,
   .command-audit-grid { grid-template-columns: 1fr; }
@@ -6429,7 +6476,7 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   .operation-report .btn-order { width: 100%; margin-left: 0; }
   .command-brief { padding: 22px 18px; border-radius: 11px; }
   .command-brief-copy h2 { font-size: 20px; }
-  .command-metric { padding: 0 13px; }
+  .command-metric { padding: 12px 13px; }
   .command-metric strong { font-size: 21px; }
   .command-jumpbar { align-items: stretch; flex-direction: column; }
   .command-jumpbar a { justify-content: space-between; }
