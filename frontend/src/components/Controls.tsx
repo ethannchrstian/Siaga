@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import type { ViewMode } from "../hazard";
 import { ClockIcon, ResetIcon } from "../icons";
@@ -25,6 +25,9 @@ interface Props {
   onTimelapse?: () => void;
   timelapseLoading?: boolean;
   timelapseRunning?: boolean;
+  /** The supply-scope control, rendered at the end of the feature row. It is a
+   *  scoping setting, not a mode toggle, so it sits apart with its own styling. */
+  supplyControl?: ReactNode;
 }
 
 const MODES: { key: ViewMode; label: string; title?: string; hint?: boolean }[] = [
@@ -61,6 +64,7 @@ export default function Controls({
   onTimelapse,
   timelapseLoading = false,
   timelapseRunning = false,
+  supplyControl,
 }: Props) {
   const [openHint, setOpenHint] = useState(false);
   const robHintRef = useRef<HTMLSpanElement>(null);
@@ -193,6 +197,12 @@ export default function Controls({
                 : timelapseRunning ? "Memutar 2015-2024" : "Putar 2015-2024"}
             </span>
           </button>
+        )}
+        {supplyControl && (
+          <>
+            <span className="map-feature-divider" aria-hidden="true" />
+            {supplyControl}
+          </>
         )}
       </div>
     </div>

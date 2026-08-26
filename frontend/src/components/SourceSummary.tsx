@@ -34,7 +34,7 @@ export default function SourceSummary({ item, items, full = false, className = "
   );
 
   if (full) return <div className={`source-summary is-full ${className}`.trim()}>{manifest}</div>;
-  if (sources.length <= 2) {
+  if (sources.length <= 1) {
     return (
       <span className={`source-summary is-inline ${className}`.trim()}>
         {sources.map((source) => `${source.units} dari ${source.depot}`).join(" · ")}

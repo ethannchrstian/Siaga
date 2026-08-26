@@ -39,3 +39,7 @@ backend/data/decisions.jsonl
 
 # local backup of the pre-InaLogpal scenario depots
 backend/data/depots.scenario.bak.json
+
+# LLM API keys and any other local secrets; never committed, same rule as users.json
+backend/.env
+.env

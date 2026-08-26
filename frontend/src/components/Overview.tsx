@@ -86,7 +86,7 @@ export default function Overview({ risk, result, date, locks, rejects, onSelect,
     <main className="overview overview-briefing operation-report">
       <header className="command-report-head">
         <div className="command-report-title">
-          <span className={`command-live-state ${result && plan.length > 0 ? "is-ready" : "is-pending"}`}>
+          <span className={`command-live-state ${reviewState === "Siap diterbitkan" ? "is-ready" : result && plan.length > 0 ? "is-pending" : "is-empty"}`}>
             <i aria-hidden="true" />{reviewState}
           </span>
           <h1>Laporan Operasional</h1>
@@ -107,7 +107,6 @@ export default function Overview({ risk, result, date, locks, rejects, onSelect,
 
       <section className="command-brief" aria-labelledby="command-brief-title">
         <div className="command-brief-copy">
-          <div className="command-brief-label">Ringkasan keputusan aktif</div>
           <h2 id="command-brief-title">
             {kpis.served > 0
               ? `${fmtInt(kpis.served)} kecamatan masuk rencana, sementara ${fmtInt(unservedMonitored.length)} prioritas pemantauan masih terbuka.`
@@ -337,7 +336,7 @@ function ReportEmpty({ text }: { text: string }) {
 
 function ResourceBar({ label, used, total, tone }: { label: string; used: number; total: number; tone: "flood" | "drought" }) {
   const pct = total ? Math.min((used / total) * 100, 100) : 0;
-  return <div className="briefing-resource"><div className="briefing-resource-head"><span>{label}</span><span><b>{used}</b> digunakan · {Math.max(total - used, 0)} tersedia</span></div><div className="briefing-resource-track" aria-label={`${label}, ${Math.round(pct)} persen digunakan`}><span className={`briefing-resource-fill ${tone}`} style={{ width: `${pct}%` }} /><i className="briefing-resource-limit" title="Batas perhatian 80%" /></div><div className="briefing-resource-scale"><span>0</span><span>{total} unit</span></div></div>;
+  return <div className="briefing-resource"><div className="briefing-resource-head"><span>{label}</span><span><b>{used}</b> digunakan · {Math.max(total - used, 0)} tersedia</span></div><div className="briefing-resource-track" role="progressbar" aria-label={`${label} digunakan`} aria-valuemin={0} aria-valuemax={total} aria-valuenow={used} aria-valuetext={`${used} dari ${total} unit digunakan, ${Math.max(total - used, 0)} tersedia`}><span className={`briefing-resource-fill ${tone}`} style={{ width: `${pct}%` }} /><i className="briefing-resource-limit" title="Batas perhatian 80%" /></div><div className="briefing-resource-scale"><span>0</span><span>{total} unit</span></div></div>;
 }
 
 function groupDecisions(plan: PlanItem[]): DistrictDecision[] {

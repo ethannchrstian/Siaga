@@ -327,6 +327,61 @@ export const postAllocate = (body: {
   confirmed_provincial_depot_ids?: string[];
 }) => postJSON<AllocateResponse>("/allocate", body);
 
+// ---- Grounded plan explanation (read-only over the optimizer) -----------
+// Mirrors the ROB layer: puts the solved plan into words, never decides.
+
+export interface ExplainStatus { available: boolean; model: string; }
+export interface ExplainResult { text: string; cached: boolean; model: string; }
+
+export const explainStatus = () => getJSON<ExplainStatus>("/explain/status");
+
+/** Sends only the grounding facts the model needs, trimmed to keep the prompt
+ *  small: the whole plan is a handful of rows, but PlanItem carries source
+ *  manifests the explanation does not need. Each row is enriched with both
+ *  hazard probabilities from the risk map, so the model can answer "why did this
+ *  kecamatan get a pump but not a tanker" from the actual risk, not a guess. */
+export async function explainPlan(
+  date: string,
+  result: AllocateResponse,
+  risk: Map<string, RiskDistrict>,
+  question?: string,
+): Promise<ExplainResult> {
+  const probs = (id: string) => {
+    const r = risk.get(id);
+    return r
+      ? { flood_prob: Number(r.flood_prob.toFixed(2)), drought_prob: Number(r.drought_prob.toFixed(2)) }
+      : {};
+  };
+  const plan = result.plan.map((p) => ({
+    district: p.district, kabupaten: p.kabupaten, resource: p.resource_label,
+    units: p.units, minutes: p.minutes, from_depot: p.from_depot,
+    people_exposed: p.people_exposed, reason: p.reason, ...probs(p.district_id),
+  }));
+  const unserved = result.unserved.map((u) => ({
+    district: u.district, kabupaten: u.kabupaten,
+    people_exposed: u.people_exposed, reason: u.reason, text: u.text,
+    ...probs(u.district_id),
+  }));
+  const res = await fetch(`${BASE}/explain`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      date, question,
+      summary: result.summary,
+      comparison: result.comparison,
+      supply_profile: result.supply_profile,
+      plan, unserved,
+    }),
+  });
+  if (!res.ok) {
+    // The 502 body carries the Indonesian reason (model down, blocked, etc.).
+    let detail = res.statusText;
+    try { detail = (await res.json()).detail ?? detail; } catch { /* keep statusText */ }
+    throw new Error(detail);
+  }
+  return res.json() as Promise<ExplainResult>;
+}
+
 // ---- Operator overrides -------------------------------------------------
 // Recorded server-side so the record outlives one browser. See
 // backend/app/routers/decisions.py for why none of this retrains anything.

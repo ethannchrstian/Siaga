@@ -39,9 +39,9 @@ interface Props {
   onPublishOrder?: () => void;
   /** Hands the panel's width back to the map. */
   onCollapse?: () => void;
-  /** Supply scope changes the plan, so its control belongs with the plan rather
-      than floating over the hazard map. */
-  supplyControl?: ReactNode;
+  /** The grounded "Tanya SIAGA" explanation panel, shown under the plan
+      summary. Read-only over the optimizer, so it lives with the plan. */
+  assistant?: ReactNode;
 }
 
 export interface DiversionOutcome {
@@ -86,7 +86,7 @@ export default function Sidebar({
   onHover,
   onPublishOrder,
   onCollapse,
-  supplyControl,
+  assistant,
 }: Props) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<DecisionFilter>("all");
@@ -121,12 +121,22 @@ export default function Sidebar({
     });
   }, [filter, groups, locks, query]);
 
-  // Counted in kecamatan, not in rows, so the number on the chip is the number
-  // of cards the chip reveals.
-  const pendingCount = useMemo(
-    () => groups.filter((group) => group.items.some((item) => !locks.has(key(item)))).length,
-    [groups, locks],
-  );
+  // Counted in kecamatan, not in rows, so the number on each chip is the number
+  // of cards that chip reveals. Every filter carries its own count: a "Banjir"
+  // that reads 0 while "Menunggu" reads 7 looked broken, when it only meant the
+  // day's plan happened to be all one hazard.
+  const filterCounts = useMemo(() => {
+    const count = (predicate: (group: (typeof groups)[number]) => boolean) =>
+      groups.filter(predicate).length;
+    return {
+      all: groups.length,
+      pending: count((group) => group.items.some((item) => !locks.has(key(item)))),
+      compound: count((group) => new Set(group.items.map((item) => item.resource)).size > 1),
+      flood: count((group) => group.items.some((item) => item.resource === "pompa")),
+      drought: count((group) => group.items.some((item) => item.resource === "truk_tangki")),
+      locked: count((group) => group.items.some((item) => locks.has(key(item)))),
+    } as Record<DecisionFilter, number>;
+  }, [groups, locks]);
 
   const readonlyTitle = readonly
     ? "Kembali ke mode Terpadu untuk mengubah rencana"
@@ -225,11 +235,7 @@ export default function Sidebar({
         )}
       </div>
 
-      {supplyControl && (
-        <div className="sidebar-supply-slot">
-          {supplyControl}
-        </div>
-      )}
+      {assistant}
 
       {readonly && (
         <div className="sidebar-readonly-note">
@@ -265,9 +271,7 @@ export default function Sidebar({
               title={value === "pending" ? "Kecamatan yang belum diputuskan operator" : undefined}
             >
               {label}
-              {value === "pending" && pendingCount > 0 && (
-                <span className="filter-count">{pendingCount}</span>
-              )}
+              <span className={`filter-count${filterCounts[value] === 0 ? " is-zero" : ""}`}>{filterCounts[value]}</span>
             </button>
           ))}
         </div>

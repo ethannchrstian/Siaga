@@ -1,0 +1,178 @@
+"""Grounded natural-language explanations of a SIAGA plan.
+
+This is the mirror of the ROB layer: it observes the plan and puts it into
+words, and it never touches the optimizer. The model is given only the facts the
+solver already produced (the plan rows, the unserved reasons, the summary) and
+is told, in the system prompt, to invent nothing and to decide nothing. The real
+numbers stay on screen next to whatever it writes, so any drift is visible.
+
+The key lives in backend/.env (gitignored), read here into the environment so
+uvicorn does not need python-dotenv. No key means the feature reports itself
+unavailable rather than crashing the API.
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import time
+from pathlib import Path
+
+import httpx
+
+BACKEND = Path(__file__).resolve().parents[2]
+ENV_FILE = BACKEND / ".env"
+
+# A "lite" model on purpose: the full flash models are thinking models whose
+# free tier is a few dozen requests per DAY (easily spent in a demo), while the
+# lite model has a far higher free daily quota, answers in ~3.5s, and needs no
+# thinking budget. Plenty for grounded phrasing. One-line change to swap.
+MODEL = "gemini-3.5-flash-lite"
+ENDPOINT = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent"
+
+TIMEOUT_S = 30
+MAX_UNSERVED = 15          # the operator reads the worst-exposed few, not all 300
+_cache: dict[str, str] = {}
+
+
+def _load_env() -> None:
+    if not ENV_FILE.exists():
+        return
+    for line in ENV_FILE.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        k, _, v = line.partition("=")
+        os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+
+
+_load_env()
+
+
+def is_configured() -> bool:
+    return bool(os.environ.get("GEMINI_API_KEY"))
+
+
+SYSTEM = (
+    "Anda asisten yang MENJELASKAN rencana prapenempatan SIAGA kepada operator "
+    "Pusdalops. Aturan wajib:\n"
+    "1. Gunakan HANYA data yang diberikan. Jangan pernah mengarang angka, nama "
+    "kecamatan, atau depot.\n"
+    "2. Jika informasi tidak ada dalam data, katakan bahwa informasi itu tidak "
+    "tersedia dalam rencana ini.\n"
+    "3. Anda TIDAK membuat keputusan alokasi. Optimizer yang memutuskan; Anda "
+    "hanya menerjemahkan hasilnya ke bahasa yang mudah dibaca.\n"
+    "4. Setiap kecamatan punya peluang banjir dan cekaman air. Armada langka: "
+    "'ringkasan.total_fleet' memberi jumlah pompa dan truk tangki di koridor. "
+    "Jika ditanya kenapa sebuah kecamatan tidak menerima jenis armada tertentu, "
+    "jelaskan berdasarkan peluang bahayanya, kelangkaan armada itu, dan bahwa "
+    "optimizer memprioritaskan kecamatan yang melindungi paparan terbesar. "
+    "Tetap jangan mengarang angka yang tidak ada.\n"
+    "5. FORMAT agar mudah dibaca: mulai dengan satu kalimat ringkas, lalu bila "
+    "ada beberapa hal gunakan poin pendek yang diawali '- '. Boleh menandai kata "
+    "kunci dengan **tebal**. Hindari satu paragraf panjang. Bahasa Indonesia, "
+    "tanpa tanda hubung em.\n"
+    "6. Jangan tampilkan nama field teknis (seperti flood_prob, truk_tangki, "
+    "people_exposed). Gunakan istilah biasa: 'peluang banjir', 'peluang cekaman "
+    "air', 'truk tangki air', 'jiwa terpapar'."
+)
+
+
+def _facts(ctx: dict) -> str:
+    """Compact, grounded snapshot of the plan for the prompt."""
+    unserved = sorted(
+        ctx.get("unserved", []),
+        key=lambda u: -(u.get("people_exposed") or 0),
+    )[:MAX_UNSERVED]
+    snapshot = {
+        "tanggal": ctx.get("date"),
+        "ringkasan": ctx.get("summary", {}),
+        "profil_pasokan": ctx.get("supply_profile", {}),
+        "perbandingan": ctx.get("comparison", {}),
+        "rencana": ctx.get("plan", []),
+        "tidak_terlayani": unserved,
+    }
+    return json.dumps(snapshot, ensure_ascii=False, default=str)
+
+
+def _prompt(ctx: dict, question: str | None) -> str:
+    facts = _facts(ctx)
+    if question:
+        return (
+            f"Pertanyaan operator: {question}\n\n"
+            f"Jawab hanya berdasarkan data rencana berikut. Data (JSON):\n{facts}"
+        )
+    return (
+        "Buat ringkasan briefing singkat (3 sampai 5 kalimat) tentang rencana "
+        "prapenempatan ini. Sebutkan berapa kecamatan diprioritaskan, pembagian "
+        "banjir dan cekaman air, dan satu atau dua wilayah paling terpapar yang "
+        "belum terlayani beserta alasannya. Data (JSON):\n"
+        f"{_facts(ctx)}"
+    )
+
+
+class LLMError(RuntimeError):
+    pass
+
+
+def explain(ctx: dict, question: str | None = None) -> dict:
+    """Return {text, cached, model}. Raises LLMError on a hard failure."""
+    key = os.environ.get("GEMINI_API_KEY")
+    if not key:
+        raise LLMError("LLM belum dikonfigurasi: GEMINI_API_KEY tidak ditemukan.")
+
+    prompt = _prompt(ctx, question)
+    cache_key = hashlib.sha256(
+        (SYSTEM + prompt).encode("utf-8")
+    ).hexdigest()
+    if cache_key in _cache:
+        return {"text": _cache[cache_key], "cached": True, "model": MODEL}
+
+    # The lite model does not burn output tokens on hidden reasoning, so a
+    # modest cap holds the whole answer without a thinking budget.
+    body = {
+        "system_instruction": {"parts": [{"text": SYSTEM}]},
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"temperature": 0.3, "maxOutputTokens": 1024},
+    }
+    headers = {"x-goog-api-key": key, "Content-Type": "application/json"}
+    # One quiet retry: a transient network blip should not surface as an error
+    # the operator has to puzzle over mid-demo.
+    r = None
+    for attempt in range(2):
+        try:
+            r = httpx.post(ENDPOINT, headers=headers, json=body, timeout=TIMEOUT_S)
+            break
+        except httpx.HTTPError:
+            if attempt == 0:
+                time.sleep(0.6)
+                continue
+            raise LLMError(
+                "Tidak dapat terhubung ke layanan AI. Periksa koneksi internet "
+                "lalu coba lagi."
+            )
+
+    if r.status_code == 429:
+        raise LLMError(
+            "Kuota AI sedang penuh sesaat (batas gratis). Tunggu beberapa detik "
+            "lalu coba lagi."
+        )
+    if r.status_code != 200:
+        detail = ""
+        try:
+            detail = r.json().get("error", {}).get("message", "")[:160]
+        except Exception:
+            pass
+        raise LLMError(f"Layanan AI menolak permintaan (HTTP {r.status_code}). {detail}")
+
+    data = r.json()
+    candidates = data.get("candidates") or []
+    if not candidates:
+        raise LLMError("Model tidak mengembalikan jawaban (kemungkinan diblokir).")
+    parts = candidates[0].get("content", {}).get("parts") or []
+    text = "".join(p.get("text", "") for p in parts).strip()
+    if not text:
+        raise LLMError("Model mengembalikan jawaban kosong.")
+
+    _cache[cache_key] = text
+    return {"text": text, "cached": False, "model": MODEL}

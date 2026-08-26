@@ -145,6 +145,12 @@ export const ChevronRightIcon = ({ size, className }: P) => (
   <svg {...base(size)} className={className}><path d="m9 18 6-6-6-6" /></svg>
 );
 
+export const CloseIcon = ({ size, className }: P) => (
+  <svg {...base(size)} className={className}>
+    <path d="M6 6l12 12M18 6 6 18" />
+  </svg>
+);
+
 export const MoreIcon = ({ size, className }: P) => (
   <svg {...base(size)} className={className}>
     <circle cx="12" cy="5" r="1" fill="currentColor" stroke="none" />

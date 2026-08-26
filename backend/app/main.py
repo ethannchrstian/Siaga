@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.routers import allocate, auth, decisions, districts, model_info, risk
+from app.routers import allocate, auth, decisions, districts, explain, model_info, risk
 
 log = logging.getLogger("siaga")
 
@@ -56,6 +56,7 @@ app.include_router(allocate.router)
 app.include_router(decisions.router)
 app.include_router(auth.router)
 app.include_router(model_info.router)
+app.include_router(explain.router)
 
 
 @app.get("/health")

@@ -19,6 +19,7 @@ import { useCountUp } from "./hooks/useCountUp";
 import ReplayControl from "./components/ReplayControl";
 import DispatchOrder from "./components/DispatchOrder";
 import SupplyControls, { type ReserveStatus, type SupplyImpact } from "./components/SupplyControls";
+import ExplainPanel from "./components/ExplainPanel";
 import {
   appendDecision,
   clearLog,
@@ -37,6 +38,7 @@ import {
   getRiskRange,
   getScenario,
   postAllocate,
+  explainStatus,
   type RiskRangeResponse,
   type RobSeries,
   type AllocateResponse,
@@ -176,6 +178,12 @@ export default function App() {
 
 function Console({ onSignOut }: { onSignOut: () => void }) {
   const [scenario, setScenario] = useState<ScenarioResponse | null>(null);
+  // Whether the grounded explanation feature has a key configured. Checked once;
+  // the panel stays hidden entirely when the backend has no LLM key.
+  const [explainOn, setExplainOn] = useState(false);
+  useEffect(() => {
+    explainStatus().then((s) => setExplainOn(s.available)).catch(() => setExplainOn(false));
+  }, []);
   const [baseSupplyScope, setBaseSupplyScope] = useState<Exclude<SupplyScope, "provincial">>("corridor");
   const [maxTravelMin, setMaxTravelMin] = useState(180);
   const [reserveStatuses, setReserveStatuses] = useState<Record<string, ReserveStatus>>({});
@@ -899,6 +907,24 @@ function Console({ onSignOut }: { onSignOut: () => void }) {
                   onReplay={startReplay}
                   disabled={!!replay}
                   replayLoading={replayLoading}
+                  supplyControl={(
+                    <SupplyControls
+                      scope={supplyScope}
+                      baseScope={baseSupplyScope}
+                      profile={scenario?.supply_profile}
+                      depots={scenario?.depots}
+                      provincialReserves={scenario?.provincial_reserves}
+                      maxTravelMin={maxTravelMin}
+                      reserveStatuses={reserveStatuses}
+                      impact={supplyImpact}
+                      disabled={!!replay || loading}
+                      onScope={changeSupplyScope}
+                      onMaxTravel={changeMaxTravel}
+                      onRequestReserve={requestProvincialSupport}
+                      onConfirmReserve={confirmProvincialSupport}
+                      onCancelReserve={cancelProvincialSupport}
+                    />
+                  )}
                 />
                 {lapse && (
                   <ReplayControl
@@ -985,24 +1011,9 @@ function Console({ onSignOut }: { onSignOut: () => void }) {
                 onHover={setHoveredId}
                 onPublishOrder={() => setShowOrder(true)}
                 onCollapse={() => setPlanOpen(false)}
-                supplyControl={(
-                  <SupplyControls
-                    scope={supplyScope}
-                    baseScope={baseSupplyScope}
-                    profile={scenario?.supply_profile}
-                    depots={scenario?.depots}
-                    provincialReserves={scenario?.provincial_reserves}
-                    maxTravelMin={maxTravelMin}
-                    reserveStatuses={reserveStatuses}
-                    impact={supplyImpact}
-                    disabled={!!replay || loading}
-                    onScope={changeSupplyScope}
-                    onMaxTravel={changeMaxTravel}
-                    onRequestReserve={requestProvincialSupport}
-                    onConfirmReserve={confirmProvincialSupport}
-                    onCancelReserve={cancelProvincialSupport}
-                  />
-                )}
+                assistant={explainOn ? (
+                  <ExplainPanel date={date} result={result} risk={risk} disabled={!!replay || loading} />
+                ) : undefined}
               />
             </main>
             {/* Honesty line. Kept on the primary screen rather than buried in
