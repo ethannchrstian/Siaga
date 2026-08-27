@@ -7122,7 +7122,16 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   .monitoring-page { padding: 20px 14px 38px; }
   .monitoring-page-head { align-items: flex-start; flex-direction: column; gap: 12px; }
   .monitoring-page-head h1 { font-size: 25px; }
-  .monitoring-threshold-note { max-width: none; }
+  .monitoring-page-head > div:first-child,
+  .monitoring-threshold-note { width: 100%; min-width: 0; max-width: none; }
+  .monitoring-page-head > div:first-child p,
+  .monitoring-threshold-note :is(strong, small) { overflow-wrap: anywhere; }
+  .monitoring-threshold-note span { min-width: 0; }
+  .monitoring-kpi-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .monitoring-kpi-tile,
+  .monitoring-kpi-tile:first-child { min-width: 0; padding: 10px 16px; }
+  .monitoring-kpi-tile:nth-child(odd) { border-left: 0; }
+  .monitoring-kpi-tile:nth-child(n + 3) { border-top: 1px solid rgba(255, 255, 255, .09); }
   .monitoring-command { grid-template-columns: 1fr; gap: 18px; padding: 22px; }
   .monitoring-plan-balance { padding-top: 16px; padding-left: 0; border-top: 1px solid rgba(123, 212, 221, .24); border-left: 0; }
   .monitoring-register-head { align-items: flex-start; flex-direction: column; gap: 10px; }
@@ -7133,7 +7142,21 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 
 @media (max-width: 560px) {
   .monitoring-page { padding: 18px 12px 88px; }
+  .monitoring-page-head { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; width: 100%; margin-bottom: 14px; }
   .monitoring-page-head h1 { font-size: 25px; }
+  .monitoring-page-head > div:first-child p { max-width: 100%; margin-top: 6px; font-size: 12px; line-height: 1.45; }
+  .monitoring-threshold-note { box-sizing: border-box; align-items: flex-start; width: 100%; max-width: 100%; min-height: 0; padding: 10px 11px; }
+  .monitoring-threshold-note svg { margin-top: 1px; }
+  .monitoring-threshold-note span { flex: 1; }
+  .monitoring-threshold-note :is(strong, small) { display: block; max-width: 100%; }
+  .monitoring-kpi { padding: 13px 12px 12px; border-radius: 11px; }
+  .monitoring-kpi-tile,
+  .monitoring-kpi-tile:first-child { align-items: flex-start; gap: 9px; min-height: 62px; padding: 10px 8px; }
+  .monitoring-kpi-tile .mk-icon { width: 30px; height: 30px; }
+  .monitoring-kpi-tile .mk-body { flex: 1; }
+  .monitoring-kpi-tile .mk-body b { font-size: 21px; }
+  .monitoring-kpi-tile .mk-body span { overflow-wrap: anywhere; font-size: 10.5px; }
+  .monitoring-kpi-note { margin-top: 10px; padding: 10px 4px 0; font-size: 11.5px; }
   .monitoring-command { padding: 20px 18px; border-radius: 11px; }
   .monitoring-command-copy h2 { font-size: 20px; }
   .monitoring-command-copy p { font-size: 13px; }

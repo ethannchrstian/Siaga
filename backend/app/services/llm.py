@@ -15,7 +15,10 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import threading
 import time
+from collections import defaultdict, deque
+from datetime import datetime, timezone
 from pathlib import Path
 
 import httpx
@@ -32,7 +35,11 @@ ENDPOINT = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:gen
 
 TIMEOUT_S = 30
 MAX_UNSERVED = 15          # the operator reads the worst-exposed few, not all 300
+DEMO_RATE_WINDOW_S = 60
+USAGE_FILE = BACKEND / "data" / "ai_usage.json"
 _cache: dict[str, str] = {}
+_usage_lock = threading.Lock()
+_recent_demo_requests: dict[str, deque[float]] = defaultdict(deque)
 
 
 def _load_env() -> None:
@@ -48,8 +55,14 @@ def _load_env() -> None:
 
 _load_env()
 
+DEMO_DAILY_LIMIT = int(os.getenv("AI_DEMO_DAILY_LIMIT", "50"))
+DEMO_RATE_LIMIT = int(os.getenv("AI_DEMO_RATE_LIMIT", "3"))
+DEMO_MAX_OUTPUT_TOKENS = int(os.getenv("AI_DEMO_MAX_OUTPUT_TOKENS", "600"))
 
-def is_configured() -> bool:
+
+def is_configured(role: str | None = None) -> bool:
+    if role == "DEMO":
+        return bool(os.environ.get("GEMINI_DEMO_API_KEY") or os.environ.get("GEMINI_API_KEY"))
     return bool(os.environ.get("GEMINI_API_KEY"))
 
 
@@ -154,11 +167,68 @@ class LLMError(RuntimeError):
     pass
 
 
-def explain(ctx: dict, question: str | None = None) -> dict:
+class DemoLimitError(LLMError):
+    pass
+
+
+def _read_usage() -> dict:
+    if not USAGE_FILE.exists():
+        return {}
+    try:
+        return json.loads(USAGE_FILE.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+
+def _write_usage(usage: dict) -> None:
+    USAGE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    temporary = USAGE_FILE.with_suffix(".tmp")
+    temporary.write_text(json.dumps(usage, indent=2), encoding="utf-8")
+    temporary.replace(USAGE_FILE)
+
+
+def _consume_demo_quota(username: str) -> dict:
+    """Reserve one upstream request before calling Gemini.
+
+    The shared demo login intentionally has one shared budget. Cache hits never
+    reach this function, so repeated identical questions cost no quota.
+    """
+    now = time.time()
+    day = datetime.now(timezone.utc).date().isoformat()
+    with _usage_lock:
+        recent = _recent_demo_requests[username]
+        while recent and now - recent[0] >= DEMO_RATE_WINDOW_S:
+            recent.popleft()
+        if len(recent) >= DEMO_RATE_LIMIT:
+            raise DemoLimitError(
+                f"Batas akun demo adalah {DEMO_RATE_LIMIT} pertanyaan per menit. "
+                "Tunggu sebentar lalu coba lagi."
+            )
+
+        usage = _read_usage()
+        record = usage.get(username, {})
+        used = int(record.get("count", 0)) if record.get("date") == day else 0
+        if used >= DEMO_DAILY_LIMIT:
+            raise DemoLimitError(
+                f"Kuota AI akun demo hari ini sudah habis ({DEMO_DAILY_LIMIT} pertanyaan). "
+                "Akun admin tetap dapat menggunakan AI."
+            )
+
+        used += 1
+        recent.append(now)
+        usage[username] = {"date": day, "count": used}
+        _write_usage(usage)
+        return {"limit": DEMO_DAILY_LIMIT, "used": used, "remaining": DEMO_DAILY_LIMIT - used}
+
+
+def explain(ctx: dict, question: str | None = None, actor: dict | None = None) -> dict:
     """Return {text, cached, model}. Raises LLMError on a hard failure."""
-    key = os.environ.get("GEMINI_API_KEY")
+    role = (actor or {}).get("role", "PUSDALOPS")
+    username = (actor or {}).get("username", "unknown")
+    demo = role == "DEMO"
+    key = (os.environ.get("GEMINI_DEMO_API_KEY") if demo else None) or os.environ.get("GEMINI_API_KEY")
     if not key:
-        raise LLMError("LLM belum dikonfigurasi: GEMINI_API_KEY tidak ditemukan.")
+        raise LLMError("LLM belum dikonfigurasi: API key untuk akun ini tidak ditemukan.")
 
     prompt = _prompt(ctx, question)
     cache_key = hashlib.sha256(
@@ -167,12 +237,17 @@ def explain(ctx: dict, question: str | None = None) -> dict:
     if cache_key in _cache:
         return {"text": _cache[cache_key], "cached": True, "model": MODEL}
 
+    quota = _consume_demo_quota(username) if demo else None
+
     # The lite model does not burn output tokens on hidden reasoning, so a
     # modest cap holds the whole answer without a thinking budget.
     body = {
         "system_instruction": {"parts": [{"text": SYSTEM}]},
         "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": 0.3, "maxOutputTokens": 1024},
+        "generationConfig": {
+            "temperature": 0.3,
+            "maxOutputTokens": DEMO_MAX_OUTPUT_TOKENS if demo else 1024,
+        },
     }
     headers = {"x-goog-api-key": key, "Content-Type": "application/json"}
     # One quiet retry: a transient network blip should not surface as an error
@@ -214,4 +289,7 @@ def explain(ctx: dict, question: str | None = None) -> dict:
         raise LLMError("Model mengembalikan jawaban kosong.")
 
     _cache[cache_key] = text
-    return {"text": text, "cached": False, "model": MODEL}
+    result = {"text": text, "cached": False, "model": MODEL}
+    if quota is not None:
+        result["quota"] = quota
+    return result

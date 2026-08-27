@@ -331,7 +331,12 @@ export const postAllocate = (body: {
 // Mirrors the ROB layer: puts the solved plan into words, never decides.
 
 export interface ExplainStatus { available: boolean; model: string; }
-export interface ExplainResult { text: string; cached: boolean; model: string; }
+export interface ExplainResult {
+  text: string;
+  cached: boolean;
+  model: string;
+  quota?: { limit: number; used: number; remaining: number };
+}
 
 export const explainStatus = () => getJSON<ExplainStatus>("/explain/status");
 
@@ -364,7 +369,10 @@ export async function explainPlan(
   }));
   const res = await fetch(`${BASE}/explain`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${storedToken() ?? ""}`,
+    },
     body: JSON.stringify({
       date, question,
       summary: result.summary,

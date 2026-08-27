@@ -30,6 +30,7 @@ backend/.venv-prod/
 # seeded on first run by app/routers/auth.py, and a credential file has no
 # business in a repository even as a hash
 backend/data/users.json
+backend/data/ai_usage.json
 
 # written by operators at runtime, not source
 backend/data/decisions.jsonl

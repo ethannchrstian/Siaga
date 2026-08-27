@@ -18,6 +18,7 @@ sys.path.insert(0, str(BACKEND))
 from app.main import app  # noqa: E402
 from app.routers import auth as auth_mod  # noqa: E402
 from app.routers import decisions as dec_mod  # noqa: E402
+from app.services import llm  # noqa: E402
 
 DATE = "2024-02-05"
 
@@ -36,6 +37,12 @@ def test_correct_credentials_return_a_session(client):
     body = r.json()
     assert body["token"]
     assert body["display"]
+
+
+def test_demo_credentials_return_limited_role(client):
+    r = client.post("/auth/login", json={"username": "demo", "password": "123"})
+    assert r.status_code == 200
+    assert r.json()["role"] == "DEMO"
 
 
 def test_wrong_password_is_refused(client):
@@ -79,6 +86,45 @@ def test_logout_invalidates_the_token(client):
     ).json()["token"]
     client.post("/auth/logout", headers={"Authorization": f"Bearer {token}"})
     assert client.get("/auth/me", headers={"Authorization": f"Bearer {token}"}).status_code == 401
+
+
+def test_ai_endpoint_requires_a_session(client):
+    r = client.post("/explain", json={"date": DATE, "question": "Ringkas rencana"})
+    assert r.status_code == 401
+
+
+def test_demo_identity_reaches_ai_limit_layer(client, monkeypatch):
+    token = client.post(
+        "/auth/login", json={"username": "demo", "password": "123"}
+    ).json()["token"]
+    monkeypatch.setattr(llm, "is_configured", lambda role=None: True)
+
+    def fake_explain(ctx, question=None, actor=None):
+        assert actor["username"] == "demo"
+        assert actor["role"] == "DEMO"
+        return {"text": "ok", "cached": False, "model": "test"}
+
+    monkeypatch.setattr(llm, "explain", fake_explain)
+    r = client.post(
+        "/explain",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"date": DATE, "question": "Ringkas rencana"},
+    )
+    assert r.status_code == 200
+
+
+def test_demo_daily_quota_is_enforced(tmp_path, monkeypatch):
+    monkeypatch.setattr(llm, "USAGE_FILE", tmp_path / "ai_usage.json")
+    monkeypatch.setattr(llm, "DEMO_DAILY_LIMIT", 2)
+    monkeypatch.setattr(llm, "DEMO_RATE_LIMIT", 99)
+    llm._recent_demo_requests.clear()
+
+    first = llm._consume_demo_quota("demo")
+    second = llm._consume_demo_quota("demo")
+    assert first["remaining"] == 1
+    assert second["remaining"] == 0
+    with pytest.raises(llm.DemoLimitError):
+        llm._consume_demo_quota("demo")
 
 
 # ------------------------------------------------------------- decisions

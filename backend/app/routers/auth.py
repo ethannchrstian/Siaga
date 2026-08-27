@@ -47,6 +47,9 @@ SESSION_TTL_S = 12 * 3600
 DEFAULT_USER = "admin"
 DEFAULT_PASSWORD = "adminletsgowin"
 DEFAULT_DISPLAY = "Operator SIAGA"
+DEMO_USER = os.getenv("SIAGA_DEMO_USERNAME", "demo").strip().lower()
+DEMO_PASSWORD = os.getenv("SIAGA_DEMO_PASSWORD", "123")
+DEMO_DISPLAY = os.getenv("SIAGA_DEMO_DISPLAY", "Operator Demo")
 
 _sessions: dict[str, dict] = {}
 
@@ -58,18 +61,27 @@ def _hash(password: str, salt: bytes) -> str:
     ).hex()
 
 
-def _seed() -> dict:
+def _record(password: str, display: str, role: str) -> dict:
     salt = os.urandom(16)
-    users = {
-        DEFAULT_USER: {
-            "salt": salt.hex(),
-            "hash": _hash(DEFAULT_PASSWORD, salt),
-            "display": DEFAULT_DISPLAY,
-            "role": "PUSDALOPS",
-        }
+    return {
+        "salt": salt.hex(),
+        "hash": _hash(password, salt),
+        "display": display,
+        "role": role,
     }
+
+
+def _write_users(users: dict) -> None:
     USERS.parent.mkdir(parents=True, exist_ok=True)
     USERS.write_text(json.dumps(users, indent=2), encoding="utf-8")
+
+
+def _seed() -> dict:
+    users = {
+        DEFAULT_USER: _record(DEFAULT_PASSWORD, DEFAULT_DISPLAY, "PUSDALOPS"),
+        DEMO_USER: _record(DEMO_PASSWORD, DEMO_DISPLAY, "DEMO"),
+    }
+    _write_users(users)
     return users
 
 
@@ -77,9 +89,15 @@ def _users() -> dict:
     if not USERS.exists():
         return _seed()
     try:
-        return json.loads(USERS.read_text(encoding="utf-8"))
+        users = json.loads(USERS.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return _seed()
+    # Existing deployments may already have a users.json containing only the
+    # original operator. Add the demo identity without rotating that account.
+    if DEMO_USER not in users:
+        users[DEMO_USER] = _record(DEMO_PASSWORD, DEMO_DISPLAY, "DEMO")
+        _write_users(users)
+    return users
 
 
 class Credentials(BaseModel):
@@ -114,10 +132,8 @@ def _public(session: dict) -> dict:
     return {"display": session["display"], "role": session["role"]}
 
 
-@router.get("/me")
-def me(authorization: str = Header(default="")) -> dict:
-    """Validates a token so a reload can restore the session without asking
-    for the password again."""
+def require_session(authorization: str = Header(default="")) -> dict:
+    """Return the verified server-side identity for protected API routes."""
     token = authorization.removeprefix("Bearer ").strip()
     session = _sessions.get(token)
     if not session:
@@ -125,7 +141,14 @@ def me(authorization: str = Header(default="")) -> dict:
     if session["expires"] < time.time():
         _sessions.pop(token, None)
         raise HTTPException(401, "sesi kedaluwarsa")
-    return _public(session)
+    return session
+
+
+@router.get("/me")
+def me(authorization: str = Header(default="")) -> dict:
+    """Validates a token so a reload can restore the session without asking
+    for the password again."""
+    return _public(require_session(authorization))
 
 
 @router.post("/logout")

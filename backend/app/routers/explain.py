@@ -7,9 +7,10 @@ state.
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from app.routers import auth
 from app.services import llm
 
 router = APIRouter()
@@ -34,8 +35,8 @@ def status() -> dict:
 
 
 @router.post("/explain")
-def explain(req: ExplainRequest) -> dict:
-    if not llm.is_configured():
+def explain(req: ExplainRequest, session: dict = Depends(auth.require_session)) -> dict:
+    if not llm.is_configured(session.get("role")):
         raise HTTPException(503, "Fitur penjelasan AI belum dikonfigurasi.")
 
     ctx = {
@@ -48,7 +49,9 @@ def explain(req: ExplainRequest) -> dict:
     }
     question = (req.question or "").strip() or None
     try:
-        return llm.explain(ctx, question)
+        return llm.explain(ctx, question, actor=session)
+    except llm.DemoLimitError as e:
+        raise HTTPException(429, str(e)) from e
     except llm.LLMError as e:
         # 502: the request was fine, the upstream model was the problem.
         raise HTTPException(502, str(e)) from e
