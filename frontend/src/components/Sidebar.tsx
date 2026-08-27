@@ -54,6 +54,9 @@ export interface DiversionOutcome {
   /** For divert, where the freed units went. For deploy, where they were
       pulled from to fund the forced allocation. */
   destinations: { district: string; units: number }[];
+  /** Deploy only: units drawn from previously-idle fleet, not from any other
+      wilayah. destinations units + reserveUnits reconcile to removedUnits. */
+  reserveUnits?: number;
   returnedUnits: number;
   coverageDelta: number;
   failed: boolean;
@@ -312,17 +315,21 @@ export default function Sidebar({
               ) : (
                 <>
                   <p><b>{diversionOutcome.removedUnits} {diversionOutcome.resourceLabel}</b> ditambahkan ke {diversionOutcome.targetDistrict}.</p>
-                  {diversionOutcome.destinations.length > 0 ? (
+                  {diversionOutcome.destinations.length > 0 && (
                     <>
                       <small>Diambil dari:</small>
                       <ul>
                         {diversionOutcome.destinations.map((source) => (
                           <li key={source.district}>{source.units} unit ← {source.district}</li>
                         ))}
+                        {(diversionOutcome.reserveUnits ?? 0) > 0 && (
+                          <li>{diversionOutcome.reserveUnits} unit ← cadangan belum terpakai</li>
+                        )}
                       </ul>
                     </>
-                  ) : (
-                    <small>Diambil dari unit yang belum terpakai.</small>
+                  )}
+                  {diversionOutcome.destinations.length === 0 && (
+                    <small>Diambil dari cadangan yang belum terpakai.</small>
                   )}
                   <footer>Estimasi cakupan {diversionOutcome.coverageDelta === 0 ? "tidak berubah" : `${diversionOutcome.coverageDelta > 0 ? "+" : "−"}${idNum(Math.abs(diversionOutcome.coverageDelta))} jiwa`}.</footer>
                 </>

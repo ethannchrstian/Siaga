@@ -195,12 +195,16 @@ function summarizeDeployment(pending: DiversionPending, result: AllocateResponse
     .filter((item) => item.units > 0)
     .sort((a, b) => b.units - a.units);
 
+  // Units the target gained that no other wilayah lost came from idle fleet.
+  const fromOthers = sources.reduce((sum, s) => sum + s.units, 0);
+  const added = placed || pending.units;
   return {
     mode: "deploy",
     targetDistrict: pending.district,
     resourceLabel: pending.resource_label,
-    removedUnits: placed || pending.units,
+    removedUnits: added,
     destinations: sources,
+    reserveUnits: Math.max(added - fromOthers, 0),
     returnedUnits: 0,
     coverageDelta: Math.round(result.comparison.siaga.expected_covered - pending.beforeCovered),
     failed: placed <= 0,
