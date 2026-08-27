@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import type { Depot, SupplyProfile, SupplyScope } from "../api/client";
 
@@ -52,7 +53,13 @@ export default function SupplyControls({
   onCancelReserve,
 }: Props) {
   const [open, setOpen] = useState(false);
-  const root = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const popRef = useRef<HTMLElement>(null);
+  // The popover is rendered through a portal to escape the map container's
+  // `overflow: hidden` (which otherwise clips its bottom, hiding the third
+  // provincial reserve). Because it leaves the trigger's positioning context,
+  // its coordinates are measured from the trigger and pinned as `position: fixed`.
+  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
   const registeredUnits = depots.reduce(
     (total, depot) => total + depot.registered_fleet.pompa + depot.registered_fleet.truk_tangki,
     0,
@@ -68,15 +75,38 @@ export default function SupplyControls({
   useEffect(() => {
     if (!open) return;
     const close = (event: MouseEvent) => {
-      if (!root.current?.contains(event.target as Node)) setOpen(false);
+      const target = event.target as Node;
+      if (triggerRef.current?.contains(target) || popRef.current?.contains(target)) return;
+      setOpen(false);
     };
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
   }, [open]);
 
+  // Pin the portalled popover under the trigger, right-aligned, clamped on-screen,
+  // and keep it there while the window scrolls or resizes.
+  useLayoutEffect(() => {
+    if (!open) return;
+    const place = () => {
+      const t = triggerRef.current?.getBoundingClientRect();
+      if (!t) return;
+      const width = Math.min(430, window.innerWidth - 16);
+      const left = Math.max(8, Math.min(t.right - width, window.innerWidth - width - 8));
+      setPos({ top: t.bottom + 6, left, width });
+    };
+    place();
+    window.addEventListener("resize", place);
+    window.addEventListener("scroll", place, true);
+    return () => {
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place, true);
+    };
+  }, [open]);
+
   return (
-    <div className="supply-control" ref={root}>
+    <div className="supply-control">
       <button
+        ref={triggerRef}
         type="button"
         className={`map-feature-button supply-trigger${open ? " is-on" : ""}`}
         onClick={() => setOpen((value) => !value)}
@@ -87,8 +117,13 @@ export default function SupplyControls({
         <span>Sumber armada · {scope === "provincial" ? `${confirmedCount} provinsi aktif` : LABEL[scope]}</span>
       </button>
 
-      {open && (
-        <section className="supply-popover" aria-label="Pengaturan cakupan pasokan">
+      {open && pos && createPortal(
+        <section
+          ref={popRef}
+          className="supply-popover is-portal"
+          style={{ top: pos.top, left: pos.left, width: pos.width }}
+          aria-label="Pengaturan cakupan pasokan"
+        >
           <header>
             <div>
               <small>Sumber armada yang boleh dipakai</small>
@@ -174,7 +209,8 @@ export default function SupplyControls({
           <footer>
             <b>Catatan:</b> jumlah InaLogpal adalah inventaris terdaftar, bukan jaminan unit sedang siap. Kesiapan dan regu tetap dikonfirmasi BPBD.
           </footer>
-        </section>
+        </section>,
+        document.body,
       )}
     </div>
   );

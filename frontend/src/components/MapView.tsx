@@ -25,17 +25,20 @@ import {
 
 // Labeled street basemap so districts have real geographic context
 // (place names, coastline, roads), unlike the blank tiles before.
+// Esri World Light Gray Canvas: pale cartography, key-free (CARTO's free CDN now
+// watermarks unauthenticated use). ArcGIS tiles use {z}/{y}/{x} order and top out
+// at z16, which is well past the corridor's regional view.
 const BASE_STYLE: maplibregl.StyleSpecification = {
   version: 8,
   sources: {
     carto: {
       type: "raster",
       tiles: [
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
+        "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",
       ],
       tileSize: 256,
-      attribution: "&copy; OpenStreetMap, &copy; CARTO",
+      maxzoom: 16,
+      attribution: "&copy; Esri, &copy; OpenStreetMap",
     },
   },
   layers: [
@@ -49,11 +52,12 @@ const BASE_STYLE: maplibregl.StyleSpecification = {
       type: "raster",
       source: "carto",
       paint: {
+        // Esri Light Gray is already pale, so we barely touch it. If it reads
+        // too faint bump raster-opacity toward 1; too strong, lower it.
         "raster-saturation": -1,
-        "raster-contrast": -0.2,
-        "raster-brightness-min": 0.42,
+        "raster-contrast": -0.1,
         "raster-brightness-max": 1,
-        "raster-opacity": 0.48,
+        "raster-opacity": 0.82,
       },
     },
   ],

@@ -87,7 +87,12 @@ export default function ExplainPanel({ date, result, risk, disabled = false }: P
   const chips = [
     "Wilayah paling terpapar yang belum terlayani?",
     topUnserved ? `Kenapa ${topUnserved} belum terlayani?` : "Kenapa sebagian wilayah tidak terlayani?",
-    "Kenapa ada yang hanya dapat satu jenis armada?",
+  ];
+  // A couple of feature-help prompts, styled quieter, so the assistant also
+  // guides the app's controls without crowding the plan questions.
+  const helpChips = [
+    "Apa arti warna di peta?",
+    "Cara mengunci alokasi?",
   ];
 
   useEffect(() => {
@@ -158,7 +163,6 @@ export default function ExplainPanel({ date, result, risk, disabled = false }: P
                 <div className="assistant-empty">
                   <span className="assistant-mark xl" aria-hidden="true"><Spark size={24} /></span>
                   <h3>Tanya apa saja tentang rencana ini</h3>
-                  <p>Saya menjelaskan keputusan optimizer dalam bahasa biasa, langsung dari data rencana yang sedang tampil.</p>
                   <button type="button" className="assistant-brief" disabled={busy} onClick={() => ask()}>
                     <Spark size={14} /> Jelaskan rencana ini
                   </button>
@@ -197,6 +201,9 @@ export default function ExplainPanel({ date, result, risk, disabled = false }: P
                 )}
                 {chips.map((c) => (
                   <button key={c} type="button" disabled={busy} onClick={() => ask(c)}>{c}</button>
+                ))}
+                {helpChips.map((c) => (
+                  <button key={c} type="button" className="is-help" disabled={busy} onClick={() => ask(c)}>{c}</button>
                 ))}
               </div>
               <form className="assistant-ask" onSubmit={submit}>

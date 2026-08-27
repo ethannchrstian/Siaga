@@ -53,9 +53,39 @@ def is_configured() -> bool:
     return bool(os.environ.get("GEMINI_API_KEY"))
 
 
+# A compact, accurate guide to the real UI so the assistant can answer
+# "how do I..." and "what does X do" without inventing buttons. Every item here
+# maps to a control that exists in the app; the model is told to stay inside it.
+FEATURES = (
+    "PANDUAN FITUR SIAGA (untuk pertanyaan 'apa fungsi' atau 'bagaimana cara'):\n"
+    "- Peta: menampilkan koridor Pantura dengan tiga mode tampilan, peluang "
+    "banjir, peluang cekaman air, dan alokasi (penempatan pompa dan truk tangki). "
+    "Legenda risiko menjelaskan arti warna. Klik sebuah kecamatan untuk detailnya; "
+    "klik sebuah depot untuk melihat perkiraan jangkauannya (area yang dapat "
+    "ditempuh dalam batas waktu tiba).\n"
+    "- Rekomendasi keputusan (panel kanan): daftar kecamatan yang diusulkan "
+    "optimizer. Filternya: Semua, Menunggu, Dua Bahaya (banjir dan cekaman air "
+    "sekaligus), Banjir, dan Cekaman air. Ada kolom cari untuk menemukan kecamatan.\n"
+    "- Keputusan operator: untuk tiap rekomendasi, operator bisa mengunci "
+    "(menetapkan), mengalihkan, atau membatalkan alokasi. SIAGA hanya mengusulkan; "
+    "keputusan akhir ada di operator lewat gerbang otorisasi sebelum menekan "
+    "'Terbitkan perintah'.\n"
+    "- Sumber armada yang boleh dipakai: mengatur depot mana yang boleh memasok "
+    "sebuah kecamatan. Bila lebih dari satu depot tersedia, muncul dropdown pilihan.\n"
+    "- Ambang dan hitung ulang: Ambang Alokasi Kritis, Ambang Pemantauan, dan "
+    "Maksimal waktu tiba dapat diubah, lalu tekan hitung ulang / putar ulang untuk "
+    "menyusun rencana baru.\n"
+    "- Angka operasional: Jiwa terpapar, Total unit, Cakupan rencana, dan Selisih "
+    "terburuk (cakupan pada 10% hari terburuk dibanding mode dua meja terpisah).\n"
+    "- Kinerja model: AUC, average precision, Brier, dan kalibrasi isotonik untuk "
+    "model banjir dan cekaman air, menunjukkan seberapa andal prediksinya.\n"
+    "- Tanya SIAGA: fitur ini sendiri, menjelaskan rencana dan cara pakai; tidak "
+    "pernah mengubah alokasi."
+)
+
 SYSTEM = (
-    "Anda asisten yang MENJELASKAN rencana prapenempatan SIAGA kepada operator "
-    "Pusdalops. Aturan wajib:\n"
+    "Anda asisten yang MENJELASKAN rencana prapenempatan SIAGA dan cara memakai "
+    "aplikasinya kepada operator Pusdalops. Aturan wajib:\n"
     "1. Gunakan HANYA data yang diberikan. Jangan pernah mengarang angka, nama "
     "kecamatan, atau depot.\n"
     "2. Jika informasi tidak ada dalam data, katakan bahwa informasi itu tidak "
@@ -74,7 +104,13 @@ SYSTEM = (
     "tanpa tanda hubung em.\n"
     "6. Jangan tampilkan nama field teknis (seperti flood_prob, truk_tangki, "
     "people_exposed). Gunakan istilah biasa: 'peluang banjir', 'peluang cekaman "
-    "air', 'truk tangki air', 'jiwa terpapar'."
+    "air', 'truk tangki air', 'jiwa terpapar'.\n"
+    "7. Selain menjelaskan rencana, Anda boleh menjelaskan FUNGSI atau CARA "
+    "MENGGUNAKAN fitur SIAGA, tetapi HANYA berdasarkan 'PANDUAN FITUR' di bawah. "
+    "Jangan mengarang fitur, tombol, atau langkah yang tidak tercantum di sana. "
+    "Jika sebuah fitur tidak ada di panduan, katakan Anda tidak yakin fitur itu "
+    "tersedia.\n\n"
+    + FEATURES
 )
 
 
@@ -100,7 +136,10 @@ def _prompt(ctx: dict, question: str | None) -> str:
     if question:
         return (
             f"Pertanyaan operator: {question}\n\n"
-            f"Jawab hanya berdasarkan data rencana berikut. Data (JSON):\n{facts}"
+            "Untuk pertanyaan tentang isi rencana, jawab hanya berdasarkan data "
+            "di bawah. Untuk pertanyaan tentang fungsi atau cara memakai fitur, "
+            "jawab berdasarkan PANDUAN FITUR pada instruksi sistem. Data rencana "
+            f"(JSON):\n{facts}"
         )
     return (
         "Buat ringkasan briefing singkat (3 sampai 5 kalimat) tentang rencana "
