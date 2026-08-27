@@ -50,7 +50,11 @@ export default function Insiden({ risk, plan, date, districtMeta, onSelect }: Pr
   const scopeDrag = useRef({ pointerId: -1, startX: 0, startLeft: 0, moved: false });
 
   const beginScopeDrag = (event: ReactPointerEvent<HTMLElement>) => {
-    if (event.pointerType === "mouse" && event.button !== 0) return;
+    if (event.pointerType === "mouse" || event.currentTarget.scrollWidth <= event.currentTarget.clientWidth) {
+      scopeDrag.current.pointerId = -1;
+      scopeDrag.current.moved = false;
+      return;
+    }
     scopeDrag.current = { pointerId: event.pointerId, startX: event.clientX, startLeft: event.currentTarget.scrollLeft, moved: false };
     event.currentTarget.setPointerCapture(event.pointerId);
   };
@@ -350,7 +354,7 @@ function PriorityDetail({ row, onClose, onMap }: { row: PriorityRow; onClose: ()
 }
 
 function SelectFilter({ label, value, onChange, options, labels = {} }: { label: string; value: string; onChange: (value: string) => void; options: string[]; labels?: Record<string, string> }) {
-  return <label className="priority-select"><span>{label}</span><select value={value} onChange={(event) => onChange(event.target.value)}><option value="">Semua</option>{options.map((option) => <option key={option} value={option}>{labels[option] ?? option}</option>)}</select><ChevronDownIcon size={14} /></label>;
+  return <label className={`priority-select${value ? " has-value" : ""}`}><span>{label}</span><select aria-label={label} value={value} onChange={(event) => onChange(event.target.value)}><option value="">Semua</option>{options.map((option) => <option key={option} value={option}>{labels[option] ?? option}</option>)}</select><ChevronDownIcon size={14} /></label>;
 }
 
 function SortableHead({ label, sortKey, sort, onSort, numeric = false }: { label: string; sortKey: SortKey; sort: { key: SortKey; direction: SortDirection }; onSort: (key: SortKey) => void; numeric?: boolean }) {

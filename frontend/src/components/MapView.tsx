@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import {
   getDistricts,
   sourcesOf,
@@ -13,6 +14,16 @@ import { mapStyleFor, ROB_HIGH, ROB_WATCH, type ViewMode } from "../hazard";
 // Same teal the radar layer uses, so a flagged boundary reads as "radar", not
 // as a fourth risk level.
 const ROB_OUTLINE_HEX = "#2f6f6c";
+
+// MapLibre 6 resolves its worker next to the bundled application module. In a
+// Vite production build that points at /assets/maplibre-gl-worker.mjs, but the
+// package worker is not emitted automatically and production returns 404.
+// Importing it through Vite's worker pipeline gives it a real hashed deployment
+// URL *and* bundles its shared-module dependency. A plain `?url` import emits a
+// 19 KB wrapper that still requests a missing maplibre-gl-shared.mjs at runtime.
+// The self-contained worker restores GeoJSON processing (district fills,
+// boundaries, and allocation routes).
+maplibregl.setWorkerUrl(maplibreWorkerUrl);
 import { playDispatch, playRedirect } from "./dispatchAnimation";
 import { CRITICAL_ALLOCATION_THRESHOLD, MONITORING_THRESHOLD } from "../thresholds";
 import {

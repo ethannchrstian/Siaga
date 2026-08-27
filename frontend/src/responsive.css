@@ -273,6 +273,15 @@
   .map-mode-control .seg-compare { width: 174px; }
   .map-feature-button { min-height: 40px; }
 
+  /* MapLibre's navigation/fullscreen stack shares the top-right corner with
+     SIAGA's two instrument rows on phones. Keep the native controls together,
+     but begin them after the source-fleet row so neither control masks the
+     other. Desktop retains MapLibre's original 7px inset. */
+  .peta .maplibregl-ctrl-top-right {
+    top: 98px;
+    right: 8px;
+  }
+
   .seg-hint-pop {
     right: -4px;
     width: min(268px, calc(100vw - 36px));
@@ -452,8 +461,64 @@
   }
   .readiness-filters button { flex: 0 0 auto; min-height: 38px; }
   .readiness-result-count { margin-left: 0; }
-  .readiness-panel .table-scroll { overflow-x: auto; }
-  .readiness-table { width: 720px; min-width: 720px; }
+  .readiness-panel .table-scroll { overflow: visible; }
+
+  /* A depot is a compact operational card on phones. This preserves all six
+     table fields without making operators pan across a 720px-wide row. */
+  .readiness-table,
+  .readiness-table tbody { display: block; width: 100%; min-width: 0; }
+  .readiness-table thead { display: none; }
+  .readiness-table tbody > tr:not(.depot-detail-row) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px 12px;
+    margin: 10px;
+    padding: 13px;
+    background: #fff;
+    border: 1px solid #dfe5ec;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(17, 38, 67, .045);
+  }
+  .readiness-table tbody > tr:not(.depot-detail-row) > td {
+    display: block;
+    width: auto;
+    height: auto;
+    padding: 0;
+    border: 0;
+  }
+  .readiness-table tbody > tr:not(.depot-detail-row) > td:first-child,
+  .readiness-table tbody > tr:not(.depot-detail-row) > td:nth-child(4) {
+    grid-column: 1 / -1;
+  }
+  .readiness-table tbody > tr:not(.depot-detail-row) > td:first-child {
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e4e9ee;
+  }
+  .readiness-table .team-use-cell { grid-template-columns: minmax(0, 1fr) auto auto; }
+  .readiness-table tbody > tr:not(.depot-detail-row) > td:nth-child(5) { align-self: center; }
+  .readiness-table tbody > tr:not(.depot-detail-row) > td:last-child {
+    align-self: center;
+    justify-self: end;
+  }
+  .readiness-table .depot-expand { width: 38px; height: 38px; }
+  .readiness-table .depot-detail-row { display: block; margin: -4px 10px 10px; }
+  .readiness-table .depot-detail-row > td {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #dfe5ec;
+    border-top: 0;
+    border-radius: 0 0 8px 8px;
+  }
+  .capacity-alert > span {
+    width: 25px;
+    min-width: 25px;
+    height: 25px;
+    flex: 0 0 25px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    line-height: 1;
+  }
   .depot-manifest { width: 100%; min-width: 0; max-width: 100%; }
   .depot-resource-grid { grid-template-columns: 1fr; }
   .dispatch-card-grid { grid-template-columns: 1fr; }
@@ -528,6 +593,48 @@
   }
 
   .toast { width: 100%; max-width: none; }
+
+  /* The active plan reads as a scan-friendly manifest on a phone: identity
+     and status share the first line; resources and source evidence occupy the
+     full width; exposure and the map action close the card side by side. */
+  .command-plan .command-surface-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 10px;
+    margin-bottom: 10px;
+  }
+  .command-plan .command-surface-head > span {
+    align-self: start;
+    white-space: nowrap;
+  }
+  .command-plan .report-allocation-table tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 12px;
+    padding: 12px 0;
+  }
+  .command-plan .report-allocation-table td { padding: 0; }
+  .command-plan .report-allocation-table td:nth-child(1) { grid-column: 1; grid-row: 1; }
+  .command-plan .report-allocation-table td:nth-child(2),
+  .command-plan .report-allocation-table td:nth-child(3) { grid-column: 1 / -1; }
+  .command-plan .report-allocation-table td:nth-child(4) { grid-column: 1; }
+  .command-plan .report-allocation-table td:nth-child(5) {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: start;
+    justify-self: end;
+  }
+  .command-plan .report-allocation-table td:last-child {
+    grid-column: 2;
+    align-self: end;
+    justify-self: end;
+    padding-top: 0;
+  }
+  .command-plan .priority-map-link {
+    width: auto;
+    min-height: 34px;
+    padding: 0 10px;
+  }
 }
 
 @media (max-width: 420px) {

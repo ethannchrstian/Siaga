@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent as ReactMouseEvent } from "react";
 
 import { getDecisions, sourcesOf, type AllocateResponse, type DecisionSummary, type PlanItem, type RiskDistrict } from "../api/client";
 import { computeKpis, fmtCompact, fmtInt } from "../metrics";
@@ -46,6 +46,7 @@ interface FollowUpItem {
 const planKey = (item: PlanItem) => `${item.district_id}:${item.resource}`;
 
 export default function Overview({ risk, result, date, locks, rejects, onSelect, onPublishOrder }: Props) {
+  const [activeReportSection, setActiveReportSection] = useState("rencana-aktif");
   const [actionStep, setActionStep] = useState(0);
   const kpis = computeKpis(risk, result);
   const districts = [...risk.values()];
@@ -81,6 +82,16 @@ export default function Overview({ risk, result, date, locks, rejects, onSelect,
     : lockedInPlan === plan.length
       ? "Siap diterbitkan"
       : "Menunggu persetujuan";
+
+  const jumpToReportSection = (event: ReactMouseEvent<HTMLAnchorElement>, sectionId: string) => {
+    event.preventDefault();
+    const section = document.getElementById(sectionId);
+    if (!section) return;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setActiveReportSection(sectionId);
+    window.history.replaceState(null, "", `#${sectionId}`);
+    section.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+  };
 
   return (
     <main className="overview overview-briefing operation-report">
@@ -128,9 +139,9 @@ export default function Overview({ risk, result, date, locks, rejects, onSelect,
       </section>
 
       <nav className="command-jumpbar" aria-label="Bagian laporan">
-        <a href="#rencana-aktif">Rencana aktif</a>
-        <a href="#tindak-lanjut">Tindak lanjut <span>{fmtInt(followUps.length)}</span></a>
-        <a href="#audit-operasi">Analisis &amp; audit</a>
+        <a className={activeReportSection === "rencana-aktif" ? "active" : undefined} href="#rencana-aktif" onClick={(event) => jumpToReportSection(event, "rencana-aktif")}>Rencana aktif</a>
+        <a className={activeReportSection === "tindak-lanjut" ? "active" : undefined} href="#tindak-lanjut" onClick={(event) => jumpToReportSection(event, "tindak-lanjut")}>Tindak lanjut <span>{fmtInt(followUps.length)}</span></a>
+        <a className={activeReportSection === "audit-operasi" ? "active" : undefined} href="#audit-operasi" onClick={(event) => jumpToReportSection(event, "audit-operasi")}>Analisis &amp; audit</a>
       </nav>
 
       <div className="command-workspace">

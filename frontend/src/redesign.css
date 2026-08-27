@@ -6334,10 +6334,11 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   font-size: 12.5px;
   font-weight: 650;
   text-decoration: none;
+  transition: color 150ms ease, background-color 150ms ease;
 }
-.command-jumpbar a:first-child { color: #fff; background: var(--command-navy-2); }
+.command-jumpbar a.active { color: #fff; background: var(--command-navy-2); }
 .command-jumpbar a:hover { background: #e8eef4; }
-.command-jumpbar a:first-child:hover { background: var(--signal-navy); }
+.command-jumpbar a.active:hover { background: var(--signal-navy); }
 .command-jumpbar span {
   min-width: 23px;
   padding: 2px 6px;
@@ -6355,6 +6356,9 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   align-items: start;
   gap: 14px;
 }
+.command-plan,
+.command-follow-up,
+.command-audit { scroll-margin-top: 14px; }
 .command-surface,
 .command-rail-section,
 .command-audit {
@@ -6999,12 +7003,47 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 .monitoring-register .priority-search input::placeholder { color: #5f6f82; }
 .monitoring-register .priority-select {
   height: 43px;
-  padding-left: 10px;
+  padding: 0;
   border-color: #d7e0e8;
   border-radius: 7px;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
 }
-.monitoring-register .priority-select span { color: #68778a; font-size: 10px; letter-spacing: .04em; }
-.monitoring-register .priority-select select { font-size: 12px; }
+.monitoring-register .priority-select span {
+  position: absolute;
+  top: 5px;
+  left: 10px;
+  z-index: 3;
+  color: #68778a;
+  font-size: 10px;
+  letter-spacing: .04em;
+  pointer-events: none;
+}
+.monitoring-register .priority-select select {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  padding: 15px 24px 2px 10px;
+  overflow: hidden;
+  color: #33455b;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.monitoring-register .priority-select.has-value { background: #f8fbfd; border-color: #9db9cb; }
+.monitoring-register .priority-select:focus-within {
+  z-index: 1;
+  border-color: #347da9;
+  box-shadow: inset 0 0 0 1px #347da9, 0 0 0 2px rgba(52, 125, 169, .18);
+}
+.monitoring-register .priority-select select:focus-visible { outline: none; }
+.monitoring-register .priority-select svg { z-index: 3; pointer-events: none; }
 .monitoring-register .priority-reset { min-height: 39px; padding: 0 10px; border-radius: 6px; }
 .monitoring-register .active-filter-row { padding: 8px 12px; border: 0; border-bottom: 1px solid var(--monitor-line); }
 .monitoring-register .active-filter-row button { display: inline-flex; align-items: center; gap: 5px; min-height: 29px; padding: 0 8px; border-radius: 5px; }
