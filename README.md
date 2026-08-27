@@ -1,11 +1,13 @@
-# SIAGA — purwarupa
+# SIAGA: prototipe
 
 Papan kendali Pusdalops untuk peringatan dini banjir dan kekeringan pesisir
-sekaligus prapenempatan sumber daya, koridor Pantura. Purwarupa untuk RISTEK
+sekaligus prapenempatan sumber daya, koridor Pantura. Prototipe untuk RISTEK
 Fasilkom UI Datathon 2026.
 
 Banjir dan kekeringan dimodelkan sebagai dua mode kegagalan dari satu neraca air
 yang sama, dan diperebutkan oleh satu kumpulan truk tangki, pompa, dan personel.
+
+**Demo langsung:** <https://siaga-production-6909.up.railway.app/>
 
 ## Arsitektur
 
