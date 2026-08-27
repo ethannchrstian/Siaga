@@ -1,14 +1,3 @@
----
-title: SIAGA
-emoji: 🌊
-colorFrom: blue
-colorTo: indigo
-sdk: docker
-app_port: 8000
-pinned: false
-license: mit
----
-
 # SIAGA — purwarupa
 
 Papan kendali Pusdalops untuk peringatan dini banjir dan kekeringan pesisir
@@ -138,7 +127,7 @@ kepala cekaman air turun dari 0.329 menjadi 0.190.
 
 ```bash
 cd backend
-venv/Scripts/python -m pytest tests/ -q          # 15 tes
+venv/Scripts/python -m pytest tests/ -q          # 74 tes
 PYTHONPATH=. venv/Scripts/python ml/run_hindcast.py     # B0/B1/B2/B3, ~4 menit
 PYTHONPATH=. venv/Scripts/python ml/run_reliability.py  # diagram reliabilitas
 python "../New folder/make_figures.py"                  # gambar untuk makalah

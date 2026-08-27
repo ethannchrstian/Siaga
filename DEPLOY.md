@@ -52,8 +52,26 @@ dipungut biaya; yang berbayar hanya perangkat kerasnya. **CPU basic, 2 vCPU dan
 5. Buka URL Space. Peta, rencana, dan tombol Kunci/Alihkan harus langsung
    bekerja.
 
-Space membaca blok YAML di awal `README.md`. `sdk: docker` dan `app_port: 8000`
-sudah ada di sana, jadi tidak ada yang perlu diubah.
+Space membaca blok YAML di awal `README.md`. Blok itu **tidak lagi disimpan di
+README** (agar GitHub tidak menampilkannya sebagai tabel), jadi sebelum
+`git push hf main` tambahkan kembali blok berikut di baris paling atas
+`README.md`:
+
+```yaml
+---
+title: SIAGA
+emoji: 🌊
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 8000
+pinned: false
+license: mit
+---
+```
+
+Deploy lain (Railway, Render, lokal) mengabaikan blok ini, jadi hanya perlu
+ditambahkan saat menyasar Hugging Face Spaces.
 
 ### Memperbarui Space
 
