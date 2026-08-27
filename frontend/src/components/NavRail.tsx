@@ -241,6 +241,7 @@ export default function NavRail({
               key={it.key}
               className={`navrail-btn${view === it.key ? " active" : ""}`}
               onClick={() => onView(it.key)}
+              aria-current={view === it.key ? "page" : undefined}
               /* Collapsed, the icon is all that is left to identify the item. */
               title={it.label}
             >
