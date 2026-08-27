@@ -1,0 +1,506 @@
+/* Responsive adaptations for the existing SIAGA interface.
+   This file is intentionally loaded last: it changes layout and interaction
+   reach only, preserving the desktop palette, typography, and component skin. */
+
+@media (max-width: 720px) {
+  html,
+  body,
+  #root,
+  .app {
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    height: 100dvh;
+  }
+
+  .app,
+  .app:has(.navrail.is-collapsed) {
+    --rail-w: 0px;
+  }
+
+  .app-main,
+  .app-main > .body,
+  .body > * {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Five operational destinations become one predictable thumb rail. */
+  .app .navrail {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 100;
+    display: flex;
+    width: 100%;
+    height: calc(68px + env(safe-area-inset-bottom));
+    padding: 0 4px env(safe-area-inset-bottom);
+    overflow: hidden;
+    flex-direction: row;
+    align-items: stretch;
+    background: #fff;
+    border-top: 1px solid var(--border);
+    border-right: 0;
+    box-shadow: 0 -5px 20px rgba(13, 23, 48, .1);
+  }
+
+  .app .navrail-brand,
+  .app .navrail-context,
+  .app .navrail-section,
+  .app .navrail-foot,
+  .app .rail-handle {
+    display: none;
+  }
+
+  .app .navrail-group {
+    display: contents;
+  }
+
+  .app .navrail .navrail-btn,
+  .app .navrail.is-collapsed .navrail-btn {
+    position: relative;
+    display: flex;
+    width: auto;
+    min-width: 0;
+    min-height: 0;
+    flex: 1 1 20%;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    margin: 5px 1px;
+    padding: 2px;
+    color: #526176;
+    font-size: 10px;
+    line-height: 1.08;
+    text-align: center;
+    border-radius: 7px;
+  }
+
+  .app .navrail .navrail-btn > span:not(.nav-badge),
+  .app .navrail.is-collapsed .navrail-btn > span:not(.nav-badge) {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .app .navrail .navrail-btn::before {
+    top: -5px;
+    left: 50%;
+    width: 24px;
+    height: 3px;
+    transform: translateX(-50%);
+    border-radius: 0 0 3px 3px;
+  }
+
+  .app .navrail .nav-badge,
+  .app .navrail.is-collapsed .nav-badge {
+    position: absolute;
+    top: 3px;
+    right: max(4px, calc(50% - 21px));
+    display: grid;
+    min-width: 16px;
+    width: auto;
+    height: 16px;
+    padding: 0 4px;
+    place-items: center;
+    color: #fff;
+    background: var(--signal-red);
+    border-radius: 999px;
+    font-size: 9px;
+  }
+
+  /* Every scrollable screen clears the fixed navigation and phone safe area. */
+  .peta,
+  .page,
+  .overview,
+  .overview-briefing,
+  .about,
+  .methodology-page,
+  .readiness-page,
+  .priority-page,
+  .monitoring-page,
+  .operation-report {
+    padding-right: 10px;
+    padding-bottom: calc(82px + env(safe-area-inset-bottom));
+    padding-left: 10px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .errbar {
+    align-items: flex-start;
+    padding: 9px 10px;
+    line-height: 1.4;
+  }
+
+  .errbar button {
+    min-height: 36px;
+    flex: none;
+  }
+
+  /* Situation numbers retain their causal order without forcing tiny text. */
+  .stat-strip {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .stat-strip .compare-banner,
+  .stat-strip .compare-banner.off {
+    width: 100%;
+    max-width: none;
+  }
+
+  .situation-strip {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+
+  .strip-stat {
+    min-height: 58px;
+    padding: 8px 10px;
+  }
+
+  .strip-stat:nth-child(2) {
+    border-top: 0;
+    border-left: 1px solid var(--border);
+  }
+
+  .strip-stat:nth-child(3) {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--border);
+  }
+
+  .strip-body b { font-size: 18px; }
+  .strip-body small { overflow-wrap: anywhere; }
+  .strip-figure-row { flex-wrap: wrap; }
+
+  /* Map first, plan second: both remain comfortably touch-scrollable. */
+  .peta > .content {
+    display: flex;
+    min-height: auto;
+    flex: 0 0 auto;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .peta .map-wrap {
+    width: 100%;
+    height: clamp(470px, 68dvh, 620px);
+    min-height: 470px;
+    flex: none;
+  }
+
+  .peta .sidebar,
+  .peta .decision-sidebar {
+    width: 100%;
+    height: min(680px, 78dvh);
+    min-height: 540px;
+    flex: none;
+  }
+
+  .plan-collapse-btn,
+  .plan-reopen {
+    display: none;
+  }
+
+  /* Two compact instrument rows. The secondary row scrolls horizontally
+     instead of wrapping downward and obscuring the map. */
+  .peta .controls,
+  .peta .map-mode-control {
+    top: 8px;
+    left: 8px;
+    width: calc(100% - 16px);
+    align-items: stretch;
+    transform: none;
+  }
+
+  .map-mode-control .map-risk-seg {
+    width: 100%;
+    grid-auto-columns: minmax(0, 1fr);
+  }
+
+  .map-mode-control .map-risk-seg .seg-btn {
+    min-width: 0;
+    padding: 0 5px;
+  }
+
+  .map-mode-control .map-risk-seg .seg-btn > span { font-size: 11px; }
+  .map-mode-control .map-risk-seg .seg-slot .seg-btn { padding-right: 20px; }
+  .seg-hint { right: 4px; }
+
+  .map-feature-row {
+    width: 100%;
+    padding: 1px 1px 5px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .map-mode-control .seg-compare,
+  .map-feature-button,
+  .map-feature-row .supply-control {
+    flex: 0 0 auto;
+  }
+
+  .map-mode-control .seg-compare { width: 174px; }
+  .map-feature-button { min-height: 40px; }
+
+  .seg-hint-pop {
+    right: -4px;
+    width: min(268px, calc(100vw - 36px));
+  }
+
+  .map-left-stack {
+    bottom: 8px;
+    left: 8px;
+    width: min(176px, calc(100% - 16px));
+  }
+
+  .replay-banner {
+    right: 8px;
+    bottom: 8px;
+    left: 8px;
+    width: auto;
+    max-width: none;
+    transform: none;
+  }
+
+  /* Drawers become contained bottom sheets, leaving the map context visible. */
+  .peta .map-wrap.with-drawer .drawer,
+  .peta .drawer,
+  .peta .district-evidence-drawer,
+  .peta .depot-readiness-drawer {
+    position: absolute;
+    inset: auto 8px 8px;
+    width: auto;
+    max-height: 72%;
+    overflow: hidden;
+    border-radius: 10px;
+  }
+
+  .peta .map-wrap.with-drawer .drawer > .drawer-head,
+  .peta .drawer > .drawer-head {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+
+  .peta .map-wrap.with-drawer .drawer > .drawer-body,
+  .peta .drawer > .drawer-body {
+    max-height: calc(68dvh - 90px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Supply configuration is a viewport sheet on phones, not a clipped popover. */
+  .map-feature-row .supply-popover {
+    position: fixed;
+    inset: auto 8px calc(76px + env(safe-area-inset-bottom));
+    z-index: 140;
+    width: auto;
+    max-height: min(72dvh, 650px);
+  }
+
+  .supply-scope-buttons { grid-template-columns: 1fr; }
+  .supply-rule { overflow-x: auto; justify-content: flex-start; }
+
+  /* Decision cards keep evidence readable and actions finger-sized. */
+  .decision-card-head {
+    grid-template-columns: 25px minmax(0, 1fr);
+  }
+
+  .decision-exposure {
+    grid-column: 2;
+    justify-self: start;
+    text-align: left;
+  }
+
+  .decision-resource-row {
+    grid-template-columns: minmax(0, 1fr) 94px;
+    gap: 9px;
+  }
+
+  .decision-resource-actions {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+  }
+
+  .decision-resource-actions button,
+  .redirect-confirm button,
+  .sidebar-order,
+  .row-detail-button {
+    min-height: 42px;
+  }
+
+  .decision-tools,
+  .decision-filters {
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .decision-filters button { min-height: 38px; flex: 0 0 auto; }
+
+  .source-note {
+    overflow-wrap: anywhere;
+    font-size: 10px;
+  }
+
+  /* Shared operational pages and data-heavy sections. */
+  .operational-page-head,
+  .command-report-head,
+  .briefing-page-head,
+  .monitoring-register-head {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .operational-page-head h1,
+  .command-report-title h1,
+  .briefing-page-head h1 {
+    font-size: 24px;
+  }
+
+  .table-scroll,
+  .quadrant-chart-wrap,
+  .report-allocation-table-wrap {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table-footer,
+  .pagination-controls {
+    max-width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .method-thesis,
+  .method-two-column,
+  .model-metrics,
+  .threshold-definition-grid,
+  .command-workspace,
+  .command-control-rail,
+  .command-audit-grid,
+  .briefing-primary-grid,
+  .briefing-secondary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .method-flow { grid-template-columns: 1fr; }
+  .method-flow li { padding: 10px 0; border-left: 0 !important; border-top: 1px solid #e3e8ed; }
+  .method-glossary div { grid-template-columns: 1fr; gap: 3px; }
+
+  /* The printable order remains a document, with a touch-scrollable table. */
+  .order-backdrop {
+    align-items: flex-start;
+    padding: 0;
+  }
+
+  .order-sheet {
+    min-height: 100dvh;
+    padding: 18px 14px calc(28px + env(safe-area-inset-bottom));
+    overflow-x: auto;
+    border-radius: 0;
+  }
+
+  .order-actions {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    padding: 8px 0;
+    background: #fff;
+  }
+
+  .order-actions button { min-height: 42px; }
+  .order-head { gap: 14px; }
+  .order-meta { grid-template-columns: 1fr 1fr; }
+  .order-summary { gap: 18px; }
+  .order-table { min-width: 720px; }
+  .order-signatures { grid-template-columns: 1fr; }
+
+  .assistant-dialog {
+    width: 100vw;
+    height: 100dvh;
+    border-radius: 0;
+  }
+
+  .assistant-ctx { display: none; }
+  .assistant-scroll { padding: 14px 10px; }
+  .assistant-a { max-width: 100%; }
+  .assistant-q { max-width: 90%; }
+
+  .toast-stack {
+    right: 10px;
+    bottom: calc(78px + env(safe-area-inset-bottom));
+    left: 10px;
+  }
+
+  .toast { width: 100%; max-width: none; }
+}
+
+@media (max-width: 420px) {
+  .app .navrail .navrail-btn { font-size: 9px; }
+  .app .navrail .navrail-btn svg { width: 17px; height: 17px; }
+
+  .peta { padding-top: 8px; }
+  .peta .map-wrap { height: 500px; min-height: 500px; }
+  .strip-stat { padding-right: 7px; padding-left: 7px; }
+  .strip-crew { white-space: normal; }
+
+  .decision-card-head { grid-template-columns: 22px minmax(0, 1fr); }
+  .decision-resource-row { grid-template-columns: 1fr; }
+  .decision-probability { width: 100%; }
+  .decision-resource-actions { grid-column: 1; }
+
+  .monitoring-register .priority-table tr { grid-template-columns: 1fr; }
+  .monitoring-register .priority-table td { grid-column: 1 !important; }
+
+  .order-meta,
+  .command-metric-rail,
+  .decision-trail {
+    grid-template-columns: 1fr;
+  }
+
+  .signin { padding: 14px; }
+  .signin-card { padding: 28px 20px 24px; }
+}
+
+@media (max-height: 560px) and (orientation: landscape) {
+  .app .navrail {
+    height: calc(56px + env(safe-area-inset-bottom));
+  }
+
+  .app .navrail .navrail-btn {
+    flex-direction: row;
+    gap: 5px;
+  }
+
+  .peta,
+  .page,
+  .overview,
+  .about,
+  .methodology-page,
+  .monitoring-page,
+  .operation-report {
+    padding-bottom: calc(68px + env(safe-area-inset-bottom));
+  }
+
+  .peta .map-wrap { height: 430px; min-height: 430px; }
+  .map-feature-row .supply-popover { bottom: calc(62px + env(safe-area-inset-bottom)); max-height: 72dvh; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within { scroll-behavior: auto; }
+}

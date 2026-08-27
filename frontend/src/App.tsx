@@ -54,6 +54,7 @@ import type { ViewMode } from "./hazard";
 import { computeKpis, fmtCompact, fmtInt } from "./metrics";
 import "./App.css";
 import "./redesign.css";
+import "./responsive.css";
 
 const PRESETS = [
   { label: "Dua bahaya Feb 2015", date: "2015-02-19", note: "Stress test alokasi · in-sample" },
