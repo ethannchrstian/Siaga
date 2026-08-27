@@ -71,8 +71,6 @@ export default function SignIn({ onSignedIn }: { onSignedIn: () => void }) {
           <b>SIAGA</b>
         </div>
 
-        <h1>{verified ? "Akses terverifikasi" : "Masuk ke konsol"}</h1>
-
         <div className={`signin-fields${verified ? " is-hidden" : ""}`} aria-hidden={verified}>
         <label className="signin-field">
           <span>Nama pengguna</span>

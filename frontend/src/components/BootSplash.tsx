@@ -51,9 +51,6 @@ export default function BootSplash({ ready }: Props) {
         </div>
         <div className="boot-word">SIAGA</div>
         <div className="boot-bar" aria-hidden="true"><i /></div>
-        <div className="boot-status">
-          {ready ? "Siap" : "Memuat data risiko dan rencana"}
-        </div>
       </div>
     </div>
   );

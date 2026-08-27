@@ -5633,23 +5633,25 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 .signin-brand {
   display: flex;
   align-items: center;
-  gap: 11px;
-  margin-bottom: 30px;
+  gap: 12px;
+  margin-bottom: 26px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid #edf0f5;
 }
 .signin-logo {
   box-sizing: content-box;
-  width: 22px;
-  height: 22px;
-  padding: 8px;
+  width: 24px;
+  height: 24px;
+  padding: 9px;
   object-fit: contain;
   background: #14294a;
-  border-radius: 8px;
+  border-radius: 9px;
 }
 .signin-brand b {
   color: #0b1f33;
-  font-size: 16px;
+  font-size: 19px;
   font-weight: 700;
-  letter-spacing: .13em;
+  letter-spacing: .14em;
 }
 
 .signin-card h1 {
