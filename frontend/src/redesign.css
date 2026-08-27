@@ -1199,6 +1199,24 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 .diversion-outcome li { font-family: var(--font-mono); font-size: 10px; }
 .diversion-outcome > small { display: block; margin-top: 5px; font-size: 10px; }
 .diversion-outcome footer { margin-top: 7px; padding-top: 6px; border-top: 1px solid #c9ddd0; font-size: 10px; font-weight: 700; }
+.diversion-outcome.deploy ul { flex-direction: column; gap: 3px; }
+
+/* Operator override: send a unit to a wilayah the optimizer skipped. Lives in
+   the gap-state box; the send is an action, so it carries the action red. */
+.drawer-deploy { margin-top: 9px; padding-top: 9px; border-top: 1px solid rgba(11,31,51,.12); }
+.drawer-deploy-title { color: var(--ink-3); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.drawer-deploy-res { display: flex; gap: 5px; margin-top: 7px; }
+.drawer-deploy-res button { flex: 1; padding: 6px 4px; color: var(--ink-2); background: #fff; border: 1px solid #cdd6df; border-radius: 4px; font-size: 11px; cursor: pointer; }
+.drawer-deploy-res button.on { color: #fff; background: #0b1f33; border-color: #0b1f33; }
+.drawer-deploy-row { display: flex; align-items: stretch; gap: 6px; margin-top: 7px; }
+.drawer-deploy-qty { display: flex; align-items: center; gap: 8px; padding: 0 8px; background: #fff; border: 1px solid #cdd6df; border-radius: 4px; }
+.drawer-deploy-qty button { display: grid; width: 20px; height: 100%; place-items: center; color: var(--ink-2); background: transparent; border: 0; cursor: pointer; font-size: 15px; line-height: 1; }
+.drawer-deploy-qty button:disabled { color: #b7c0ca; cursor: default; }
+.drawer-deploy-qty b { min-width: 12px; color: var(--ink-1); font-family: var(--font-mono); font-size: 13px; text-align: center; }
+.drawer-deploy-send { flex: 1; padding: 8px; color: #fff; background: var(--danger); border: 0; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer; }
+.drawer-deploy-send:hover { background: #cf2b31; }
+.drawer-deploy-send:disabled { background: #c7ced6; cursor: default; }
+.drawer-deploy-warn { display: block; margin-top: 6px; color: #8e4828; font-size: 10.5px; line-height: 1.4; }
 .decision-scroll-region .decision-group-list {
   display: flex;
   flex: none;
@@ -6830,12 +6848,11 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
 .monitoring-threshold-note strong { color: #294158; font-size: 12px; }
 .monitoring-threshold-note small { color: #657489; font-size: 11.5px; line-height: 1.35; }
 
-.monitoring-command {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 345px;
-  align-items: stretch;
-  gap: 30px;
-  padding: 25px 28px;
+/* Stakes at a glance. Four metric tiles, not a sentence: the count strip below
+   already carries the per-category counts, so this bar adds what it lacks —
+   jiwa exposed and the exposure with no plan yet. */
+.monitoring-kpi {
+  padding: 18px 24px 15px;
   color: #fff;
   background:
     linear-gradient(110deg, rgba(76, 167, 211, .13), transparent 47%),
@@ -6844,38 +6861,53 @@ h1, h2, .brand-name, .sidebar-title, .drawer-title, .page-heading h1 {
   border-radius: 13px;
   box-shadow: 0 17px 38px rgba(17, 34, 59, .14);
 }
-.monitoring-command-copy { align-self: center; }
-.monitoring-command-copy h2 {
-  max-width: 850px;
-  color: #fff;
-  font-size: 23px;
-  font-weight: 690;
-  letter-spacing: -.025em;
-  line-height: 1.24;
-}
-.monitoring-command-copy p { max-width: 800px; margin-top: 9px; color: #bac8d9; font-size: 13.5px; line-height: 1.55; }
-.monitoring-plan-balance {
+.monitoring-kpi-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-content: center;
-  gap: 12px 16px;
-  margin: 0;
-  padding-left: 23px;
-  border-left: 1px solid rgba(123, 212, 221, .28);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
-.monitoring-plan-balance div { min-width: 0; }
-.monitoring-plan-balance dt { color: #aebed0; font-size: 11px; line-height: 1.3; }
-.monitoring-plan-balance dd { margin: 6px 0 0; color: #8fcfff; font-family: var(--font-mono); font-size: 25px; font-weight: 620; line-height: 1; }
-.monitoring-plan-balance .open dd { color: #f3b1b5; }
-.monitoring-plan-balance .balance-track {
-  position: relative;
-  grid-column: 1 / -1;
-  height: 5px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, .13);
-  border-radius: 2px;
+.monitoring-kpi-tile {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 6px 22px;
+  border-left: 1px solid rgba(255, 255, 255, .09);
 }
-.monitoring-plan-balance .balance-track span { display: block; height: 100%; background: #7bd4dd; }
+.monitoring-kpi-tile:first-child { padding-left: 4px; border-left: 0; }
+.monitoring-kpi-tile .mk-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  color: #a9c2dc;
+  background: rgba(255, 255, 255, .06);
+  border-radius: 8px;
+}
+.monitoring-kpi-tile .mk-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.monitoring-kpi-tile .mk-body b {
+  color: #eaf3fb;
+  font-family: var(--font-mono);
+  font-size: 26px;
+  font-weight: 640;
+  line-height: 1;
+  letter-spacing: -.01em;
+}
+.monitoring-kpi-tile .mk-body span { color: #aebed0; font-size: 11.5px; line-height: 1.3; }
+/* Tone per stake: violet compound, blue exposure, red for the action gap. */
+.monitoring-kpi-tile.compound .mk-icon { color: #cfb0e3; background: rgba(155, 118, 184, .18); }
+.monitoring-kpi-tile.exposure .mk-icon { color: #8fcfff; background: rgba(76, 167, 211, .16); }
+.monitoring-kpi-tile.exposure .mk-body b { color: #a9dbff; }
+.monitoring-kpi-tile.gap .mk-icon { color: #ffb3b7; background: rgba(231, 53, 59, .18); }
+.monitoring-kpi-tile.gap .mk-body b { color: #ff9ea3; }
+.monitoring-kpi-note {
+  margin: 13px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, .07);
+  color: #9fb1c6;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
 
 .monitoring-scope-tabs {
   display: flex;

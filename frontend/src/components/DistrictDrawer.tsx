@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   type DistrictProperties,
   type HazardCalibration,
@@ -26,6 +27,11 @@ interface Props {
   robMonth?: string | null;
   /** Set when this kecamatan is not in the plan: why it received nothing. */
   unserved?: Unserved | null;
+  /** Planning travel limit, to warn before a send the solver cannot honour. */
+  maxTravelMin?: number;
+  /** Force a unit into this wilayah and re-solve. Absent in the read-only
+      baseline view, where operator actions do not apply. */
+  onDeploy?: (resource: "pompa" | "truk_tangki", units: number) => void;
   onClose: () => void;
 }
 
@@ -157,9 +163,19 @@ export default function DistrictDrawer({
   calibration,
   robMonth,
   unserved,
+  maxTravelMin,
+  onDeploy,
   onClose,
 }: Props) {
+  // Default to the unit that matches the greater hazard here. Rob-flagged
+  // coastal wilayah are a flood case, so an unmodeled wilayah defaults to pumps.
+  const defaultResource: "pompa" | "truk_tangki" =
+    (risk?.drought_prob ?? 0) > (risk?.flood_prob ?? 0) ? "truk_tangki" : "pompa";
+  const [deployRes, setDeployRes] = useState<"pompa" | "truk_tangki">(defaultResource);
+  const [deployQty, setDeployQty] = useState(1);
   if (!props) return null;
+  const nearestMin = unserved?.nearest_depot_min ?? null;
+  const outOfReach = nearestMin != null && maxTravelMin != null && nearestMin > maxTravelMin;
   const exposure = risk?.people_exposed ?? null;
   const compound = (risk?.flood_prob ?? 0) >= MONITORING_THRESHOLD
     && (risk?.drought_prob ?? 0) >= MONITORING_THRESHOLD;
@@ -236,8 +252,63 @@ export default function DistrictDrawer({
           {/* "Belum ada alokasi" named the outcome and withheld the cause,
               which is the one thing somebody in this kecamatan wants. */}
           <span>{unserved?.text ?? "Belum ada alokasi untuk wilayah ini pada rencana aktif."}</span>
-          {unserved?.nearest_depot_min != null && (
-            <small>Depot terdekat {unserved.nearest_depot_min} menit.</small>
+          {nearestMin != null && (
+            <small>Depot terdekat {nearestMin} menit.</small>
+          )}
+          {onDeploy && (
+            <div className="drawer-deploy">
+              <div className="drawer-deploy-title">Kerahkan unit ke sini</div>
+              <div className="drawer-deploy-res" role="group" aria-label="Jenis unit">
+                <button
+                  type="button"
+                  className={deployRes === "pompa" ? "on" : ""}
+                  onClick={() => setDeployRes("pompa")}
+                >
+                  Pompa banjir
+                </button>
+                <button
+                  type="button"
+                  className={deployRes === "truk_tangki" ? "on" : ""}
+                  onClick={() => setDeployRes("truk_tangki")}
+                >
+                  Truk tangki air
+                </button>
+              </div>
+              <div className="drawer-deploy-row">
+                <div className="drawer-deploy-qty" role="group" aria-label="Jumlah unit">
+                  <button
+                    type="button"
+                    onClick={() => setDeployQty((q) => Math.max(1, q - 1))}
+                    disabled={deployQty <= 1}
+                    aria-label="Kurangi jumlah"
+                  >
+                    −
+                  </button>
+                  <b>{deployQty}</b>
+                  <button
+                    type="button"
+                    onClick={() => setDeployQty((q) => Math.min(6, q + 1))}
+                    disabled={deployQty >= 6}
+                    aria-label="Tambah jumlah"
+                  >
+                    +
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  className="drawer-deploy-send"
+                  disabled={outOfReach}
+                  onClick={() => onDeploy(deployRes, deployQty)}
+                >
+                  Kerahkan {deployQty} unit
+                </button>
+              </div>
+              {outOfReach && (
+                <small className="drawer-deploy-warn">
+                  Di luar jangkauan: depot terdekat {nearestMin} menit, batas {maxTravelMin} menit.
+                </small>
+              )}
+            </div>
           )}
         </div>
       ) : assignments.map((assignment) => (

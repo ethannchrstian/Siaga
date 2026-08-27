@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { sourcesOf, type DistrictProperties, type PlanItem, type RiskDistrict } from "../api/client";
-import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, CloseIcon, InfoIcon, ResetIcon, SearchIcon } from "../icons";
-import { fmtInt } from "../metrics";
+import { AlertIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, CloseIcon, EyeIcon, InfoIcon, PeopleIcon, ResetIcon, SearchIcon, ShieldIcon } from "../icons";
+import { fmtCompact, fmtInt } from "../metrics";
 import { MONITORING_THRESHOLD, MONITORING_THRESHOLD_HELP } from "../thresholds";
 import SourceSummary from "./SourceSummary";
 
@@ -126,6 +126,14 @@ export default function Insiden({ risk, plan, date, districtMeta, onSelect }: Pr
     unmodeled: unmodeledRows.length,
   }), [baseRows, blindRows, unmodeledRows]);
 
+  // Exposure at the top of the page is the stakes number the count strip below
+  // never shows: total jiwa on the watchlist, and how many of those sit in
+  // kecamatan with no plan yet. Summed from full-precision per-row exposure.
+  const exposure = useMemo(() => ({
+    total: baseRows.reduce((sum, row) => sum + row.exposure, 0),
+    unplanned: baseRows.reduce((sum, row) => sum + (row.assignments.length === 0 ? row.exposure : 0), 0),
+  }), [baseRows]);
+
   const provinces = useMemo(() => [...new Set(baseRows.map((row) => row.province).filter((value) => value !== "—"))].sort(), [baseRows]);
   const regencies = useMemo(() => [...new Set(baseRows.filter((row) => !filters.province || row.province === filters.province).map((row) => row.kabupaten))].sort(), [baseRows, filters.province]);
 
@@ -163,7 +171,6 @@ export default function Insiden({ risk, plan, date, districtMeta, onSelect }: Pr
       ?? null
     : null;
   const activeFilters = filterChips(filters);
-  const plannedCount = Math.max(counts.all - counts.unplanned, 0);
   const viewCopy = monitoringViewCopy(filters, counts, rows.length);
 
   useEffect(() => setPage(1), [filters, query, rowsPerPage]);
@@ -204,16 +211,26 @@ export default function Insiden({ risk, plan, date, districtMeta, onSelect }: Pr
         <div className="monitoring-threshold-note" title={MONITORING_THRESHOLD_HELP}><InfoIcon size={17} /><span><strong>Ambang 50% berarti dipantau</strong><small>Bukan insiden terkonfirmasi atau pemicu alokasi otomatis.</small></span></div>
       </header>
 
-      <section className="monitoring-command" aria-labelledby="monitoring-command-title">
-        <div className="monitoring-command-copy">
-          <h2 id="monitoring-command-title">{viewCopy.title}</h2>
-          <p>{viewCopy.detail}</p>
+      <section className="monitoring-kpi" aria-label="Ringkasan pemantauan">
+        <div className="monitoring-kpi-row">
+          <div className="monitoring-kpi-tile">
+            <span className="mk-icon" aria-hidden="true"><EyeIcon size={16} /></span>
+            <div className="mk-body"><b>{fmtInt(counts.all)}</b><span>Wilayah dipantau</span></div>
+          </div>
+          <div className="monitoring-kpi-tile compound">
+            <span className="mk-icon" aria-hidden="true"><AlertIcon size={16} /></span>
+            <div className="mk-body"><b>{fmtInt(counts.compound)}</b><span>Bahaya majemuk</span></div>
+          </div>
+          <div className="monitoring-kpi-tile exposure">
+            <span className="mk-icon" aria-hidden="true"><PeopleIcon size={16} /></span>
+            <div className="mk-body"><b>{fmtCompact(exposure.total)}</b><span>Jiwa terpapar</span></div>
+          </div>
+          <div className="monitoring-kpi-tile gap">
+            <span className="mk-icon" aria-hidden="true"><ShieldIcon size={16} /></span>
+            <div className="mk-body"><b>{fmtCompact(exposure.unplanned)}</b><span>Belum terlindungi · {fmtInt(counts.unplanned)} wilayah</span></div>
+          </div>
         </div>
-        <dl className="monitoring-plan-balance" aria-label="Keseimbangan cakupan rencana">
-          <div><dt>Sudah masuk rencana</dt><dd>{fmtInt(plannedCount)}</dd></div>
-          <div className="open"><dt>Belum masuk rencana</dt><dd>{fmtInt(counts.unplanned)}</dd></div>
-          <div className="balance-track" aria-hidden="true"><span style={{ width: `${counts.all ? (plannedCount / counts.all) * 100 : 0}%` }} /></div>
-        </dl>
+        <p className="monitoring-kpi-note">{viewCopy.detail}</p>
       </section>
 
       <div className="monitoring-scope-frame">

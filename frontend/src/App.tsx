@@ -102,6 +102,7 @@ function summarizeDiversion(pending: DiversionPending, result: AllocateResponse)
     .filter((item) => item.units > 0);
 
   return {
+    mode: "divert",
     targetDistrict: pending.district,
     resourceLabel: pending.resource_label,
     removedUnits: pending.units,
@@ -156,9 +157,55 @@ type DiversionPending = Pick<
   PlanItem,
   "district_id" | "district" | "resource" | "resource_label" | "units"
 > & {
+  mode: "divert" | "deploy";
   beforePlan: PlanItem[];
   beforeCovered: number;
 };
+
+/** Mirror of summarizeDiversion for a manual deployment: the operator forced a
+ *  unit into a wilayah the optimizer skipped, so "what moved" is which wilayah
+ *  the solver pulled units from to fund it. Same panel, read the other way. */
+function summarizeDeployment(pending: DiversionPending, result: AllocateResponse): DiversionOutcome {
+  const placed = result.plan
+    .filter((item) => item.district_id === pending.district_id && item.resource === pending.resource)
+    .reduce((sum, item) => sum + item.units, 0);
+  const totals = (plan: PlanItem[]) => {
+    const byDistrict = new Map<string, { district: string; units: number }>();
+    for (const item of plan) {
+      if (item.resource !== pending.resource || item.district_id === pending.district_id) continue;
+      const current = byDistrict.get(item.district_id);
+      byDistrict.set(item.district_id, {
+        district: item.district,
+        units: (current?.units ?? 0) + item.units,
+      });
+    }
+    return byDistrict;
+  };
+  const before = totals(pending.beforePlan);
+  const after = totals(result.plan);
+  const sources = [...new Set([...before.keys(), ...after.keys()])]
+    .map((districtId) => {
+      const b = before.get(districtId);
+      const a = after.get(districtId);
+      return {
+        district: (b?.district ?? a?.district) as string,
+        units: (b?.units ?? 0) - (a?.units ?? 0),
+      };
+    })
+    .filter((item) => item.units > 0)
+    .sort((a, b) => b.units - a.units);
+
+  return {
+    mode: "deploy",
+    targetDistrict: pending.district,
+    resourceLabel: pending.resource_label,
+    removedUnits: placed || pending.units,
+    destinations: sources,
+    returnedUnits: 0,
+    coverageDelta: Math.round(result.comparison.siaga.expected_covered - pending.beforeCovered),
+    failed: placed <= 0,
+  };
+}
 
 /** Sign-in wraps the console so nothing is fetched before there is a session.
  *  "checking" is its own state: rendering the form for a moment and then
@@ -508,7 +555,29 @@ function Console({ onSignOut }: { onSignOut: () => void }) {
         }
 
         const diversion = diversionRef.current;
-        if (diversion) {
+        if (diversion && diversion.mode === "deploy") {
+          const outcome = summarizeDeployment(diversion, res);
+          setDiversionOutcome(outcome);
+          if (outcome.failed) {
+            // The solver could not place the forced unit (no depot reaches this
+            // wilayah in time). Drop the lock so it does not linger as a no-op.
+            const k = `${diversion.district_id}:${diversion.resource}`;
+            setLocks((prev) => {
+              if (!prev.has(k)) return prev;
+              const next = new Map(prev);
+              next.delete(k);
+              return next;
+            });
+            pushToast(`${diversion.district} di luar jangkauan; pengerahan dibatalkan.`, "reject");
+          } else {
+            const placed = res.plan.find(
+              (item) => item.district_id === diversion.district_id && item.resource === diversion.resource,
+            );
+            if (placed) mapHandleRef.current?.dispatch(placed);
+            pushToast(`Rencana diperbarui: unit dikerahkan ke ${diversion.district}.`, "lock");
+          }
+          diversionRef.current = null;
+        } else if (diversion) {
           const outcome = summarizeDiversion(diversion, res);
           setDiversionOutcome(outcome);
           pushToast(
@@ -567,6 +636,7 @@ function Console({ onSignOut }: { onSignOut: () => void }) {
   };
   const onReject = (p: PlanItem) => {
     diversionRef.current = {
+      mode: "divert",
       district_id: p.district_id,
       district: p.district,
       resource: p.resource,
@@ -594,6 +664,39 @@ function Console({ onSignOut }: { onSignOut: () => void }) {
       "reject",
     );
   };
+  // Send a unit to a wilayah the optimizer skipped. This is the operator's
+  // override for hazards the model cannot see (tidal rob, a local report): the
+  // lock forces the allocation and the solver rebalances the rest of the scarce
+  // fleet around it, so the operator never has to choose which wilayah loses.
+  const onDeploy = (
+    districtId: string,
+    districtName: string,
+    resource: "pompa" | "truk_tangki",
+    units: number,
+  ) => {
+    const resourceLabel = resource === "pompa" ? "pompa banjir" : "truk tangki air";
+    diversionRef.current = {
+      mode: "deploy",
+      district_id: districtId,
+      district: districtName,
+      resource,
+      resource_label: resourceLabel,
+      units,
+      beforePlan: result?.plan ?? [],
+      beforeCovered: result?.comparison.siaga.expected_covered ?? 0,
+    };
+    setDiversionOutcome(null);
+    const k = `${districtId}:${resource}`;
+    setLocks((prev) => new Map(prev).set(k, { district_id: districtId, resource, units }));
+    record("manual_deploy", {
+      district_id: districtId,
+      district: districtName,
+      resource_label: resourceLabel,
+      units,
+    });
+    pushToast(`${units} ${resourceLabel} dikerahkan ke ${districtName}; menghitung ulang rencana…`, "lock");
+  };
+
   const onClearReject = (k: string) => {
     const [districtId, resource] = k.split(":");
     const district = risk.get(districtId);
@@ -967,6 +1070,15 @@ function Console({ onSignOut }: { onSignOut: () => void }) {
                       selected
                         ? result?.unserved.find((u) => u.district_id === selected) ?? null
                         : null
+                    }
+                    maxTravelMin={maxTravelMin}
+                    onDeploy={
+                      compare === "terpisah"
+                        ? undefined
+                        : (resource, units) => {
+                            const meta = propsRef.current.get(selected);
+                            if (meta) onDeploy(selected, meta.name, resource, units);
+                          }
                     }
                     onClose={() => setSelected(null)}
                   />

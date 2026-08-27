@@ -25,6 +25,7 @@ const MAX_ENTRIES = 500;
 export type DecisionKind =
   | "lock"
   | "unlock"
+  | "manual_deploy"
   | "reject"
   | "clear_reject"
   | "clear_all_locks"
@@ -51,6 +52,7 @@ export interface DecisionEntry {
 export const KIND_LABEL: Record<DecisionKind, string> = {
   lock: "Dikunci",
   unlock: "Kunci dilepas",
+  manual_deploy: "Dikerahkan manual",
   reject: "Dikeluarkan dari rencana",
   clear_reject: "Pengalihan dibatalkan",
   clear_all_locks: "Semua kunci dilepas",

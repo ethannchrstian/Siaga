@@ -45,9 +45,14 @@ interface Props {
 }
 
 export interface DiversionOutcome {
+  /** "divert" removes an allocation; "deploy" forces one into a wilayah the
+      optimizer skipped. The panel reads the same either way: what changed. */
+  mode?: "divert" | "deploy";
   targetDistrict: string;
   resourceLabel: string;
   removedUnits: number;
+  /** For divert, where the freed units went. For deploy, where they were
+      pulled from to fund the forced allocation. */
   destinations: { district: string; units: number }[];
   returnedUnits: number;
   coverageDelta: number;
@@ -296,24 +301,53 @@ export default function Sidebar({
         )}
 
         {diversionOutcome && (
-          <div className={`diversion-outcome${diversionOutcome.failed ? " failed" : ""}`} role="status">
-            <header>
-              <strong>{diversionOutcome.failed ? "Pengalihan belum diterapkan" : "Rencana diperbarui"}</strong>
-              {onDismissDiversion && <button type="button" onClick={onDismissDiversion} aria-label="Tutup hasil pengalihan">×</button>}
-            </header>
-            <p><b>{diversionOutcome.removedUnits} {diversionOutcome.resourceLabel}</b> ke {diversionOutcome.targetDistrict} {diversionOutcome.failed ? "masih berada dalam rencana." : "dikeluarkan dari rencana."}</p>
-            {!diversionOutcome.failed && diversionOutcome.destinations.length > 0 && (
-              <ul>
-                {diversionOutcome.destinations.map((destination) => (
-                  <li key={destination.district}>{destination.units} unit → {destination.district}</li>
-                ))}
-              </ul>
-            )}
-            {!diversionOutcome.failed && diversionOutcome.returnedUnits > 0 && <small>{diversionOutcome.returnedUnits} unit kembali tersedia.</small>}
-            {!diversionOutcome.failed && (
-              <footer>Estimasi cakupan {diversionOutcome.coverageDelta === 0 ? "tidak berubah" : `${diversionOutcome.coverageDelta > 0 ? "+" : "−"}${idNum(Math.abs(diversionOutcome.coverageDelta))} jiwa`}.</footer>
-            )}
-          </div>
+          diversionOutcome.mode === "deploy" ? (
+            <div className={`diversion-outcome deploy${diversionOutcome.failed ? " failed" : ""}`} role="status">
+              <header>
+                <strong>{diversionOutcome.failed ? "Belum dapat dikerahkan" : "Unit dikerahkan"}</strong>
+                {onDismissDiversion && <button type="button" onClick={onDismissDiversion} aria-label="Tutup hasil pengerahan">×</button>}
+              </header>
+              {diversionOutcome.failed ? (
+                <p>Tidak ada depot yang dapat menjangkau {diversionOutcome.targetDistrict} dalam batas waktu tiba.</p>
+              ) : (
+                <>
+                  <p><b>{diversionOutcome.removedUnits} {diversionOutcome.resourceLabel}</b> ditambahkan ke {diversionOutcome.targetDistrict}.</p>
+                  {diversionOutcome.destinations.length > 0 ? (
+                    <>
+                      <small>Diambil dari:</small>
+                      <ul>
+                        {diversionOutcome.destinations.map((source) => (
+                          <li key={source.district}>{source.units} unit ← {source.district}</li>
+                        ))}
+                      </ul>
+                    </>
+                  ) : (
+                    <small>Diambil dari unit yang belum terpakai.</small>
+                  )}
+                  <footer>Estimasi cakupan {diversionOutcome.coverageDelta === 0 ? "tidak berubah" : `${diversionOutcome.coverageDelta > 0 ? "+" : "−"}${idNum(Math.abs(diversionOutcome.coverageDelta))} jiwa`}.</footer>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className={`diversion-outcome${diversionOutcome.failed ? " failed" : ""}`} role="status">
+              <header>
+                <strong>{diversionOutcome.failed ? "Pengalihan belum diterapkan" : "Rencana diperbarui"}</strong>
+                {onDismissDiversion && <button type="button" onClick={onDismissDiversion} aria-label="Tutup hasil pengalihan">×</button>}
+              </header>
+              <p><b>{diversionOutcome.removedUnits} {diversionOutcome.resourceLabel}</b> ke {diversionOutcome.targetDistrict} {diversionOutcome.failed ? "masih berada dalam rencana." : "dikeluarkan dari rencana."}</p>
+              {!diversionOutcome.failed && diversionOutcome.destinations.length > 0 && (
+                <ul>
+                  {diversionOutcome.destinations.map((destination) => (
+                    <li key={destination.district}>{destination.units} unit → {destination.district}</li>
+                  ))}
+                </ul>
+              )}
+              {!diversionOutcome.failed && diversionOutcome.returnedUnits > 0 && <small>{diversionOutcome.returnedUnits} unit kembali tersedia.</small>}
+              {!diversionOutcome.failed && (
+                <footer>Estimasi cakupan {diversionOutcome.coverageDelta === 0 ? "tidak berubah" : `${diversionOutcome.coverageDelta > 0 ? "+" : "−"}${idNum(Math.abs(diversionOutcome.coverageDelta))} jiwa`}.</footer>
+              )}
+            </div>
+          )
         )}
 
         <div className={`cards decision-group-list${loading ? " solving" : ""}`}>
